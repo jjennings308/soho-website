@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  h1 {
+    @apply text-4xl font-bold font-display;
+  }
+  
+  h2 {
+    @apply text-3xl font-bold font-display;
+  }
+  
+  h3 {
+    @apply text-2xl font-semibold font-display;
+  }
+  
+  h4 {
+    @apply text-xl font-semibold;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-secondary-700 transition-colors duration-200;
+  }
+  
+  .btn-outline {
+    @apply border-2 border-primary-600 text-primary-600 px-6 py-3 rounded-lg font-semibold hover:bg-primary-600 hover:text-white transition-colors duration-200;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow-lg overflow-hidden;
+  }
+  
+  .menu-item-card {
+    @apply card hover:shadow-xl transition-shadow duration-300;
+  }
+  
+  .section-padding {
+    @apply py-16 px-4 md:px-8;
+  }
+  
+  .container-custom {
+    @apply max-w-7xl mx-auto;
+  }
+}
+
+/* Custom utility styles */
+@layer utilities {
+  .text-shadow {
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .text-shadow-lg {
+    text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.2);
+  }
+}

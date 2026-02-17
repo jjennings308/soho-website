@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}{{ site_settings.meta_description }}{% endblock %}">
+    <meta name="keywords" content="{% block meta_keywords %}{{ site_settings.meta_keywords }}{% endblock %}">
+    
+    <title>{% block title %}{{ restaurant_name }}{% endblock %}</title>
+    
+    {% load static %}
+    
+    <!-- Favicon -->
+    {% if site_settings.favicon %}
+    <link rel="icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
+    {% endif %}
+    
+    <!-- Tailwind CSS -->
+    <link rel="stylesheet" href="{% static 'dist/output.css' %}">
+    
+    <!-- Google Fonts (customize as needed) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="font-sans antialiased bg-gray-50">
+    
+    {% if site_settings.maintenance_mode and not user.is_staff %}
+        <!-- Maintenance Mode -->
+        <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-600 to-secondary-600">
+            <div class="text-center text-white px-4">
+                <h1 class="text-5xl font-display mb-4">We'll Be Right Back</h1>
+                <p class="text-xl mb-8">{{ site_settings.maintenance_message|default:"We're currently performing maintenance. Please check back soon!" }}</p>
+            </div>
+        </div>
+    {% else %}
+    
+    <!-- Navigation -->
+    {% include 'partials/_navigation.html' %}
+    
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    {% include 'partials/_footer.html' %}
+    
+    {% endif %}
+    
+    <!-- Scripts -->
+    {% block extra_js %}{% endblock %}
+    
+</body>
+</html>
