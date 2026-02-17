@@ -75,11 +75,12 @@ class MenuItem(models.Model):
         help_text="Brief description for menu listings"
     )
     
-    # Pricing
+    # Pricing (base price - can be overridden by variations)
     price = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text="Base price or price for standard size"
     )
     sale_price = models.DecimalField(
         max_digits=8,
@@ -88,6 +89,18 @@ class MenuItem(models.Model):
         null=True,
         validators=[MinValueValidator(Decimal('0.01'))],
         help_text="Optional discounted price"
+    ) 
+      
+    # Has size/quantity variations
+    has_variations = models.BooleanField(
+        default=False,
+        help_text="Check if this item has multiple size/quantity options"
+    )
+    
+    # Has add-ons
+    has_addons = models.BooleanField(
+        default=False,
+        help_text="Check if this item has add-on options"
     )
     
     # Images
@@ -215,6 +228,129 @@ class MenuItem(models.Model):
         if self.is_nut_free:
             labels.append('Nut Free')
         return labels
+
+    @property
+    def price_range(self):
+        """Return price range if item has variations"""
+        if not self.has_variations:
+            return None
+        
+        variations = self.variations.all()
+        if not variations:
+            return None
+            
+        prices = [v.price for v in variations]
+        min_price = min(prices)
+        max_price = max(prices)
+        
+        if min_price == max_price:
+            return f"${min_price}"
+        return f"${min_price} - ${max_price}"
+
+
+class MenuItemVariation(models.Model):
+    """
+    Size/quantity variations for menu items (e.g., Small/Large, 6pc/12pc/30pc)
+    """
+    menu_item = models.ForeignKey(
+        MenuItem,
+        on_delete=models.CASCADE,
+        related_name='variations'
+    )
+    name = models.CharField(
+        max_length=100,
+        help_text="Variation name (e.g., 'Small', 'Large', '6 Wings', '12 Wings')"
+    )
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional description of this variation"
+    )
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    quantity = models.PositiveIntegerField(
+        blank=True,
+        null=True,
+        help_text="Quantity/count for this variation (e.g., 6, 12, 30)"
+    )
+    size = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Size descriptor (e.g., 'Small', 'Medium', 'Large', 'Cup', 'Bowl')"
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order (lower numbers first)"
+    )
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Is this the default/recommended option?"
+    )
+    is_available = models.BooleanField(
+        default=True,
+        help_text="Is this variation currently available?"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'price']
+        verbose_name = 'Menu Item Variation'
+        verbose_name_plural = 'Menu Item Variations'
+        unique_together = ['menu_item', 'name']
+
+    def __str__(self):
+        return f"{self.menu_item.name} - {self.name} (${self.price})"
+    
+class MenuItemAddon(models.Model):
+    """
+    addons for menu items (e.g., cheese $2, Chicken $6)
+    """
+    menu_item = models.ForeignKey(
+        MenuItem,
+        on_delete=models.CASCADE,
+        related_name='addons'
+    )
+    name = models.CharField(
+        max_length=100,
+        help_text="Addon name (e.g., 'Chicken', 'Steak', etc.)"
+    )
+    description = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional description of this add-on"
+    )
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order (lower numbers first)"
+    )
+    is_default = models.BooleanField(
+        default=False,
+        help_text="Is this the default/recommended option?"
+    )
+    is_available = models.BooleanField(
+        default=True,
+        help_text="Is this add-on currently available?"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'price']
+        verbose_name = 'Menu Item Add-on'
+        verbose_name_plural = 'Menu Item Add-ons'
+        unique_together = ['menu_item', 'name']
+
+    def __str__(self):
+        return f"{self.menu_item.name} - {self.name} (${self.price})"
 
 
 class MenuItemImage(models.Model):
