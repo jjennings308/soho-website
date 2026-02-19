@@ -1,8 +1,21 @@
-.env
-.vscode/
+# Python
 __pycache__/
 *.py[cod]
-scripts/*.log
-*$py.class
-/uploads/*
-!/uploads/.gitkeep
+*.pyo
+
+# Django
+db.sqlite3
+media/
+logs/
+staticfiles/
+
+# Node
+node_modules/
+
+# Environment
+.env
+*.env
+
+# Misc
+tmp.txt
+.DS_Store
