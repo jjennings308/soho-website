@@ -50,6 +50,116 @@
   .container-custom {
     @apply max-w-7xl mx-auto;
   }
+
+  /* ==========================================================
+     TYPOGRAPHY SYSTEM — Theme Layer
+     Font family and color are driven by CSS variables injected
+     by the active ThemeStyle + ThemeOverlay at runtime.
+     These classes define *what* a piece of text is.
+     ========================================================== */
+
+  /* Headings and titles */
+  .t-heading {
+    font-family: var(--primary-font, theme('fontFamily.display'));
+    color: var(--heading-text-color, var(--primary-text-color, theme('colors.gray.900')));
+    @apply font-bold tracking-wide;
+  }
+
+  .t-title {
+    font-family: var(--primary-font, theme('fontFamily.display'));
+    color: var(--primary-text-color, theme('colors.gray.900'));
+    @apply font-semibold;
+  }
+
+  /* Body and descriptions */
+  .t-body {
+    font-family: var(--secondary-font, theme('fontFamily.sans'));
+    color: var(--secondary-text-color, theme('colors.gray.600'));
+    @apply font-normal leading-relaxed;
+  }
+
+  /* Pricing */
+  .t-price {
+    font-family: var(--accent-font, var(--secondary-font, theme('fontFamily.sans')));
+    color: var(--accent-text-color, var(--primary-text-color, theme('colors.gray.900')));
+    @apply font-semibold;
+  }
+
+  /* Labels, categories, meta info */
+  .t-label {
+    font-family: var(--secondary-font, theme('fontFamily.sans'));
+    color: var(--secondary-text-color, theme('colors.gray.500'));
+    @apply font-medium uppercase tracking-widest;
+  }
+
+  /* Navigation links */
+  .t-nav {
+    font-family: var(--primary-font, theme('fontFamily.display'));
+    color: var(--primary-text-color, theme('colors.gray.900'));
+    @apply font-medium tracking-wide;
+  }
+
+  /* Accent text — special callouts, featured items */
+  .t-accent {
+    font-family: var(--accent-font, var(--primary-font, theme('fontFamily.display')));
+    color: var(--accent-text-color, theme('colors.primary.600'));
+    @apply font-semibold;
+  }
+
+  /* ==========================================================
+     TYPOGRAPHY SYSTEM — Application Layer
+     Font size and overflow are set here per component context.
+     These classes define *how* text fits its container.
+     Combine with a theme class: <h3 class="t-title t-card">
+     ========================================================== */
+
+  /* Card title — single line, truncates */
+  .t-card {
+    @apply text-lg truncate max-w-full;
+  }
+
+  /* Table cell — compact, truncates */
+  .t-table {
+    @apply text-sm truncate max-w-xs;
+  }
+
+  /* Description — clamps to 3 lines */
+  .t-description {
+    @apply text-sm leading-relaxed;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Full description — no clamp, detail views */
+  .t-description-full {
+    @apply text-base leading-relaxed;
+  }
+
+  /* Badge / tag — small inline label */
+  .t-badge {
+    @apply text-xs px-2 py-0.5 rounded-full inline-block;
+  }
+
+  /* Size modifiers for headings */
+  .t-page      { @apply text-4xl leading-tight; }
+  .t-section   { @apply text-3xl leading-snug; }
+  .t-subheading { @apply text-xl leading-snug; }
+
+  /* Price size modifiers */
+  .t-price-lg  { @apply text-xl; }
+  .t-price-sm  { @apply text-sm; }
+
+  /* ==========================================================
+     BACKGROUND UTILITY CLASSES
+     Driven by CSS variables from the active theme.
+     ========================================================== */
+
+  .bg-theme-primary   { background-color: var(--primary-bg-color, theme('colors.white')); }
+  .bg-theme-secondary { background-color: var(--secondary-bg-color, theme('colors.gray.50')); }
+  .bg-theme-accent    { background-color: var(--accent-bg-color, theme('colors.primary.600')); }
+  .bg-theme-nav       { background-color: var(--nav-bg-color, theme('colors.gray.900')); }
 }
 
 /* Custom utility styles */

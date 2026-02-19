@@ -17,11 +17,15 @@ def site_settings(request):
 
 def active_theme(request):
     """
-    Make active theme available in all templates
+    Make active theme and resolved style variables available in all templates.
+    Resolves base style + any active overlay into a single set of CSS variables.
     """
     theme = Theme.get_active_theme()
+    style_vars = theme.resolve_style_vars() if theme else {}
+
     return {
         'active_theme': theme,
         'theme_name': theme.name if theme else 'default',
         'theme_directory': theme.theme_directory if theme else 'default',
+        'theme_style_vars': style_vars,  # dict of CSS var name -> value
     }
