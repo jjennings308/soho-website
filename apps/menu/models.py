@@ -4,10 +4,44 @@ from decimal import Decimal
 from django_ckeditor_5.fields import CKEditor5Field
 
 
+class MenuType(models.Model):
+    """
+    Top-level grouping for the menu (e.g., Food, Beverages, Specials).
+    Managed entirely through the admin — no hardcoded choices.
+    """
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Order in which types appear (lower numbers first)"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Display this type on the menu"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['order', 'name']
+        verbose_name = 'Menu Type'
+        verbose_name_plural = 'Menu Types'
+
+    def __str__(self):
+        return self.name
+
+
 class MenuCategory(models.Model):
     """
     Categories for organizing menu items (e.g., Appetizers, Entrees, Desserts, Beverages)
     """
+    menu_type = models.ForeignKey(
+        MenuType,
+        on_delete=models.CASCADE,
+        related_name='categories',
+        help_text="The top-level type this category belongs to (e.g., Food, Beverages)"
+    )
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
@@ -19,7 +53,7 @@ class MenuCategory(models.Model):
     )
     order = models.PositiveIntegerField(
         default=0,
-        help_text="Order in which categories appear (lower numbers first)"
+        help_text="Order in which categories appear within their type (lower numbers first)"
     )
     is_active = models.BooleanField(
         default=True,
@@ -29,12 +63,12 @@ class MenuCategory(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['order', 'name']
+        ordering = ['menu_type__order', 'order', 'name']
         verbose_name = 'Menu Category'
         verbose_name_plural = 'Menu Categories'
 
     def __str__(self):
-        return self.name
+        return f"{self.menu_type.name} › {self.name}"
 
 
 class MenuItem(models.Model):
@@ -194,7 +228,7 @@ class MenuItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['category__order', 'order', 'name']
+        ordering = ['category__menu_type__order', 'category__order', 'order', 'name']
         verbose_name = 'Menu Item'
         verbose_name_plural = 'Menu Items'
         indexes = [
@@ -307,7 +341,7 @@ class MenuItemVariation(models.Model):
     
 class MenuItemAddon(models.Model):
     """
-    addons for menu items (e.g., cheese $2, Chicken $6)
+    Addons for menu items (e.g., cheese $2, Chicken $6)
     """
     menu_item = models.ForeignKey(
         MenuItem,

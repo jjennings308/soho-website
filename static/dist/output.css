@@ -749,24 +749,43 @@ input:where([type='file']):focus {
   outline: 1px auto -webkit-focus-ring-color;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-secondary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings — font-family and color from theme vars, size from Tailwind */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-primary);
+  color: var(--color-text-heading);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
 h1 {
-  font-family: Montserrat, sans-serif;
+  font-size: 3rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+h2 {
   font-size: 2.25rem;
   line-height: 2.5rem;
   font-weight: 700;
 }
 
-h2 {
-  font-family: Montserrat, sans-serif;
+h3 {
   font-size: 1.875rem;
   line-height: 2.25rem;
-  font-weight: 700;
-}
-
-h3 {
-  font-family: Montserrat, sans-serif;
-  font-size: 1.5rem;
-  line-height: 2rem;
   font-weight: 600;
 }
 
@@ -774,6 +793,68 @@ h4 {
   font-size: 1.25rem;
   line-height: 1.75rem;
   font-weight: 600;
+}
+
+h5 {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  font-weight: 600;
+}
+
+h6 {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+}
+
+p {
+  line-height: 1.8;
+}
+
+/* Links — theme-driven color, hover from extended gold token */
+
+a {
+  color: var(--color-text-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast, 150ms ease);
+}
+
+a:hover {
+  color: var(--color-gold-bright);
+}
+
+.container {
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .container {
+    max-width: 1536px;
+  }
 }
 
 .prose {
@@ -1549,77 +1630,238 @@ h4 {
   --tw-prose-td-borders: var(--tw-prose-invert-td-borders);
 }
 
-.btn-primary {
-  border-radius: 0.5rem;
-  --tw-bg-opacity: 1;
-  background-color: rgb(220 38 38 / var(--tw-bg-opacity, 1));
-  padding-left: 1.5rem;
-  padding-right: 1.5rem;
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+/* ── Typography System ─────────────────────────────────────────────────── */
+
+/* Theme layer: what a piece of text IS */
+
+/* Application layer: HOW text fits its container */
+
+/* Eyebrow / section label */
+
+/* ── Background Helpers ────────────────────────────────────────────────── */
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+
+.btn {
+  font-family: var(--font-accent);
+  display: inline-flex;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
   font-weight: 600;
-  --tw-text-opacity: 1;
-  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-decoration-line: none;
+  transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 200ms;
 }
 
-.btn-primary:hover {
-  --tw-bg-opacity: 1;
-  background-color: rgb(185 28 28 / var(--tw-bg-opacity, 1));
+/* Gold fill */
+
+.btn-primary {
+  background-color: var(--color-bg-accent);
+  border: 1px solid var(--color-bg-accent);
+  color: #0a0a0a;
 }
+
+.btn-primary:hover {
+  background-color: var(--color-gold-bright);
+  border-color: var(--color-gold-bright);
+  color: #0a0a0a;
+  box-shadow: var(--shadow-gold);
+  --tw-translate-y: -1px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+/* Gold outline */
+
+.btn-secondary {
+  background-color: transparent;
+  color: var(--color-text-accent);
+  border: 1px solid var(--color-text-accent);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-bg-accent);
+  color: #0a0a0a;
+  box-shadow: var(--shadow-gold);
+  --tw-translate-y: -1px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+/* White outline (for use on dark hero sections) */
+
+/* Deprecated — btn-outline kept for backward compat, maps to btn-secondary */
+
+/* ── Cards ─────────────────────────────────────────────────────────────── */
+
+/* menu-item-card — alias used in existing templates */
+
+/* ── Menu Items ─────────────────────────────────────────────────────────── */
+
+/* ── Navigation ─────────────────────────────────────────────────────────── */
+
+.site-nav {
+  background-color: var(--color-nav-bg);
+  border-bottom: var(--gold-rule);
+  position: sticky;
+  top: 0px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 2rem;
+  padding-right: 2rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  --tw-backdrop-blur: blur(12px);
+  -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+}
+
+.site-nav__logo {
+  font-family: var(--font-primary);
+  color: var(--color-text-accent);
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.site-nav__logo span {
+  color: var(--color-text-primary);
+}
+
+.site-nav__links {
+  display: flex;
+  list-style-type: none;
+  align-items: center;
+  gap: 2rem;
+}
+
+.site-nav__links a {
+  font-family: var(--font-accent);
+  color: var(--color-text-primary);
+  position: relative;
+  padding-bottom: 0.125rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.site-nav__links a::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  height: 1px;
+  width: 0px;
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+  background-color: var(--color-text-accent);
+}
+
+.site-nav__links a:hover,
+  .site-nav__links a.active {
+  color: var(--color-gold-bright);
+}
+
+.site-nav__links a:hover::after,
+  .site-nav__links a.active::after {
+  width: 100%;
+}
+
+/* ── Section Helpers ────────────────────────────────────────────────────── */
 
 .container-custom {
+  max-width: var(--max-width);
   margin-left: auto;
   margin-right: auto;
-  max-width: 80rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
 }
 
-/* ==========================================================
-     TYPOGRAPHY SYSTEM — Theme Layer
-     Font family and color are driven by CSS variables injected
-     by the active ThemeStyle + ThemeOverlay at runtime.
-     These classes define *what* a piece of text is.
-     ========================================================== */
+/* Decorative heading with centered gold underline */
 
-/* Headings and titles */
+/* Gold decorative horizontal rule */
 
-/* Body and descriptions */
+/* ── Hero ───────────────────────────────────────────────────────────────── */
 
-/* Pricing */
+/* ── Footer ─────────────────────────────────────────────────────────────── */
 
-/* Labels, categories, meta info */
+.site-footer {
+  background-color: #060606;
+  border-top: var(--gold-rule-thick);
+  color: var(--color-text-secondary);
+  padding-top: 4rem;
+  padding-bottom: 2rem;
+}
 
-/* Navigation links */
+.site-footer__logo {
+  font-family: var(--font-primary);
+  color: var(--color-text-accent);
+  margin-bottom: 0.5rem;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
 
-/* Accent text — special callouts, featured items */
+.site-footer__nav {
+  display: flex;
+  list-style-type: none;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
 
-/* ==========================================================
-     TYPOGRAPHY SYSTEM — Application Layer
-     Font size and overflow are set here per component context.
-     These classes define *how* text fits its container.
-     Combine with a theme class: <h3 class="t-title t-card">
-     ========================================================== */
+.site-footer__nav a {
+  font-family: var(--font-accent);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
 
-/* Card title — single line, truncates */
+.site-footer__nav a:hover {
+  color: var(--color-text-accent);
+}
 
-/* Table cell — compact, truncates */
+.site-footer__bottom {
+  border-top: 1px solid var(--color-dark-gray);
+  color: var(--color-mid-gray);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 2rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  letter-spacing: 0.025em;
+}
 
-/* Description — clamps to 3 lines */
+/* ── Seasonal Badge ──────────────────────────────────────────────────────── */
 
-/* Full description — no clamp, detail views */
-
-/* Badge / tag — small inline label */
-
-/* Size modifiers for headings */
-
-/* Price size modifiers */
-
-/* ==========================================================
-     BACKGROUND UTILITY CLASSES
-     Driven by CSS variables from the active theme.
-     ========================================================== */
+/* Used in templates to surface an active overlay (Christmas, etc.) */
 
 .collapse {
   visibility: collapse;
@@ -1707,6 +1949,16 @@ h4 {
 
 .w-auto {
   width: auto;
+}
+
+.-translate-y-2 {
+  --tw-translate-y: -0.5rem;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+.translate-y-0 {
+  --tw-translate-y: 0px;
+  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
 .scale-100 {
@@ -1975,11 +2227,29 @@ h4 {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
 }
 
-/* Custom base styles */
+/* Hide element but keep accessible to screen readers */
 
-/* Custom component styles */
+/* =============================================================================
+   @layer base
+   Element-level defaults that override Tailwind Preflight.
+   Uses CSS custom properties from theme.css so the active ThemeStyle
+   (injected as :root{} in base.html) controls fonts and colors at runtime.
+   ============================================================================= */
 
-/* Custom utility styles */
+/* =============================================================================
+   @layer components
+   All BEM component classes. No hardcoded colors — everything references
+   a CSS custom property so ThemeStyle + ThemeOverlay control the output.
+
+   Rule: if a value needs to change per-theme, it uses a var().
+         if it's structural (flex, grid, padding), it uses Tailwind utilities
+         or plain CSS values.
+   ============================================================================= */
+
+/* =============================================================================
+   @layer utilities
+   One-off helpers that need to beat component styles.
+   ============================================================================= */
 
 .hover\:text-primary-400:hover {
   --tw-text-opacity: 1;

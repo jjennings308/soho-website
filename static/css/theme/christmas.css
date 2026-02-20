@@ -1,0 +1,58 @@
+/* =============================================================================
+   Seasonal Overlay: Christmas / Holiday
+   static/css/themes/christmas.css
+
+   Overrides the CSS variables defined in theme.css by reassigning the
+   same :root tokens. Since this file loads AFTER theme.css and BEFORE
+   output.css in base.html, the values here win at the token level.
+   All component styles automatically pick up the new values via var().
+
+   Load order in base.html:
+     1. theme.css      ← base tokens
+     2. output.css     ← Tailwind (compiled from input.css)
+     3. THIS FILE      ← token overrides (must come after output.css)
+   ============================================================================= */
+
+:root {
+  /* Shift accent gold to warm candlelight */
+  --color-text-accent:  #d4a017;
+  --color-bg-accent:    #d4a017;
+  --color-gold-bright:  #e8c050;
+  --color-gold-deep:    #9e7512;
+
+  /* Holiday-specific tokens (used in component overrides below) */
+  --color-holiday-red:   #b91c1c;
+  --color-holiday-green: #14532d;
+}
+
+/* ── Component overrides that can't be handled by tokens alone ──────────────
+   These specifically target the border-color shorthand properties which
+   are set as var(--gold-rule) / var(--gold-rule-thick) compound values.
+   We override the border-color directly since we can't reassign a
+   shorthand var that includes width + style + color together.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.site-nav {
+  border-bottom-color: var(--color-holiday-red);
+}
+
+.site-footer {
+  border-top-color: var(--color-holiday-red);
+}
+
+/* Warm radial glow behind hero/page top */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% -10%, rgba(185,28,28,0.05) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Seasonal badge picks up --color-bg-accent automatically from the
+   .seasonal-badge component, but we add a green option too */
+.seasonal-badge--green {
+  background-color: var(--color-holiday-green);
+  color: #ffffff;
+}

@@ -67,11 +67,11 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             'fields': ('hours_text',)
         }),
         ('Social Media', {
-            'fields': ('facebook_url', 'instagram_url', 'twitter_url'),
+            'fields': ('facebook_url', 'instagram_url', 'twitter_url', 'yelp_url'),
             'classes': ('collapse',)
         }),
         ('Theme & Templates', {
-            'fields': ('active_theme', 'home_template', 'menu_template', 'events_template')
+            'fields': ('active_theme', 'home_template', 'menu_template', 'promotions_template')
         }),
         ('SEO Settings', {
             'fields': ('meta_description', 'meta_keywords'),

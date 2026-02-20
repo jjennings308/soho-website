@@ -1,60 +1,105 @@
-<!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+{% load static %}<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block meta_description %}{{ site_settings.meta_description }}{% endblock %}">
-    <meta name="keywords" content="{% block meta_keywords %}{{ site_settings.meta_keywords }}{% endblock %}">
-    
-    <title>{% block title %}{{ restaurant_name }}{% endblock %}</title>
-    
-    {% load static %}
-    
-    <!-- Favicon -->
-    {% if site_settings.favicon %}
-    <link rel="icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
-    {% endif %}
-    
-    <!-- Tailwind CSS -->
-    <link rel="stylesheet" href="{% static 'dist/output.css' %}">
-    
-    <!-- Google Fonts (customize as needed) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    {% block extra_css %}{% endblock %}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="{% block meta_description %}{% if site_settings.meta_description %}{{ site_settings.meta_description }}{% else %}{{ site_settings.tagline }}{% endif %}{% endblock %}" />
+  {% if site_settings.meta_keywords %}
+  <meta name="keywords" content="{{ site_settings.meta_keywords }}" />
+  {% endif %}
+
+  <title>{% block title %}{{ restaurant_name }}{% endblock %}</title>
+
+  {# ── Favicon ──────────────────────────────────────────────────────────── #}
+{% if site_settings.favicon %}
+  <link rel="icon" type="image/x-icon" href="{{ site_settings.favicon.url }}">
+{% else %}
+  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon.png' %}">
+  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon.png' %}">
+  <link rel="icon" type="image/png" sizes="48x48" href="{% static 'img/favicon.png' %}">
+  <link rel="icon" type="image/png" sizes="64x64" href="{% static 'img/favicon.png' %}">
+{% endif %}
+
+{# ── Apple Touch Icons ────────────────────────────────────────────────── #}
+<link rel="apple-touch-icon" sizes="57x57"   href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="apple-touch-icon" sizes="60x60"   href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="apple-touch-icon" sizes="72x72"   href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="apple-touch-icon" sizes="114x114" href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="apple-touch-icon" sizes="120x120" href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="apple-touch-icon" sizes="144x144" href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="apple-touch-icon" sizes="152x152" href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}">
+
+  {# ── Google Fonts — built dynamically from active theme's font choices ── #}
+  {# Loaded only if the theme actually uses web fonts (system fonts skipped) #}
+  {% if google_fonts_url %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="{{ google_fonts_url }}" rel="stylesheet">
+  {% endif %}
+
+  {# ── Base Theme CSS ───────────────────────────────────────────────────── #}
+  {# Contains all :root defaults. Dynamic vars below override as needed.    #}
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+
+  {# ── Tailwind compiled output ─────────────────────────────────────────── #}
+  <link rel="stylesheet" href="{% static 'dist/output.css' %}">
+
+  {# ── Dynamic CSS Variable Overrides ───────────────────────────────────── #}
+  {# Injects the resolved base+overlay vars as a :root block.              #}
+  {# theme_style_vars comes from the active_theme context processor.       #}
+  {% if theme_style_vars %}
+  <style>
+    :root {
+      {% for var, val in theme_style_vars.items %}
+      --{{ var }}: {{ val }};
+      {% endfor %}
+    }
+  </style>
+  {% endif %}
+
+  {% block extra_head %}{% endblock %}
 </head>
-<body class="font-sans antialiased bg-gray-50">
-    
-    {% if site_settings.maintenance_mode and not user.is_staff %}
-        <!-- Maintenance Mode -->
-        <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-600 to-secondary-600">
-            <div class="text-center text-white px-4">
-                <h1 class="text-5xl font-display mb-4">We'll Be Right Back</h1>
-                <p class="text-xl mb-8">{{ site_settings.maintenance_message|default:"We're currently performing maintenance. Please check back soon!" }}</p>
-            </div>
-        </div>
-    {% else %}
-    
-    <!-- Navigation -->
-    {% include 'partials/_navigation.html' %}
-    
-    <!-- Main Content -->
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-    
-    <!-- Footer -->
-    {% include 'partials/_footer.html' %}
-    
-    {% endif %}
-    
-    <!-- Scripts -->
-    {% block extra_js %}{% endblock %}
-    
+
+<body>
+
+  {# ── Navigation ───────────────────────────────────────────────────────── #}
+  {% include "partials/_navigation.html" %}
+
+  {# ── Django Messages ──────────────────────────────────────────────────── #}
+  {% if messages %}
+  <div style="position:fixed;top:80px;right:1rem;z-index:200;max-width:380px;">
+    {% for message in messages %}
+    <div style="
+      background: var(--color-bg-secondary, #1a1a1a);
+      border-left: 3px solid var(--color-bg-accent, #c9972a);
+      color: var(--color-text-primary, #f5f0e8);
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.5rem;
+      font-family: var(--font-secondary, sans-serif);
+      font-size: 0.875rem;
+    ">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ── Main Content ─────────────────────────────────────────────────────── #}
+  <main id="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  {# ── Footer ───────────────────────────────────────────────────────────── #}
+  {% include "partials/_footer.html" %}
+
+  {# ── Alpine.js (local, from node_modules) ────────────────────────────── #}
+  <script defer src="{% static 'node_modules/alpinejs/dist/cdn.min.js' %}"></script>
+ 
+  {% comment %}
+  {# -- Or if you serve it via a copy in static/js/:
+  <script defer src="{% static 'js/alpine.min.js' %}"></script>  -- #}
+  {% endcomment %}
+  
+  {% block extra_js %}{% endblock %}
+
 </body>
 </html>

@@ -1,0 +1,45 @@
+/* =============================================================================
+   Seasonal Overlay: Valentine's Day
+   static/css/themes/valentines.css
+
+   Same loading strategy as christmas.css — overrides :root tokens so all
+   components automatically re-skin via their var() references.
+
+   Load order in base.html:
+     1. theme.css      ← base tokens
+     2. output.css     ← Tailwind (compiled from input.css)
+     3. THIS FILE      ← token overrides (must come after output.css)
+   ============================================================================= */
+
+:root {
+  /* Shift accent gold to rose gold */
+  --color-text-accent:  #d4618a;
+  --color-bg-accent:    #d4618a;
+  --color-gold-bright:  #e87aa0;
+  --color-gold-deep:    #a03060;
+
+  /* Valentine-specific tokens */
+  --color-valentine-rose:  #be185d;
+  --color-valentine-blush: #fbcfe8;
+  --color-valentine-deep:  #831843;
+}
+
+/* Border-color overrides (same reason as christmas.css — can't reassign
+   compound shorthand vars so we target the property directly) */
+.site-nav {
+  border-bottom-color: var(--color-valentine-deep);
+}
+
+.site-footer {
+  border-top-color: var(--color-valentine-deep);
+}
+
+/* Subtle rose radial glow */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% -10%, rgba(190,24,93,0.06) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+}

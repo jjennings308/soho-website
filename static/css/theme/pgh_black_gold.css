@@ -1,0 +1,37 @@
+/* =============================================================================
+   Seasonal Theme Overlay: Pittsburgh Black & Gold
+   Activates during Steelers playoff season or Pittsburgh-specific events.
+   Intensifies the gold palette toward official Steelers gold (#FFB612).
+   ============================================================================= */
+
+:root {
+  --color-gold-primary:  #ffb612;   /* Official Steelers gold */
+  --color-gold-bright:   #ffc926;
+  --color-gold-deep:     #cc9400;
+  --color-gold-light:    #ffe08a;
+  --color-bg-primary:    #080808;   /* Even deeper black */
+  --color-bg-surface:    #111111;
+}
+
+/* Subtle gold shimmer on hero sections */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,182,18,0.08) 0%, transparent 60%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Gold top accent bar */
+body::before {
+  content: '';
+  display: block;
+  height: 3px;
+  background: linear-gradient(90deg, #080808, #ffb612, #080808);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+}

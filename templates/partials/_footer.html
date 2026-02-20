@@ -1,98 +1,109 @@
-{% load static %}
+{# templates/partials/footer.html #}
+{# SoHo Pittsburgh — Site Footer #}
 
-<footer class="bg-gray-900 text-gray-300">
-    <div class="container-custom px-4 py-12">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            
-            <!-- Restaurant Info -->
-            <div>
-                <h3 class="text-white text-lg font-display font-semibold mb-4">{{ restaurant_name }}</h3>
-                <p class="text-sm mb-4">{{ site_settings.tagline }}</p>
-                
-                {% if site_settings.logo %}
-                <img src="{{ site_settings.logo.url }}" alt="{{ restaurant_name }}" class="h-16 w-auto mb-4">
-                {% endif %}
-            </div>
-            
-            <!-- Contact Info -->
-            <div>
-                <h3 class="text-white text-lg font-display font-semibold mb-4">Contact Us</h3>
-                <div class="space-y-2 text-sm">
-                    {% if restaurant_address %}
-                    <p>
-                        <span class="font-semibold">Address:</span><br>
-                        {{ site_settings.address_line1 }}<br>
-                        {% if site_settings.address_line2 %}{{ site_settings.address_line2 }}<br>{% endif %}
-                        {{ site_settings.city }}, {{ site_settings.state }} {{ site_settings.zip_code }}
-                    </p>
-                    {% endif %}
-                    
-                    {% if restaurant_phone %}
-                    <p>
-                        <span class="font-semibold">Phone:</span><br>
-                        <a href="tel:{{ restaurant_phone }}" class="hover:text-primary-400 transition-colors">
-                            {{ restaurant_phone }}
-                        </a>
-                    </p>
-                    {% endif %}
-                    
-                    {% if restaurant_email %}
-                    <p>
-                        <span class="font-semibold">Email:</span><br>
-                        <a href="mailto:{{ restaurant_email }}" class="hover:text-primary-400 transition-colors">
-                            {{ restaurant_email }}
-                        </a>
-                    </p>
-                    {% endif %}
-                </div>
-            </div>
-            
-            <!-- Hours -->
-            <div>
-                <h3 class="text-white text-lg font-display font-semibold mb-4">Hours</h3>
-                <div class="text-sm prose prose-invert prose-sm">
-                    {{ site_settings.hours_text|safe }}
-                </div>
-            </div>
-            
-            <!-- Quick Links & Social -->
-            <div>
-                <h3 class="text-white text-lg font-display font-semibold mb-4">Quick Links</h3>
-                <ul class="space-y-2 text-sm mb-6">
-                    <li><a href="/" class="hover:text-primary-400 transition-colors">Home</a></li>
-                    <li><a href="{% url 'menu:index' %}" class="hover:text-primary-400 transition-colors">Menu</a></li>
-                    <li><a href="{% url 'promotions:index' %}" class="hover:text-primary-400 transition-colors">Events</a></li>
-                    <li><a href="/about/" class="hover:text-primary-400 transition-colors">About</a></li>
-                    <li><a href="/contact/" class="hover:text-primary-400 transition-colors">Contact</a></li>
-                </ul>
-                
-                <!-- Social Media Links -->
-                <div class="flex space-x-4">
-                    {% if site_settings.facebook_url %}
-                    <a href="{{ site_settings.facebook_url }}" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-primary-400 transition-colors">
-                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                    </a>
-                    {% endif %}
-                    
-                    {% if site_settings.instagram_url %}
-                    <a href="{{ site_settings.instagram_url }}" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-primary-400 transition-colors">
-                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                    </a>
-                    {% endif %}
-                    
-                    {% if site_settings.twitter_url %}
-                    <a href="{{ site_settings.twitter_url }}" target="_blank" rel="noopener noreferrer" class="text-gray-300 hover:text-primary-400 transition-colors">
-                        <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-            
+<footer class="site-footer">
+  <div class="container">
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:3rem;margin-bottom:3rem;">
+
+      {# Brand Column #}
+      <div>
+        <div class="site-footer__logo">
+          {% if site_settings.logo %}
+            <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.logo_alt_text }}" style="height:50px;width:auto;margin-bottom:1rem;">
+          {% else %}
+            SoHo Pittsburgh
+          {% endif %}
         </div>
-        
-        <!-- Copyright -->
-        <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-            <p>&copy; {% now "Y" %} {{ restaurant_name }}. All rights reserved.</p>
+        <p class="site-footer__tagline">{{ site_settings.tagline|default:"The Original North Shore Restaurant" }}</p>
+        <p style="font-size:0.8rem;line-height:1.7;color:var(--color-text-secondary);">
+          Established 2006. An upscale bar and grille experience — elegant, functional, and rooted in Pittsburgh's North Shore.
+        </p>
+
+        {# Social Icons #}
+        <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+          {% if site_settings.facebook_url %}
+            <a href="{{ site_settings.facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook"
+              style="color:var(--color-text-muted);transition:color 0.2s;" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="40px" height="40px" data-ux="IconSocial" class="x-el x-el-svg c1-1 c1-2 c1-28 c1-2d c1-2u c1-2f c1-2g c1-2h c1-2i c1-b c1-c c1-d c1-e c1-f c1-g"><path fill-rule="evenodd" d="M22 12.061C22 6.505 17.523 2 12 2S2 6.505 2 12.061c0 5.022 3.657 9.184 8.438 9.939v-7.03h-2.54v-2.91h2.54V9.845c0-2.522 1.492-3.915 3.777-3.915 1.094 0 2.238.197 2.238.197v2.476h-1.26c-1.243 0-1.63.775-1.63 1.57v1.888h2.773l-.443 2.908h-2.33V22c4.78-.755 8.437-4.917 8.437-9.939z"></path></svg>
+            </a>
+          {% endif %}
+          {% if site_settings.instagram_url %}
+            <a href="{{ site_settings.instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram"
+              style="color:var(--color-text-muted);transition:color 0.2s;" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="40px" height="40px" data-ux="IconSocial" class="x-el x-el-svg c1-1 c1-2 c1-28 c1-2d c1-2u c1-2f c1-2g c1-2h c1-2i c1-b c1-c c1-d c1-e c1-f c1-g"><path d="M16.604 8.516c.13.35.198.719.203 1.091.033.622.033.811.033 2.386 0 1.574-.004 1.763-.033 2.385a3.273 3.273 0 0 1-.203 1.091 1.956 1.956 0 0 1-1.12 1.12c-.35.13-.719.198-1.091.204-.622.032-.811.032-2.386.032-1.574 0-1.763-.003-2.385-.032a3.273 3.273 0 0 1-1.091-.204 1.956 1.956 0 0 1-1.12-1.12 3.273 3.273 0 0 1-.204-1.09c-.032-.623-.032-.812-.032-2.386 0-1.575.003-1.764.032-2.386.006-.372.074-.741.204-1.09a1.956 1.956 0 0 1 1.12-1.12c.35-.13.718-.199 1.09-.204.623-.033.812-.033 2.386-.033 1.575 0 1.764.004 2.386.033.372.005.741.074 1.09.203.515.2.922.606 1.12 1.12zM12 15.033a3.033 3.033 0 1 0 0-6.066 3.033 3.033 0 0 0 0 6.066zm3.153-5.477a.71.71 0 1 0 0-1.418.71.71 0 0 0 0 1.418zM12 13.967a1.967 1.967 0 1 1 0-3.934 1.967 1.967 0 0 1 0 3.934zM12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10A10 10 0 0 0 12 2zm5.87 12.433c-.01.49-.102.974-.274 1.432a3.018 3.018 0 0 1-1.727 1.728 4.335 4.335 0 0 1-1.433.272c-.629.03-.829.037-2.432.037-1.604 0-1.819 0-2.433-.037a4.335 4.335 0 0 1-1.433-.272 3.018 3.018 0 0 1-1.727-1.728 4.335 4.335 0 0 1-.273-1.432c-.029-.63-.036-.83-.036-2.433 0-1.604 0-1.818.036-2.433.01-.49.102-.974.273-1.432a3.018 3.018 0 0 1 1.727-1.728 4.335 4.335 0 0 1 1.433-.272c.629-.03.829-.037 2.433-.037 1.603 0 1.818 0 2.432.037.49.009.974.101 1.433.272.794.307 1.42.934 1.727 1.728.172.458.264.943.273 1.432.03.63.036.83.036 2.433 0 1.604-.007 1.804-.036 2.433z"></path></svg>
+            </a>
+          {% endif %}
+          {% if site_settings.twitter_url %}
+            <a href="{{ site_settings.twitter_url }}" target="_blank" rel="noopener" aria-label="Twitter"
+              style="color:var(--color-text-muted);transition:color 0.2s;" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="40px" height="40px" data-ux="IconSocial" class="x-el x-el-svg c1-1 c1-2 c1-28 c1-2d c1-2u c1-2f c1-2g c1-2h c1-2i c1-b c1-c c1-d c1-e c1-f c1-g"><path d="M14.933 17.2645L7.44211 6.77221H9.06447L16.5654 17.2645H14.933Z"></path><path fill-rule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM10.6893 12.6803L6 6H9.58023L12.6597 10.42L16.5504 6H17.6019L13.148 11.1015L18 18H14.4348L11.165 13.3471L7.07907 18H6L10.6893 12.6803Z"></path></svg>
+            </a>
+          {% endif %}
+          {% if site_settings.yelp_url %}
+            <a href="{{ site_settings.yelp_url }}" target="_blank" rel="noopener" aria-label="Yelp"
+              style="color:var(--color-text-muted);transition:color 0.2s;" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-text-muted)'">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="40px" height="40px" data-ux="IconSocial" class="x-el x-el-svg c1-1 c1-2 c1-28 c1-2d c1-2u c1-2f c1-2g c1-2h c1-2i c1-b c1-c c1-d c1-e c1-f c1-g"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10A10 10 0 0 0 12 2zM7.055 13.745a.97.97 0 0 1-.073-.509l.182-2.072a.687.687 0 0 1 .29-.364c.182-.11.582.036.582.036l2.619 1.31s.4.181.4.509c-.037.436-.219.436-.364.509l-3.055.654s-.436.146-.581-.073zm4.945.473l-.036 3.018s.036.437-.219.51c-.144.02-.291.02-.436 0l-2.036-.655a.6.6 0 0 1-.291-.364c-.073-.218.182-.545.182-.545l2.036-2.255s.327-.29.582-.145c.254.145.254.436.218.436zm-.364-3.236a.687.687 0 0 1-.581-.182l-2.51-3.418s-.363-.4-.181-.691a.64.64 0 0 1 .363-.291l2.4-.873c.11-.036.218-.145.582.073.255.145.291.655.291.655l.036 4.145s-.072.51-.4.582zm1.419.582l1.636-2.582s.145-.364.436-.327c.152.002.29.085.364.218l1.382 1.636a.676.676 0 0 1 .072.473c-.072.218-.472.363-.472.363l-2.91.837s-.4.073-.545-.182c-.145-.255 0-.51.037-.436zm3.781 3.309L15.6 16.655a.815.815 0 0 1-.436.181c-.219 0-.473-.327-.473-.327l-1.564-2.618s-.182-.364.037-.582c.218-.218.472-.109.509-.145l2.909.945s.4.073.4.364a1.942 1.942 0 0 1-.146.4z"></path></svg>
+            </a>
+          {% endif %}
         </div>
+      </div>
+
+      {# Hours Column #}
+      <div>
+        <h4 style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-primary);margin-bottom:1.25rem;">Hours</h4>
+        <p style="font-size:0.875rem;color:var(--color-text-secondary);margin-bottom:0.5rem;">
+          {{ site_settings.hours_weekday|default:"Sunday – Thursday: 11 AM – 11 PM" }}
+        </p>
+        <p style="font-size:0.875rem;color:var(--color-text-secondary);">
+          {{ site_settings.hours_weekend|default:"Friday & Saturday: 11 AM – 12 AM" }}
+        </p>
+      </div>
+
+      {# Location Column #}
+      <div>
+        <h4 style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-primary);margin-bottom:1.25rem;">Location</h4>
+        <address style="font-style:normal;font-size:0.875rem;color:var(--color-text-secondary);line-height:1.7;">
+          {{ site_settings.address_line1|default:"203 Federal Street" }}<br>
+          {{ site_settings.address_line2|default:"Pittsburgh, Pennsylvania 15212" }}
+        </address>
+        <p style="margin-top:1rem;">
+          <a href="tel:{{ site_settings.phone|default:'4123217646' }}"
+             style="font-family:var(--font-nav);font-size:0.8rem;letter-spacing:0.1em;color:var(--color-gold-primary);">
+            {{ site_settings.phone|default:"(412) 321-7646" }}
+          </a>
+        </p>
+        {% if site_settings.email %}
+          <p style="margin-top:0.5rem;">
+            <a href="mailto:{{ site_settings.email }}"
+               style="font-size:0.8rem;color:var(--color-text-secondary);">
+              {{ site_settings.email }}
+            </a>
+          </p>
+        {% endif %}
+      </div>
+
+      {# Nav Column #}
+      <div>
+        <h4 style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-primary);margin-bottom:1.25rem;">Explore</h4>
+        <ul class="site-footer__nav" style="flex-direction:column;gap:0.75rem;">
+          <li><a href="{% url 'core:home' %}">Home</a></li>
+          <li><a href="{% url 'core:about' %}">About SoHo</a></li>
+          <li><a href="{% url 'menu:food' %}">Food Menu</a></li>
+          <li><a href="{% url 'menu:drinks' %}">Drinks Menu</a></li>
+          <li><a href="{% url 'promotions:list' %}">Promotions</a></li>
+          <li><a href="{% url 'core:contact' %}">Contact</a></li>
+        </ul>
+      </div>
+
+    </div>{# /grid #}
+
+    {# Bottom Bar #}
+    <div class="site-footer__bottom">
+      <span>© {% now "Y" %} {{ site_settings.site_name|default:"SoHo Pittsburgh" }} — All rights reserved.</span>
+      <span style="color:var(--color-gold-deep);">&#9670;</span>
+      <span>203 Federal Street, Pittsburgh, PA 15212</span>
     </div>
+
+  </div>
 </footer>

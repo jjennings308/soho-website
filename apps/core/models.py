@@ -4,6 +4,25 @@ from django.utils import timezone
 from django_ckeditor_5.fields import CKEditor5Field
 
 
+# Maps font choice values to their Google Fonts URL parameter
+# Used by SiteSettings.get_google_fonts_url() to build a single <link> tag
+GOOGLE_FONTS_MAP = {
+    '"Playfair Display", serif':    'Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400',
+    '"Cormorant Garamond", serif':  'Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400',
+    '"Libre Baskerville", serif':   'Libre+Baskerville:ital,wght@0,400;0,700;1,400',
+    '"Inter", sans-serif':          'Inter:wght@300;400;500;600;700',
+    '"Lato", sans-serif':           'Lato:ital,wght@0,300;0,400;0,700;1,300;1,400',
+    '"Montserrat", sans-serif':     'Montserrat:wght@300;400;500;600;700',
+    '"Open Sans", sans-serif':      'Open+Sans:ital,wght@0,300;0,400;0,600;1,400',
+    '"Cinzel", serif':              'Cinzel:wght@400;600;700',
+    '"Oswald", sans-serif':         'Oswald:wght@300;400;500;600',
+    '"Raleway", sans-serif':        'Raleway:wght@300;400;500;600;700',
+    # Georgia and Courier New are system fonts — no Google Fonts import needed
+    'Georgia, serif':               None,
+    '"Courier New", monospace':     None,
+}
+
+
 class ThemeStyle(models.Model):
     """
     Defines typography and color settings for a theme or overlay.
@@ -55,7 +74,7 @@ class ThemeStyle(models.Model):
     primary_text_color = models.CharField(
         max_length=20,
         blank=True,
-        help_text="Main text color (e.g., #1a1a1a)"
+        help_text="Main text color (e.g., #f5f0e8)"
     )
     secondary_text_color = models.CharField(
         max_length=20,
@@ -65,7 +84,7 @@ class ThemeStyle(models.Model):
     accent_text_color = models.CharField(
         max_length=20,
         blank=True,
-        help_text="Accent color for prices, highlights"
+        help_text="Accent color for prices, highlights (e.g., #c9972a)"
     )
     heading_text_color = models.CharField(
         max_length=20,
@@ -77,17 +96,17 @@ class ThemeStyle(models.Model):
     primary_bg_color = models.CharField(
         max_length=20,
         blank=True,
-        help_text="Main page background color"
+        help_text="Main page background color (e.g., #0a0a0a)"
     )
     secondary_bg_color = models.CharField(
         max_length=20,
         blank=True,
-        help_text="Card/section background color"
+        help_text="Card/section background color (e.g., #1a1a1a)"
     )
     accent_bg_color = models.CharField(
         max_length=20,
         blank=True,
-        help_text="Accent background (buttons, badges, highlights)"
+        help_text="Accent background — buttons, badges, highlights (e.g., #c9972a)"
     )
     nav_bg_color = models.CharField(
         max_length=20,
@@ -108,31 +127,53 @@ class ThemeStyle(models.Model):
 
     def to_css_vars(self):
         """
-        Returns a dict of CSS variable name -> value for all non-blank fields.
-        Used when merging base + overlay styles.
+        Returns a dict mapping CSS custom property names → values
+        for all non-blank fields on this style.
+
+        These names match exactly what theme.css defines in :root {}.
+        Used by Theme.resolve_style_vars() to merge base + overlay.
+        The template renders them as:
+            {% for var, val in theme_style_vars.items %}
+                --{{ var }}: {{ val }};
+            {% endfor %}
         """
         mapping = {
-            'primary-font': self.primary_font,
-            'secondary-font': self.secondary_font,
-            'accent-font': self.accent_font,
-            'primary-text-color': self.primary_text_color,
-            'secondary-text-color': self.secondary_text_color,
-            'accent-text-color': self.accent_text_color,
-            'heading-text-color': self.heading_text_color,
-            'primary-bg-color': self.primary_bg_color,
-            'secondary-bg-color': self.secondary_bg_color,
-            'accent-bg-color': self.accent_bg_color,
-            'nav-bg-color': self.nav_bg_color,
+            # Fonts — match theme.css variables
+            'font-primary':   self.primary_font,
+            'font-secondary': self.secondary_font,
+            'font-accent':    self.accent_font,
+            # Text colors
+            'color-text-primary':   self.primary_text_color,
+            'color-text-secondary': self.secondary_text_color,
+            'color-text-accent':    self.accent_text_color,
+            'color-text-heading':   self.heading_text_color,
+            # Background colors
+            'color-bg-primary':   self.primary_bg_color,
+            'color-bg-secondary': self.secondary_bg_color,
+            'color-bg-accent':    self.accent_bg_color,
+            'color-nav-bg':       self.nav_bg_color,
         }
         # Only return fields that have a value set
         return {k: v for k, v in mapping.items() if v}
 
+    def get_google_fonts(self):
+        """
+        Returns a list of Google Fonts family strings needed for this style.
+        Used by SiteSettings.get_google_fonts_url() to build the combined URL.
+        Skips system fonts (Georgia, Courier New) which don't need importing.
+        """
+        fonts = set()
+        for field in [self.primary_font, self.secondary_font, self.accent_font]:
+            if field and field in GOOGLE_FONTS_MAP and GOOGLE_FONTS_MAP[field]:
+                fonts.add(GOOGLE_FONTS_MAP[field])
+        return list(fonts)
+
 
 class ThemeOverlay(models.Model):
     """
-    A seasonal or promotion-based style overlay that sits on top of the base theme style.
-    Only the fields set here will override the base — everything else falls through.
-    Examples: Christmas, Valentine's Day, Pittsburgh (Black & Gold), Mardi Gras
+    A seasonal or promotion-based style overlay that sits on top of the base theme.
+    Only fields set here override the base — everything else falls through.
+    Examples: Christmas, Valentine's Day, Pittsburgh Black & Gold, Mardi Gras
     """
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
@@ -180,25 +221,25 @@ class ThemeOverlay(models.Model):
 
 class Theme(models.Model):
     """
-    Defines available themes for the restaurant website.
-    Each theme has a name, directory path, and preview image.
-    A theme pairs a base style with an optional overlay style.
+    A theme pairs a base ThemeStyle with a directory of HTML templates.
+    The active Theme determines which templates are rendered and which
+    base CSS variables are set.
     """
     name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     theme_directory = models.CharField(
         max_length=100,
-        help_text="Directory name in themes/ folder (e.g., 'classic', 'modern')"
+        help_text="Directory name in themes/ folder (e.g., 'classic', 'modern', 'elegant')"
     )
     preview_image = models.ImageField(
         upload_to='theme_previews/',
         blank=True,
         null=True,
-        help_text="Screenshot or preview of the theme"
+        help_text="Screenshot or preview of this theme"
     )
 
-    # Style layers
+    # Style layer
     base_style = models.ForeignKey(
         ThemeStyle,
         on_delete=models.SET_NULL,
@@ -221,33 +262,60 @@ class Theme(models.Model):
         return self.name
 
     def save(self, *args, **kwargs):
+        # Enforce only one active theme at a time
         if self.is_active:
             Theme.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
         super().save(*args, **kwargs)
 
     @classmethod
     def get_active_theme(cls):
-        """Get the currently active theme"""
+        """Get the currently active theme, with base_style pre-fetched."""
         return cls.objects.filter(is_active=True).select_related('base_style').first()
 
     def resolve_style_vars(self):
         """
-        Merge base style + any active overlay into a single dict of CSS variables.
+        Merge base style + any currently active overlay into a single CSS var dict.
         Overlay values win over base values for any overlapping keys.
+
+        Returns: dict of { 'color-bg-primary': '#0a0a0a', 'font-primary': '"Playfair Display", serif', ... }
         """
         resolved = {}
 
-        # Start with base style
+        # Layer 1: base style
         if self.base_style:
             resolved.update(self.base_style.to_css_vars())
 
-        # Apply active overlay from SiteSettings if one exists
-        from .models import SiteSettings
+        # Layer 2: active overlay (if one is set in SiteSettings and currently in-range)
         settings = SiteSettings.load()
         if settings.active_overlay and settings.active_overlay.is_currently_active:
             resolved.update(settings.active_overlay.style.to_css_vars())
 
         return resolved
+
+    def get_google_fonts_url(self):
+        """
+        Builds a single Google Fonts URL covering all fonts needed by the
+        active base style + active overlay. Returns None if no web fonts needed.
+
+        Usage in base.html:
+            {% if google_fonts_url %}
+            <link href="{{ google_fonts_url }}" rel="stylesheet">
+            {% endif %}
+        """
+        font_families = set()
+
+        if self.base_style:
+            font_families.update(self.base_style.get_google_fonts())
+
+        settings = SiteSettings.load()
+        if settings.active_overlay and settings.active_overlay.is_currently_active:
+            font_families.update(settings.active_overlay.style.get_google_fonts())
+
+        if not font_families:
+            return None
+
+        families_param = '&family='.join(sorted(font_families))
+        return f"https://fonts.googleapis.com/css2?family={families_param}&display=swap"
 
 
 class PageTemplate(models.Model):
@@ -292,8 +360,8 @@ class PageTemplate(models.Model):
 
 class SiteSettings(models.Model):
     """
-    Global site settings for the restaurant.
-    Singleton model - only one instance should exist.
+    Global site settings — singleton (pk=1 always).
+    Controls restaurant info, active theme, active overlay, and page templates.
     """
     # Restaurant Information
     restaurant_name = models.CharField(max_length=200, default="Your Restaurant")
@@ -326,6 +394,7 @@ class SiteSettings(models.Model):
     facebook_url = models.URLField(blank=True)
     instagram_url = models.URLField(blank=True)
     twitter_url = models.URLField(blank=True)
+    yelp_url = models.URLField(blank=True)
 
     # Theme and Template Settings
     active_theme = models.ForeignKey(
@@ -409,6 +478,6 @@ class SiteSettings(models.Model):
 
     @classmethod
     def load(cls):
-        """Load the singleton instance"""
+        """Load the singleton instance, creating it with defaults if it doesn't exist."""
         obj, created = cls.objects.get_or_create(pk=1)
         return obj

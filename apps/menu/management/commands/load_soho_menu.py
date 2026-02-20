@@ -8,7 +8,7 @@ Usage: python manage.py load_soho_menu
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
 from decimal import Decimal
-from apps.menu.models import MenuCategory, MenuItem, MenuItemVariation  # Adjust 'menu' to your actual app name
+from apps.menu.models import MenuType, MenuCategory, MenuItem, MenuItemVariation  # Adjust 'menu' to your actual app name
 
 
 class Command(BaseCommand):
@@ -17,11 +17,16 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.stdout.write('Loading Soho Pittsburgh menu data...')
         
-        # Clear existing data (optional - comment out if you want to keep existing data)
+        # Clear existing data
         MenuItemVariation.objects.all().delete()
         MenuItem.objects.all().delete()
         MenuCategory.objects.all().delete()
-        
+        MenuType.objects.all().delete()
+
+        # Create top-level types
+        self.food = self.create_type('Food', 'Food menu', order=1)
+        self.drink = self.create_type('Beverages', 'Drinks menu', order=2)
+
         # Create categories and items
         self.load_starters()
         self.load_soups_and_salads()
@@ -37,11 +42,27 @@ class Command(BaseCommand):
         
         self.stdout.write(self.style.SUCCESS('Successfully loaded menu data!'))
 
-    def create_category(self, name, description, order):
+    def create_type(self, name, description, order):
+        """Helper method to create a menu type"""
+        menu_type, created = MenuType.objects.get_or_create(
+            slug=slugify(name),
+            defaults={
+                'name': name,
+                'description': description,
+                'order': order,
+                'is_active': True
+            }
+        )
+        if created:
+            self.stdout.write(f'Created type: {name}')
+        return menu_type
+
+    def create_category(self, name, description, order, menu_type):
         """Helper method to create a menu category"""
         category, created = MenuCategory.objects.get_or_create(
             slug=slugify(name),
             defaults={
+                'menu_type': menu_type,
                 'name': name,
                 'description': description,
                 'order': order,
@@ -100,7 +121,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Starters',
             'Appetizers and shareable plates to start your meal',
-            order=1
+            order=1,
+            menu_type=self.food
         )
         
         self.create_item(category, 'Mozzarella Sticks', 16,
@@ -167,7 +189,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Soups and Salads',
             'Fresh salads and homemade soups',
-            order=2
+            order=2,
+            menu_type=self.food
         )
         
         # Soup of the Day with Cup/Bowl variations
@@ -219,7 +242,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Tacos and Wraps',
             'Fresh wraps and tacos with your choice of side',
-            order=3
+            order=3,
+            menu_type=self.food
         )
         
         self.create_item(category, 'Buffalo Chicken Wrap', 19,
@@ -242,7 +266,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Sandwiches',
             'Signature sandwiches served with your choice of side',
-            order=4
+            order=4,
+            menu_type=self.food
         )
         
         self.create_item(category, 'Green Goddess Ciabatta', 18,
@@ -282,7 +307,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Burgers',
             'Half-pound burgers served with your choice of side',
-            order=5
+            order=5,
+            menu_type=self.food
         )
         
         self.create_item(category, 'Cheeseburger', 19,
@@ -308,7 +334,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Pizza',
             'All pizzas are baked on our homemade pizza dough',
-            order=6
+            order=6,
+            menu_type=self.food
         )
         
         self.create_item(category, 'Cheese Pizza', 18,
@@ -328,7 +355,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Entrées',
             'Signature dinner entrées',
-            order=7
+            order=7,
+            menu_type=self.food
         )
         
         self.create_item(category, 'Pasta Primavera', 18,
@@ -370,7 +398,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Sides',
             'Side dishes and add-ons',
-            order=8
+            order=8,
+            menu_type=self.food
         )
         
         self.create_item(category, 'French Fries', 7, 'Crispy french fries')
@@ -391,7 +420,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Beverages',
             'Soft drinks and beverages',
-            order=9
+            order=1,  # order=1 within its type
+            menu_type=self.drink
         )
         
         self.create_item(category, 'Fountain Drinks', 4,
@@ -401,7 +431,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Kids Menu',
             'For children 12 & under. Served with your choice of broccoli, fries, or tots',
-            order=10
+            order=9,
+            menu_type=self.food
         )
         
         self.create_item(category, "I Don't Know (Mac & Cheese)", 10,
@@ -427,7 +458,8 @@ class Command(BaseCommand):
         category = self.create_category(
             'Desserts',
             'Sweet endings to your meal',
-            order=11
+            order=10,
+            menu_type=self.food
         )
         
         self.create_item(category, 'Seasonal Cheesecake', 10,

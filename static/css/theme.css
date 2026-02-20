@@ -1,0 +1,89 @@
+/* =============================================================================
+   SoHo Pittsburgh — Design Tokens
+   static/css/theme.css
+
+   CSS CUSTOM PROPERTIES ONLY — no element selectors, no class definitions.
+
+   Safe to load before Tailwind's output.css because:
+   - :root {} custom properties are never touched by Tailwind Preflight
+   - All element/class styling lives in input.css @layer base/components
+     so Tailwind controls the cascade order
+
+   Variable names here MUST match the keys returned by ThemeStyle.to_css_vars()
+   in apps/core/models.py. The active theme injects its own :root{} block in
+   base.html <head> which overrides these defaults at runtime.
+   ============================================================================= */
+
+:root {
+  /* --- Fonts --------------------------------------------------------------- */
+  /* Overridden by ThemeStyle.primary/secondary/accent_font via admin         */
+  --font-primary:   "Playfair Display", Georgia, serif;
+  --font-secondary: "Lato", "Helvetica Neue", sans-serif;
+  --font-accent:    "Montserrat", Arial, sans-serif;
+
+  /* --- Text Colors --------------------------------------------------------- */
+  /* Overridden by ThemeStyle.*_text_color                                    */
+  --color-text-primary:   #f5f0e8;   /* warm off-white — main body text */
+  --color-text-secondary: #aaaaaa;   /* muted/supporting text */
+  --color-text-accent:    #c9972a;   /* gold — prices, highlights, links */
+  --color-text-heading:   #ffffff;   /* h1-h6 */
+
+  /* --- Background Colors --------------------------------------------------- */
+  /* Overridden by ThemeStyle.*_bg_color                                      */
+  --color-bg-primary:   #0a0a0a;             /* page background */
+  --color-bg-secondary: #1a1a1a;             /* cards, panels, surfaces */
+  --color-bg-accent:    #c9972a;             /* CTA buttons, badges */
+  --color-nav-bg:       rgba(10,10,10,0.95); /* sticky nav */
+
+  /* --- Extended Gold (CSS-only, not overridable via admin) ----------------- */
+  --color-gold-bright: #e8b84b;   /* hover states */
+  --color-gold-deep:   #a07820;   /* borders, subtle dividers */
+  --color-gold-light:  #f4d98a;   /* tints */
+
+  /* --- Grays --------------------------------------------------------------- */
+  --color-dark-gray: #2c2c2c;   /* borders */
+  --color-mid-gray:  #555555;   /* placeholder text */
+
+  /* --- Spacing Scale ------------------------------------------------------- */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-5:  1.25rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  --space-24: 6rem;
+
+  /* --- Layout -------------------------------------------------------------- */
+  --max-width:    1280px;
+  --container-px: 1.5rem;
+
+  /* --- Borders ------------------------------------------------------------- */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --gold-rule:       1px solid var(--color-gold-deep);
+  --gold-rule-thick: 2px solid var(--color-bg-accent);
+
+  /* --- Shadows ------------------------------------------------------------- */
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.6);
+  --shadow-md:   0 4px 12px rgba(0,0,0,0.5);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,0.6);
+  --shadow-gold: 0 0 20px rgba(201,151,42,0.25);
+
+  /* --- Transitions --------------------------------------------------------- */
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+}
+
+/* Responsive token overrides — still just tokens, no element styles */
+@media (max-width: 768px) {
+  :root {
+    --container-px: 1rem;
+  }
+}
