@@ -160,7 +160,6 @@
   .btn-primary:hover {
     background-color: var(--color-gold-bright);
     border-color: var(--color-gold-bright);
-    color: #0a0a0a;
     box-shadow: var(--shadow-gold);
     @apply -translate-y-px;
   }
@@ -173,7 +172,7 @@
   }
   .btn-secondary:hover {
     background-color: var(--color-bg-accent);
-    color: #0a0a0a;
+    color: var(--color-text-primary) !important;
     box-shadow: var(--shadow-gold);
     @apply -translate-y-px;
   }
@@ -304,7 +303,7 @@
 
   .site-nav__links a {
     font-family: var(--font-accent);
-    color: var(--color-text-primary);
+    color: var(--color-text-nav);
     @apply relative text-xs font-semibold uppercase tracking-widest pb-0.5
            transition-colors duration-150;
   }

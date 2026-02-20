@@ -2,11 +2,10 @@
 {# SoHo Pittsburgh — Main Navigation #}
 
 <nav class="site-nav" x-data="{ mobileOpen: false }">
-
   {# Logo #}
   <a href="{% url 'core:home' %}" class="site-nav__logo">
-    {% if settings.logo %}
-      <img src="{{ settings.logo.url }}" alt="{{ settings.logo_alt_text }}" style="height:42px;width:auto;">
+    {% if site_settings.logo %}
+      <img src="{{ site_settings.logo.url }}" alt="{{ site_settings.logo_alt_text }}" style="height:42px;width:auto;">
     {% else %}
       <span>SoHo</span> Pittsburgh
     {% endif %}
@@ -23,7 +22,7 @@
     <li><a href="{% url 'promotions:list' %}" class="{% if 'promotion' in request.resolver_match.url_name %}active{% endif %}">promotions</a></li>
     <li><a href="{% url 'core:contact' %}" class="{% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a></li>
     <li>
-      <a href="tel:{{ settings.phone|default:'4123217646' }}" class="btn btn-secondary" style="padding: 0.6rem 1.5rem;">
+      <a href="tel:{{ site_settings.phone|default:'4123217646' }}" class="btn btn-secondary" style="padding: 0.6rem 1.5rem;">
         Reserve
       </a>
     </li>
@@ -66,12 +65,11 @@
       <li><a href="{% url 'core:contact' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Contact</a></li>
     </ul>
     <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-dark-gray);">
-      <a href="tel:{{ settings.phone|default:'4123217646' }}" class="btn btn-primary" style="width:100%;justify-content:center;">
-        {{ settings.phone|default:"(412) 321-7646" }}
+      <a href="tel:{{ site_settings.phone|default:'4123217646' }}" class="btn btn-primary" style="width:100%;justify-content:center;">
+        {{ site_settings.phone|default:"(412) 321-7646" }}
       </a>
     </div>
   </div>
-
 </nav>
 
 {# Inject desktop nav via media query logic (Tailwind md: breakpoint) #}
