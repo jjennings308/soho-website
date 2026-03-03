@@ -92,13 +92,31 @@
   {% include "partials/_footer.html" %}
 
   {# ── Alpine.js (local, from node_modules) ────────────────────────────── #}
-  <script defer src="{% static 'node_modules/alpinejs/dist/cdn.min.js' %}"></script>
- 
   {% comment %}
-  {# -- Or if you serve it via a copy in static/js/:
-  <script defer src="{% static 'js/alpine.min.js' %}"></script>  -- #}
+  <!-- <script defer src="{% static 'node_modules/alpinejs/dist/cdn.min.js' %}"></script> -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   {% endcomment %}
-  
+
+  <script defer src="{% static 'js/alpine.min.js' %}"></script>
+
+  <!-- Cookie Notice -->
+  <div 
+    x-data="{ show: !localStorage.getItem('cookieDismissed') }"
+    x-show="show"
+    class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 text-white px-6 py-4 flex items-center justify-between gap-4"
+  >
+    <p class="text-sm">
+        We use cookies to improve your experience. By continuing to use this site you accept our 
+        <a href="/privacy/" class="underline hover:text-gray-300">cookie policy</a>.
+    </p>
+    <button 
+        @click="show=false; localStorage.setItem('cookieDismissed', '1')"
+        class="shrink-0 text-sm bg-white text-gray-900 px-4 py-2 rounded hover:bg-gray-200"
+    >
+        Got it
+    </button>
+  </div>
+
   {% block extra_js %}{% endblock %}
 
 </body>
