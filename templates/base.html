@@ -100,22 +100,23 @@
   <script defer src="{% static 'js/alpine.min.js' %}"></script>
 
   <!-- Cookie Notice -->
-  <div 
-    x-data="{ show: !localStorage.getItem('cookieDismissed') }"
-    x-show="show"
-    class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 text-white px-6 py-4 flex items-center justify-between gap-4"
+ <!-- Cookie Notice -->
+<div
+  x-data="{ show: !(() => { try { return localStorage.getItem('cookieDismissed'); } catch(e) { return true; } })() }"
+  x-show="show"
+  class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 text-white px-6 py-4 flex items-center justify-between gap-4"
+>
+  <p class="text-sm">
+    We use cookies to improve your experience. By continuing to use this site you accept our
+    <a href="/privacy/" class="underline hover:text-gray-300">cookie policy</a>.
+  </p>
+  <button
+    @click="show=false; localStorage.setItem('cookieDismissed', '1')"
+    class="shrink-0 text-sm bg-white text-gray-900 px-4 py-2 rounded hover:bg-gray-200"
   >
-    <p class="text-sm">
-        We use cookies to improve your experience. By continuing to use this site you accept our 
-        <a href="/privacy/" class="underline hover:text-gray-300">cookie policy</a>.
-    </p>
-    <button 
-        @click="show=false; localStorage.setItem('cookieDismissed', '1')"
-        class="shrink-0 text-sm bg-white text-gray-900 px-4 py-2 rounded hover:bg-gray-200"
-    >
-        Got it
-    </button>
-  </div>
+    Got it
+  </button>
+</div>
 
   {% block extra_js %}{% endblock %}
 

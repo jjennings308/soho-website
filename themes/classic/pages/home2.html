@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ site_settings.restaurant_name|default:"SoHo Pittsburgh" }} - {{ site_settings.tagline|default:"The Original North Shore Restaurant" }}{% endblock %}
+{% load ui_tags %}
 {% block content %}
 
 {% include "core/components/banner_full.html" with title=hero_banner.title content=hero_banner.content bg_color=hero_banner.bg_color %}
@@ -12,8 +13,8 @@
     <div class="max-w-7xl mx-auto px-6 text-center">
         <h2 class="text-4xl font-bold mb-4">Banner Two Title</h2>
         <p class="text-lg text-gray-600">
-            Secondary full-width banner section. 
-
+            Secondary V2 full-width banner section. 
+            {% render_button label="Order Grubhub Directly from SoHo" href="http://menus.fyi/11489616" bg_color="bg-yellow-500" text_color="text-black" %}
         </p>
     </div>
 </section>

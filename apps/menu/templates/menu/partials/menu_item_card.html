@@ -1,0 +1,84 @@
+{# ============================================================ #}
+{# menu_item_card.html                                          #}
+{# Loop over your items and include this partial, e.g.:        #}
+{#   {% for item in items %}                                    #}
+{#     {% include "menu/partials/menu_item_card.html" %}        #}
+{#   {% endfor %}                                               #}
+{# ============================================================ #}
+
+{% load menu_tags %}{# if you have a custom templatetag library #}
+
+{# Build the JSON payload for this item once, up front.        #}
+{# item_json is a safe JSON string — see menu_view_snippet.py  #}
+{# for how to generate it in your view, OR use the             #}
+{# |item_to_json filter defined in menu_tags.py below.         #}
+
+<article
+  class="menu-item-card"
+  x-data="{}"
+  x-on:click="$dispatch('open-menu-modal', {{ item|item_to_json }})"
+  role="button"
+  tabindex="0"
+  x-on:keydown.enter="$dispatch('open-menu-modal', {{ item|item_to_json }})"
+  x-on:keydown.space.prevent="$dispatch('open-menu-modal', {{ item|item_to_json }})"
+  :aria-label="'View details for {{ item.name|escapejs }}'"
+>
+  {# ── Image ── #}
+  {% if item.image %}
+    <div class="menu-card-image-wrap">
+      <img
+        src="{{ item.image.url }}"
+        alt="{{ item.image_alt_text|default:item.name }}"
+        class="menu-card-image"
+        loading="lazy"
+      />
+      {# Feature badges overlaid on image #}
+      <div class="menu-card-image-badges">
+        {% if item.is_chef_special %}<span class="card-badge badge-chef">Chef's Special</span>{% endif %}
+        {% if item.is_new %}<span class="card-badge badge-new">New</span>{% endif %}
+        {% if item.is_seasonal %}<span class="card-badge badge-seasonal">Seasonal</span>{% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# ── Content ── #}
+  <div class="menu-card-content">
+    <div class="menu-card-top">
+      <h3 class="menu-card-name">{{ item.name }}</h3>
+      {# Price — use the model property #}
+      <span class="menu-card-price">
+        {% if item.price_display == 'market' %}
+          MP
+        {% elif item.price_display == 'hidden' %}
+          {# show nothing #}
+        {% elif item.has_variations %}
+          {{ item.price_range|default:"See Options" }}
+        {% elif item.is_on_sale %}
+          <span class="price-was">${{ item.price }}</span>
+          <span class="price-sale">${{ item.sale_price }}</span>
+        {% elif item.price %}
+          ${{ item.price }}
+        {% endif %}
+      </span>
+    </div>
+
+    {# Short description only on the card #}
+    {% if item.short_description %}
+      <p class="menu-card-short-desc">{{ item.short_description|truncatechars:100 }}</p>
+    {% endif %}
+
+    {# Dietary labels #}
+    {% with labels=item.dietary_labels %}
+      {% if labels %}
+        <div class="menu-card-dietary">
+          {% for label in labels %}
+            <span class="card-dietary-tag">{{ label }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {# "View details" hint #}
+    <span class="menu-card-cta">View Details →</span>
+  </div>
+</article>

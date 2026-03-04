@@ -4,7 +4,7 @@ Place this in: <your_app>/admin.py
 """
 
 from django.contrib import admin
-from .models import MenuType, MenuCategory, MenuItem, MenuItemVariation, MenuItemAddon, MenuItemImage
+from .models import MenuType, MenuCategory, MenuItem, MenuItemVariation, MenuItemAddon, MenuItemImage, MenuSubCategory
 
 
 class MenuCategoryInline(admin.TabularInline):
@@ -97,13 +97,46 @@ class MenuCategoryAdmin(admin.ModelAdmin):
         return obj.items.count()
     item_count.short_description = 'Items'
 
+@admin.register(MenuSubCategory)
+class MenuSubCategoryAdmin(admin.ModelAdmin):
+    list_display = ('name', 'category', 'get_menu_type', 'order', 'is_active', 'item_count', 'created_at')
+    list_filter = ('category__menu_type', 'category', 'is_active', 'created_at')
+    search_fields = ('name', 'description')
+    prepopulated_fields = {'slug': ('name',)}
+    ordering = ['category__menu_type__order', 'category__order', 'order', 'name']
+
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('category', 'name', 'slug', 'description')
+        }),
+        ('Display Settings', {
+            'fields': ('order', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    readonly_fields = ('created_at', 'updated_at')
+
+    def get_menu_type(self, obj):
+        return obj.category.menu_type.name
+    get_menu_type.short_description = 'Type'
+    get_menu_type.admin_order_field = 'category__menu_type__name'
+
+    def item_count(self, obj):
+        return obj.items.count()
+    item_count.short_description = 'Items'
+
 
 @admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
-    list_display = ('name', 'get_menu_type', 'category', 'get_price_display', 'has_variations',
-                    'has_addons', 'is_featured', 'is_available', 'dietary_type', 'order')
+    list_display = ('name', 'get_menu_type', 'category', 'price_display',
+                    'get_price_display', 'has_variations', 'has_addons',
+                    'is_featured', 'is_available', 'dietary_type', 'order')
     list_filter = ('category__menu_type', 'category', 'is_featured', 'is_chef_special',
-                   'is_available', 'dietary_type', 'has_variations', 'has_addons', 'created_at')
+                   'is_available', 'dietary_type', 'has_addons', 'created_at')
     search_fields = ('name', 'description', 'short_description')
     prepopulated_fields = {'slug': ('name',)}
     ordering = ['category__menu_type__order', 'category__order', 'order', 'name']
@@ -112,10 +145,10 @@ class MenuItemAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Basic Information', {
-            'fields': ('category', 'name', 'slug', 'description', 'short_description')
+            'fields': ('category', 'subcategory', 'name', 'slug', 'description', 'short_description')
         }),
         ('Pricing', {
-            'fields': ('price', 'sale_price', 'has_variations', 'has_addons')
+            'fields': ('price_display', 'price', 'sale_price', 'has_variations', 'has_addons')
         }),
         ('Images', {
             'fields': ('image', 'image_alt_text')
@@ -152,13 +185,16 @@ class MenuItemAdmin(admin.ModelAdmin):
     get_menu_type.admin_order_field = 'category__menu_type__name'
     
     def get_price_display(self, obj):
-        """Display price or price range"""
+        """Human-readable price for the admin list view, reflecting sale price and price_display mode."""
+        if obj.price_display == 'market':
+            return "MP"
+        if obj.price_display == 'hidden':
+            return "—"
         if obj.has_variations:
-            price_range = obj.price_range
-            return f"{price_range} (varies)" if price_range else f"${obj.price} (varies)"
-        elif obj.sale_price:
-            return f"${obj.sale_price} (was ${obj.price})"
-        return f"${obj.price}"
+            return obj.price_range or "See Options"
+        if obj.sale_price is not None:
+            return f"${obj.sale_price} (sale)"
+        return f"${obj.price}" if obj.price is not None else "—"
     get_price_display.short_description = 'Price'
     get_price_display.admin_order_field = 'price'
     

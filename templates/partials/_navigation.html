@@ -1,7 +1,7 @@
 {# templates/partials/nav.html #}
 {# SoHo Pittsburgh — Main Navigation #}
 
-<nav class="site-nav" x-data="{ mobileOpen: false }">
+<nav class="site-nav" x-data="{ mobileOpen: false, menuOpen: false }">
   {# Logo #}
   <a href="{% url 'core:home' %}" class="site-nav__logo">
     {% if site_settings.logo %}
@@ -15,11 +15,97 @@
   <ul class="site-nav__links" style="display:none;" id="desktop-nav">
     <li><a href="{% url 'core:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a></li>
     <li><a href="{% url 'core:about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a></li>
-    <li>
-      <a href="{% url 'menu:full' %}" class="{% if 'menu' in request.resolver_match.url_name %}active{% endif %}">Menu</a>
-      {# Dropdown if needed — handled via Alpine #}
+
+    {# ── Menu Dropdown ── #}
+    <li
+      style="position:relative;"
+      x-data="{ open: false }"
+      @mouseenter="open = true"
+      @mouseleave="open = false"
+    >
+      <a
+        href="{% url 'menu:full' %}"
+        class="{% if 'menu' in request.resolver_match.url_name %}active{% endif %}"
+        style="display:flex;align-items:center;gap:0.35rem;"
+        @click.prevent="open = !open"
+      >
+        Menu
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="12" height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          style="transition:transform 0.2s;"
+          :style="open ? 'transform:rotate(180deg)' : ''"
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </a>
+
+      {# Dropdown Panel #}
+      <div
+        x-show="open"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        x-transition:leave="transition ease-in duration-100"
+        x-transition:leave-start="opacity-100 translate-y-0"
+        x-transition:leave-end="opacity-0 translate-y-1"
+        style="
+          display:none;
+          position:absolute;
+          top:calc(100% + 0.5rem);
+          left:50%;
+          transform:translateX(-50%);
+          min-width:160px;
+          background:rgba(10,10,10,0.97);
+          border:1px solid var(--color-gold-deep);
+          border-radius:3px;
+          padding:0.5rem 0;
+          z-index:300;
+          box-shadow:0 8px 24px rgba(0,0,0,0.5);
+        "
+      >
+        <a
+          href="{% url 'menu:full' %}?type=Food"
+          style="
+            display:block;
+            padding:0.6rem 1.25rem;
+            font-family:var(--font-nav);
+            font-size:0.72rem;
+            letter-spacing:0.15em;
+            text-transform:uppercase;
+            color:var(--color-text-primary);
+            text-decoration:none;
+            transition:color 0.15s, background 0.15s;
+          "
+          onmouseover="this.style.color='var(--color-gold-primary)';this.style.background='rgba(255,255,255,0.05)'"
+          onmouseout="this.style.color='var(--color-text-primary)';this.style.background=''"
+        >Food</a>
+        <a
+          href="{% url 'menu:full' %}?type=Drinks"
+          style="
+            display:block;
+            padding:0.6rem 1.25rem;
+            font-family:var(--font-nav);
+            font-size:0.72rem;
+            letter-spacing:0.15em;
+            text-transform:uppercase;
+            color:var(--color-text-primary);
+            text-decoration:none;
+            transition:color 0.15s, background 0.15s;
+          "
+          onmouseover="this.style.color='var(--color-gold-primary)';this.style.background='rgba(255,255,255,0.05)'"
+          onmouseout="this.style.color='var(--color-text-primary)';this.style.background=''"
+        >Drinks</a>
+      </div>
     </li>
-    <li><a href="{% url 'promotions:list' %}" class="{% if 'promotion' in request.resolver_match.url_name %}active{% endif %}">promotions</a></li>
+
+    <li><a href="{% url 'promotions:list' %}" class="{% if 'promotion' in request.resolver_match.url_name %}active{% endif %}">Promotions</a></li>
     <li><a href="{% url 'core:contact' %}" class="{% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a></li>
     <li>
       <a href="tel:{{ site_settings.phone|default:'4123217646' }}" class="btn btn-secondary" style="padding: 0.6rem 1.5rem;">
@@ -60,8 +146,21 @@
     <ul style="list-style:none;display:flex;flex-direction:column;gap:1.25rem;">
       <li><a href="{% url 'core:home' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Home</a></li>
       <li><a href="{% url 'core:about' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">About</a></li>
-      <li><a href="#" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Menu</a></li>
-      <li><a href="{% url 'promotions:list' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">promotions</a></li>
+
+      {# Mobile Menu sub-links #}
+      <li>
+        <span style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Menu</span>
+        <ul style="list-style:none;display:flex;flex-direction:column;gap:0.75rem;margin-top:0.75rem;padding-left:1rem;border-left:1px solid var(--color-gold-deep);">
+          <li>
+            <a href="{% url 'menu:full' %}?type=Food" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-primary);">Food</a>
+          </li>
+          <li>
+            <a href="{% url 'menu:full' %}?type=Drinks" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-primary);">Drinks</a>
+          </li>
+        </ul>
+      </li>
+
+      <li><a href="{% url 'promotions:list' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Promotions</a></li>
       <li><a href="{% url 'core:contact' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Contact</a></li>
     </ul>
     <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-dark-gray);">

@@ -5,7 +5,7 @@ from django_ckeditor_5.fields import CKEditor5Field
 
 
 # Maps font choice values to their Google Fonts URL parameter
-# Used by SiteSettings.get_google_fonts_url() to build a single <link> tag
+# Used by ThemeStyle.get_google_fonts() to build a single <link> tag
 GOOGLE_FONTS_MAP = {
     '"Playfair Display", serif':    'Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400',
     '"Cormorant Garamond", serif':  'Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400',
@@ -17,7 +17,7 @@ GOOGLE_FONTS_MAP = {
     '"Cinzel", serif':              'Cinzel:wght@400;600;700',
     '"Oswald", sans-serif':         'Oswald:wght@300;400;500;600',
     '"Raleway", sans-serif':        'Raleway:wght@300;400;500;600;700',
-    # Georgia and Courier New are system fonts — no Google Fonts import needed
+    # System fonts — no Google Fonts import needed
     'Georgia, serif':               None,
     '"Courier New", monospace':     None,
 }
@@ -26,92 +26,141 @@ GOOGLE_FONTS_MAP = {
 class ThemeStyle(models.Model):
     """
     Defines typography and color settings for a theme or overlay.
+    Field names map 1-to-1 with CSS custom properties in theme.css via to_css_vars().
     Blank fields mean "inherit from base theme" when used as an overlay.
+
+    CSS variable → field mapping:
+        --font-primary            → primary_font
+        --font-secondary          → secondary_font
+        --font-accent             → accent_font
+        --color-text-primary      → primary_text_color
+        --color-text-secondary    → secondary_text_color
+        --color-text-tertiary     → tertiary_text_color
+        --color-text-accent       → accent_text_color
+        --color-text-heading      → heading_text_color
+        --color-text-nav          → nav_text_color
+        --color-bg-primary        → primary_bg_color
+        --color-bg-secondary      → secondary_bg_color
+        --color-bg-tertiary       → tertiary_bg_color
+        --color-bg-accent         → accent_bg_color
+        --color-nav-bg            → nav_bg_color
+        --color-gold-bright       → gold_bright_color
+        --color-gold-deep         → gold_deep_color
+        --color-gold-light        → gold_light_color
+        --color-gold-primary      → gold_primary_color  (used by pgh_black_gold overlay)
+        --color-dark-gray         → dark_gray_color
+        --color-mid-gray          → mid_gray_color
     """
     FONT_CHOICES = [
         # Serif
-        ('Georgia, serif', 'Georgia'),
-        ('"Playfair Display", serif', 'Playfair Display'),
-        ('"Cormorant Garamond", serif', 'Cormorant Garamond'),
-        ('"Libre Baskerville", serif', 'Libre Baskerville'),
+        ('Georgia, serif',                  'Georgia'),
+        ('"Playfair Display", serif',        'Playfair Display'),
+        ('"Cormorant Garamond", serif',      'Cormorant Garamond'),
+        ('"Libre Baskerville", serif',       'Libre Baskerville'),
         # Sans-serif
-        ('"Inter", sans-serif', 'Inter'),
-        ('"Lato", sans-serif', 'Lato'),
-        ('"Montserrat", sans-serif', 'Montserrat'),
-        ('"Open Sans", sans-serif', 'Open Sans'),
+        ('"Inter", sans-serif',             'Inter'),
+        ('"Lato", sans-serif',              'Lato'),
+        ('"Montserrat", sans-serif',        'Montserrat'),
+        ('"Open Sans", sans-serif',         'Open Sans'),
         # Display / Decorative
-        ('"Cinzel", serif', 'Cinzel (Elegant)'),
-        ('"Oswald", sans-serif', 'Oswald'),
-        ('"Raleway", sans-serif', 'Raleway'),
+        ('"Cinzel", serif',                 'Cinzel (Elegant)'),
+        ('"Oswald", sans-serif',            'Oswald'),
+        ('"Raleway", sans-serif',           'Raleway'),
         # Monospace
-        ('"Courier New", monospace', 'Courier New'),
+        ('"Courier New", monospace',        'Courier New'),
     ]
 
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
 
-    # Typography
+    # ── Typography ────────────────────────────────────────────────────────────
     primary_font = models.CharField(
-        max_length=100,
-        choices=FONT_CHOICES,
-        blank=True,
-        help_text="Main font for headings and titles"
+        max_length=100, choices=FONT_CHOICES, blank=True,
+        help_text="--font-primary — headings and titles"
     )
     secondary_font = models.CharField(
-        max_length=100,
-        choices=FONT_CHOICES,
-        blank=True,
-        help_text="Font for body text and descriptions"
+        max_length=100, choices=FONT_CHOICES, blank=True,
+        help_text="--font-secondary — body text and descriptions"
     )
     accent_font = models.CharField(
-        max_length=100,
-        choices=FONT_CHOICES,
-        blank=True,
-        help_text="Font for prices, labels, and accents"
+        max_length=100, choices=FONT_CHOICES, blank=True,
+        help_text="--font-accent — prices, labels, and UI accents"
     )
 
-    # Colors - Text
+    # ── Text Colors ───────────────────────────────────────────────────────────
     primary_text_color = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Main text color (e.g., #f5f0e8)"
+        max_length=30, blank=True,
+        help_text="--color-text-primary — main body text (e.g. #f5f0e8)"
     )
     secondary_text_color = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Secondary/muted text color"
+        max_length=30, blank=True,
+        help_text="--color-text-secondary — muted/supporting text"
+    )
+    tertiary_text_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-text-tertiary — third-level text, captions (e.g. #eccb9c)"
     )
     accent_text_color = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Accent color for prices, highlights (e.g., #c9972a)"
+        max_length=30, blank=True,
+        help_text="--color-text-accent — gold highlights, prices, links (e.g. #c9972a)"
     )
     heading_text_color = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Color specifically for headings"
+        max_length=30, blank=True,
+        help_text="--color-text-heading — h1–h6 color"
+    )
+    nav_text_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-text-nav — navigation link color (stays light regardless of theme)"
     )
 
-    # Colors - Backgrounds
+    # ── Background Colors ─────────────────────────────────────────────────────
     primary_bg_color = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Main page background color (e.g., #0a0a0a)"
+        max_length=30, blank=True,
+        help_text="--color-bg-primary — main page background (e.g. #0a0a0a)"
     )
     secondary_bg_color = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Card/section background color (e.g., #1a1a1a)"
+        max_length=30, blank=True,
+        help_text="--color-bg-secondary — cards, panels, surfaces (e.g. #1a1a1a)"
+    )
+    tertiary_bg_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-bg-tertiary — third-level surface, e.g. deep red accent area"
     )
     accent_bg_color = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Accent background — buttons, badges, highlights (e.g., #c9972a)"
+        max_length=30, blank=True,
+        help_text="--color-bg-accent — CTA buttons, badges, highlights (e.g. #c9972a)"
     )
     nav_bg_color = models.CharField(
-        max_length=20,
-        blank=True,
-        help_text="Navigation bar background color"
+        max_length=30, blank=True,
+        help_text="--color-nav-bg — sticky navigation bar background"
+    )
+
+    # ── Extended Gold Palette ─────────────────────────────────────────────────
+    gold_primary_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-gold-primary — official brand gold (e.g. #ffb612 for Steelers overlay)"
+    )
+    gold_bright_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-gold-bright — hover states and highlights (e.g. #e8b84b)"
+    )
+    gold_deep_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-gold-deep — borders, subtle dividers (e.g. #a07820)"
+    )
+    gold_light_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-gold-light — tints and washes (e.g. #f4d98a)"
+    )
+
+    # ── Neutral Grays ─────────────────────────────────────────────────────────
+    dark_gray_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-dark-gray — borders and dividers (e.g. #2c2c2c)"
+    )
+    mid_gray_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="--color-mid-gray — placeholder text (e.g. #555555)"
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -127,39 +176,48 @@ class ThemeStyle(models.Model):
 
     def to_css_vars(self):
         """
-        Returns a dict mapping CSS custom property names → values
-        for all non-blank fields on this style.
+        Returns a dict of { 'css-var-name': 'value' } for all non-blank fields.
+        Variable names match exactly what theme.css defines in :root {}.
+        Used by Theme.resolve_style_vars() to merge base + overlay layers.
 
-        These names match exactly what theme.css defines in :root {}.
-        Used by Theme.resolve_style_vars() to merge base + overlay.
-        The template renders them as:
+        Rendered in base.html as:
             {% for var, val in theme_style_vars.items %}
                 --{{ var }}: {{ val }};
             {% endfor %}
         """
         mapping = {
-            # Fonts — match theme.css variables
-            'font-primary':   self.primary_font,
-            'font-secondary': self.secondary_font,
-            'font-accent':    self.accent_font,
+            # Fonts
+            'font-primary':             self.primary_font,
+            'font-secondary':           self.secondary_font,
+            'font-accent':              self.accent_font,
             # Text colors
-            'color-text-primary':   self.primary_text_color,
-            'color-text-secondary': self.secondary_text_color,
-            'color-text-accent':    self.accent_text_color,
-            'color-text-heading':   self.heading_text_color,
+            'color-text-primary':       self.primary_text_color,
+            'color-text-secondary':     self.secondary_text_color,
+            'color-text-tertiary':      self.tertiary_text_color,
+            'color-text-accent':        self.accent_text_color,
+            'color-text-heading':       self.heading_text_color,
+            'color-text-nav':           self.nav_text_color,
             # Background colors
-            'color-bg-primary':   self.primary_bg_color,
-            'color-bg-secondary': self.secondary_bg_color,
-            'color-bg-accent':    self.accent_bg_color,
-            'color-nav-bg':       self.nav_bg_color,
+            'color-bg-primary':         self.primary_bg_color,
+            'color-bg-secondary':       self.secondary_bg_color,
+            'color-bg-tertiary':        self.tertiary_bg_color,
+            'color-bg-accent':          self.accent_bg_color,
+            'color-nav-bg':             self.nav_bg_color,
+            # Extended gold palette
+            'color-gold-primary':       self.gold_primary_color,
+            'color-gold-bright':        self.gold_bright_color,
+            'color-gold-deep':          self.gold_deep_color,
+            'color-gold-light':         self.gold_light_color,
+            # Neutrals
+            'color-dark-gray':          self.dark_gray_color,
+            'color-mid-gray':           self.mid_gray_color,
         }
-        # Only return fields that have a value set
+        # Only emit vars that have a value — blank = inherit from layer below
         return {k: v for k, v in mapping.items() if v}
 
     def get_google_fonts(self):
         """
         Returns a list of Google Fonts family strings needed for this style.
-        Used by SiteSettings.get_google_fonts_url() to build the combined URL.
         Skips system fonts (Georgia, Courier New) which don't need importing.
         """
         fonts = set()
@@ -183,15 +241,12 @@ class ThemeOverlay(models.Model):
         help_text="The style definition for this overlay"
     )
 
-    # Date range for automatic activation/deactivation
     valid_from = models.DateField(
-        null=True,
-        blank=True,
+        null=True, blank=True,
         help_text="Date this overlay becomes active (leave blank for manual control)"
     )
     valid_to = models.DateField(
-        null=True,
-        blank=True,
+        null=True, blank=True,
         help_text="Date this overlay expires (leave blank for manual control)"
     )
     is_active = models.BooleanField(
@@ -233,22 +288,16 @@ class Theme(models.Model):
         help_text="Directory name in themes/ folder (e.g., 'classic', 'modern', 'elegant')"
     )
     preview_image = models.ImageField(
-        upload_to='theme_previews/',
-        blank=True,
-        null=True,
+        upload_to='theme_previews/', blank=True, null=True,
         help_text="Screenshot or preview of this theme"
     )
-
-    # Style layer
     base_style = models.ForeignKey(
         ThemeStyle,
         on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        null=True, blank=True,
         related_name='base_themes',
         help_text="The base branding style (fonts, colors) for this theme"
     )
-
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -276,44 +325,28 @@ class Theme(models.Model):
         """
         Merge base style + any currently active overlay into a single CSS var dict.
         Overlay values win over base values for any overlapping keys.
-
-        Returns: dict of { 'color-bg-primary': '#0a0a0a', 'font-primary': '"Playfair Display", serif', ... }
         """
         resolved = {}
-
-        # Layer 1: base style
         if self.base_style:
             resolved.update(self.base_style.to_css_vars())
-
-        # Layer 2: active overlay (if one is set in SiteSettings and currently in-range)
         settings = SiteSettings.load()
         if settings.active_overlay and settings.active_overlay.is_currently_active:
             resolved.update(settings.active_overlay.style.to_css_vars())
-
         return resolved
 
     def get_google_fonts_url(self):
         """
         Builds a single Google Fonts URL covering all fonts needed by the
         active base style + active overlay. Returns None if no web fonts needed.
-
-        Usage in base.html:
-            {% if google_fonts_url %}
-            <link href="{{ google_fonts_url }}" rel="stylesheet">
-            {% endif %}
         """
         font_families = set()
-
         if self.base_style:
             font_families.update(self.base_style.get_google_fonts())
-
         settings = SiteSettings.load()
         if settings.active_overlay and settings.active_overlay.is_currently_active:
             font_families.update(settings.active_overlay.style.get_google_fonts())
-
         if not font_families:
             return None
-
         families_param = '&family='.join(sorted(font_families))
         return f"https://fonts.googleapis.com/css2?family={families_param}&display=swap"
 
@@ -324,12 +357,12 @@ class PageTemplate(models.Model):
     Templates control the layout and structure of pages.
     """
     PAGE_TYPES = [
-        ('home', 'Home Page'),
-        ('menu', 'Menu Page'),
+        ('home',       'Home Page'),
+        ('menu',       'Menu Page'),
         ('promotions', 'Promotions Page'),
-        ('about', 'About Page'),
-        ('contact', 'Contact Page'),
-        ('gallery', 'Gallery Page'),
+        ('about',      'About Page'),
+        ('contact',    'Contact Page'),
+        ('gallery',    'Gallery Page'),
     ]
 
     name = models.CharField(max_length=100)
@@ -340,11 +373,7 @@ class PageTemplate(models.Model):
         help_text="Template file path relative to theme directory (e.g., 'pages/home_template1.html')"
     )
     description = models.TextField(blank=True)
-    preview_image = models.ImageField(
-        upload_to='template_previews/',
-        blank=True,
-        null=True
-    )
+    preview_image = models.ImageField(upload_to='template_previews/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -398,54 +427,37 @@ class SiteSettings(models.Model):
 
     # Theme and Template Settings
     active_theme = models.ForeignKey(
-        Theme,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        Theme, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='site_settings'
     )
     active_overlay = models.ForeignKey(
-        ThemeOverlay,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        ThemeOverlay, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='site_settings',
         help_text="Optional seasonal/promotion overlay applied on top of the active theme"
     )
     home_template = models.ForeignKey(
-        PageTemplate,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        PageTemplate, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='home_pages',
         limit_choices_to={'page_type': 'home', 'is_active': True}
     )
     menu_template = models.ForeignKey(
-        PageTemplate,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        PageTemplate, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='menu_pages',
         limit_choices_to={'page_type': 'menu', 'is_active': True}
     )
     promotions_template = models.ForeignKey(
-        PageTemplate,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
+        PageTemplate, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='promotions_pages',
         limit_choices_to={'page_type': 'promotions', 'is_active': True}
     )
 
     # SEO
     meta_description = models.TextField(
-        blank=True,
-        max_length=160,
+        blank=True, max_length=160,
         help_text="Meta description for search engines (max 160 characters)"
     )
     meta_keywords = models.CharField(
-        max_length=255,
-        blank=True,
+        max_length=255, blank=True,
         help_text="Comma-separated keywords"
     )
 

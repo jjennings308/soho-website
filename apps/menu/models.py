@@ -71,6 +71,40 @@ class MenuCategory(models.Model):
         return f"{self.menu_type.name} › {self.name}"
 
 
+class MenuSubCategory(models.Model):
+    """
+    Optional sub-grouping within a category (e.g., Category: Beer → SubCategory: Bottled, Draft).
+    Not every category will use sub-categories.
+    """
+    category = models.ForeignKey(
+        MenuCategory,
+        on_delete=models.CASCADE,
+        related_name='subcategories',
+        help_text="The category this sub-category belongs to (e.g., Beer)"
+    )
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Order in which sub-categories appear within their category (lower numbers first)"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Display this sub-category on the menu"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['category__menu_type__order', 'category__order', 'order', 'name']
+        verbose_name = 'Menu Sub-Category'
+        verbose_name_plural = 'Menu Sub-Categories'
+
+    def __str__(self):
+        return f"{self.category.menu_type.name} › {self.category.name} › {self.name}"
+
+
 class MenuItem(models.Model):
     """
     Individual menu items with details, pricing, and dietary information
@@ -97,6 +131,14 @@ class MenuItem(models.Model):
         on_delete=models.CASCADE,
         related_name='items'
     )
+    subcategory = models.ForeignKey(
+        MenuSubCategory,
+        on_delete=models.SET_NULL,
+        related_name='items',
+        blank=True,
+        null=True,
+        help_text="Optional sub-category (e.g., Bottled, Draft). Leave blank if not applicable."
+    )
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     description = CKEditor5Field(
@@ -110,11 +152,28 @@ class MenuItem(models.Model):
     )
     
     # Pricing (base price - can be overridden by variations)
+    PRICE_DISPLAY_CHOICES = [
+        ('price', 'Show Price'),
+        ('market', 'Market Price (MP)'),
+        ('hidden', 'Hide Price'),
+    ]
+    price_display = models.CharField(
+        max_length=10,
+        choices=PRICE_DISPLAY_CHOICES,
+        default='price',
+        help_text=(
+            "'Show Price' displays the price field. "
+            "'Market Price' shows 'MP' on the menu. "
+            "'Hide Price' shows nothing — useful when price isn't relevant for web display."
+        )
+    )
     price = models.DecimalField(
         max_digits=8,
         decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))],
-        help_text="Base price or price for standard size"
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Base price or price for standard size. Leave blank for Market Price or Hidden."
     )
     sale_price = models.DecimalField(
         max_digits=8,
@@ -241,12 +300,28 @@ class MenuItem(models.Model):
 
     @property
     def current_price(self):
-        """Return sale price if available, otherwise regular price"""
+        """Return sale price if available, otherwise regular price. None if MP or hidden."""
+        if self.price_display != 'price':
+            return None
         return self.sale_price if self.sale_price else self.price
+
+    @property
+    def display_price(self):
+        """Human-readable price string for templates."""
+        if self.price_display == 'market':
+            return "MP"
+        if self.price_display == 'hidden':
+            return ""
+        if self.has_variations:
+            return self.price_range or "See Options"
+        price = self.current_price
+        return float(price) if price is not None else "—"
 
     @property
     def is_on_sale(self):
         """Check if item has a sale price"""
+        if self.price_display != 'price' or self.price is None:
+            return False
         return self.sale_price is not None and self.sale_price < self.price
 
     @property

@@ -1,0 +1,218 @@
+{% comment %}
+Theme Diagnostic Page
+Place at: apps/core/templates/core/theme_test.html
+
+Temporary URL in core/urls.py:
+    path('test/', views.theme_test, name='theme_test'),
+
+Temporary view in core/views.py:
+    def theme_test(request):
+        return render(request, 'core/theme_test.html')
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Theme Diagnostic</title>
+
+  {% if google_fonts_url %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="{{ google_fonts_url }}" rel="stylesheet">
+  {% endif %}
+
+  <style>
+    :root {
+      {% for var, val in theme_style_vars.items %}
+      --{{ var }}: {{ val }};
+      {% endfor %}
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background-color: var(--color-bg-primary, #eccb9c);
+  color: var(--color-text-primary, #171717);
+  font-family: var(--font-secondary, sans-serif);
+  padding: 2rem; line-height: 1.6;
+}
+h1, h2, h3 { font-family: var(--font-primary, serif); color: var(--color-text-heading, #ffffff); margin-bottom: 0.5rem; }
+h1 { font-size: 2rem; border-bottom: 2px solid var(--color-bg-accent, #c9972a); padding-bottom: 0.5rem; margin-bottom: 1.5rem; }
+h2 { font-size: 1rem; color: var(--color-text-accent, #8a6010); margin-top: 2rem; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.section { background: var(--color-bg-secondary, #171717); border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem; }
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+th, td { text-align: left; padding: 0.4rem 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.07); }
+th { color: var(--color-text-accent, #c9972a); font-weight: 600; width: 40%; }
+td { font-family: monospace; color: var(--color-text-secondary, #fafafa); }
+.badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; font-family: sans-serif; }
+.ok   { background: #14532d; color: #86efac; }
+.warn { background: #7f1d1d; color: #fca5a5; }
+.grey { background: #374151; color: #d1d5db; }
+.swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+.swatch { text-align: center; font-size: 0.75rem; font-family: monospace; color: var(--color-text-secondary, #fafafa); }
+.swatch-box { height: 48px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 0.35rem; }
+.font-samples { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
+.font-sample { font-size: 1.1rem; color: var(--color-text-secondary, #fafafa); }
+.s-primary   { font-family: var(--font-primary, serif); }
+.s-secondary { font-family: var(--font-secondary, sans-serif); }
+.s-accent    { font-family: var(--font-accent, sans-serif); color: var(--color-text-accent, #c9972a); }
+.note { color: var(--color-text-tertiary, #eccb9c); font-style: italic; font-size: 0.85rem; }
+.issue { color: #fbbf24; font-size: 0.85rem; margin-top: 0.5rem; }
+.issue li { margin-left: 1.25rem; margin-top: 0.25rem; }  </style>
+</head>
+<body>
+
+<h1>Theme Diagnostic</h1>
+
+<h2>1 — Site Settings</h2>
+<div class="section">
+  {% if site_settings %}
+  <table>
+    <tr><th>Restaurant Name</th><td>{{ restaurant_name|default:"—" }}</td></tr>
+    <tr><th>Phone</th>          <td>{{ restaurant_phone|default:"—" }}</td></tr>
+    <tr><th>Email</th>          <td>{{ restaurant_email|default:"—" }}</td></tr>
+    <tr><th>Address</th>        <td>{{ restaurant_address|default:"—" }}</td></tr>
+    <tr>
+      <th>Active Theme (FK)</th>
+      <td>
+        {% if site_settings.active_theme %}{{ site_settings.active_theme.name }} <span class="badge ok">SET</span>
+        {% else %}<span class="badge warn">NOT SET</span>{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <th>Active Overlay (FK)</th>
+      <td>
+        {% if site_settings.active_overlay %}
+          {{ site_settings.active_overlay.name }}
+          {% if site_settings.active_overlay.is_currently_active %}<span class="badge ok">FIRING</span>
+          {% else %}<span class="badge grey">INACTIVE</span>{% endif %}
+        {% else %}<span class="note">None assigned</span>{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <th>Home Template (FK)</th>
+      <td>
+        {% if site_settings.home_template %}{{ site_settings.home_template.name }} &rarr; <code>{{ site_settings.home_template.template_file }}</code>
+        {% else %}<span class="note">None — falling back to core/home.html</span>{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <th>Menu Template (FK)</th>
+      <td>
+        {% if site_settings.menu_template %}{{ site_settings.menu_template.name }} &rarr; <code>{{ site_settings.menu_template.template_file }}</code>
+        {% else %}<span class="note">None — falling back to hardcoded path</span>{% endif %}
+      </td>
+    </tr>
+    <tr>
+      <th>Maintenance Mode</th>
+      <td>{% if site_settings.maintenance_mode %}<span class="badge warn">ON</span>{% else %}<span class="badge ok">OFF</span>{% endif %}</td>
+    </tr>
+  </table>
+  {% else %}
+  <p class="issue">site_settings not in context — check context processors in settings.py</p>
+  {% endif %}
+</div>
+
+<h2>2 — Active Theme</h2>
+<div class="section">
+  {% if active_theme %}
+  <table>
+    <tr><th>Name</th>            <td>{{ active_theme.name }}</td></tr>
+    <tr><th>Slug</th>            <td>{{ active_theme.slug }}</td></tr>
+    <tr><th>theme_directory</th> <td><code>{{ theme_directory }}</code></td></tr>
+    <tr>
+      <th>Base Style</th>
+      <td>
+        {% if active_theme.base_style %}
+          {{ active_theme.base_style.name }} <span class="badge ok">SET</span>
+          <span class="note"> &larr; your base brand colors live here</span>
+        {% else %}
+          <span class="badge warn">NOT SET</span> &mdash; assign a ThemeStyle to this Theme in admin
+        {% endif %}
+      </td>
+    </tr>
+    <tr>
+      <th>Google Fonts URL</th>
+      <td>
+        {% if google_fonts_url %}<span class="badge ok">LOADED</span> <a href="{{ google_fonts_url }}" target="_blank" style="color:var(--color-text-accent); word-break:break-all;">{{ google_fonts_url }}</a>
+        {% else %}<span class="note">None — system fonts only</span>{% endif %}
+      </td>
+    </tr>
+  </table>
+  {% else %}
+  <p class="issue">No active theme. Set is_active=True on a Theme record in admin.</p>
+  {% endif %}
+</div>
+
+<h2>3 — CSS Variables + Swatches</h2>
+<div class="section">
+  {% if theme_style_vars %}
+  <table>
+    {% for var, val in theme_style_vars.items %}
+    <tr><th>--{{ var }}</th><td>{{ val }}</td></tr>
+    {% endfor %}
+  </table>
+
+  <h3 style="font-size:0.9rem; margin-top:1.25rem; margin-bottom:0;">Color Swatches</h3>
+  <div class="swatch-grid">
+    <div class="swatch"><div class="swatch-box" style="background:var(--color-bg-primary,transparent);"></div>bg-primary</div>
+    <div class="swatch"><div class="swatch-box" style="background:var(--color-bg-secondary,transparent);"></div>bg-secondary</div>
+    <div class="swatch"><div class="swatch-box" style="background:var(--color-bg-accent,transparent);"></div>bg-accent</div>
+    <div class="swatch"><div class="swatch-box" style="background:var(--color-nav-bg,transparent);"></div>nav-bg</div>
+    <div class="swatch"><div class="swatch-box" style="background:var(--color-text-primary,transparent);"></div>text-primary</div>
+    <div class="swatch"><div class="swatch-box" style="background:var(--color-text-secondary,transparent);"></div>text-secondary</div>
+    <div class="swatch"><div class="swatch-box" style="background:var(--color-text-accent,transparent);"></div>text-accent</div>
+    <div class="swatch"><div class="swatch-box" style="background:var(--color-text-heading,transparent);"></div>text-heading</div>
+  </div>
+
+  <h3 style="font-size:0.9rem; margin-top:1.25rem; margin-bottom:0;">Font Samples</h3>
+  <div class="font-samples">
+    <p class="font-sample s-primary">Primary &mdash; The quick brown fox jumps over the lazy dog (headings)</p>
+    <p class="font-sample s-secondary">Secondary &mdash; The quick brown fox jumps over the lazy dog (body)</p>
+    <p class="font-sample s-accent">Accent &mdash; The quick brown fox jumps over the lazy dog (prices, labels)</p>
+  </div>
+
+  {% else %}
+  <p class="issue">No CSS variables resolved. Check:</p>
+  <ul class="issue">
+    <li>A Theme has is_active=True</li>
+    <li>That Theme has a base_style FK assigned (ThemeStyle with colors filled in)</li>
+    <li>Both context processors are in settings.py TEMPLATES &rarr; OPTIONS &rarr; context_processors</li>
+  </ul>
+  {% endif %}
+</div>
+
+<h2>4 — Overlay Status</h2>
+<div class="section">
+  {% if site_settings.active_overlay %}
+    {% with o=site_settings.active_overlay %}
+    <table>
+      <tr><th>Name</th>           <td>{{ o.name }}</td></tr>
+      <tr><th>Style</th>          <td>{{ o.style.name }}</td></tr>
+      <tr><th>valid_from</th>     <td>{{ o.valid_from|default:"(not set — manual toggle only)" }}</td></tr>
+      <tr><th>valid_to</th>       <td>{{ o.valid_to|default:"(not set — manual toggle only)" }}</td></tr>
+      <tr><th>is_active flag</th> <td>{{ o.is_active }}</td></tr>
+      <tr>
+        <th>Firing now?</th>
+        <td>
+          {% if o.is_currently_active %}<span class="badge ok">YES — overlay vars merged over base</span>
+          {% else %}<span class="badge grey">NO — base theme only</span>{% endif %}
+        </td>
+      </tr>
+    </table>
+    {% if o.is_currently_active %}
+    <p style="margin-top:0.75rem; font-size:0.8rem; color:var(--color-text-secondary);">
+      Overlay vars applied: {{ o.style.to_css_vars }}
+    </p>
+    {% endif %}
+    {% endwith %}
+  {% else %}
+  <p class="note">No overlay assigned. Admin &rarr; Site Settings &rarr; Active Overlay.</p>
+  {% endif %}
+</div>
+
+<p style="margin-top:2rem; font-size:0.7rem; color:#374151; text-align:center;">
+  Remove this template and its URL/view before deploying.
+</p>
+
+</body>
+</html>

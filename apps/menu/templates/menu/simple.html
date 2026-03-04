@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% load menu_filters %}
+
+{% block title %}SoHo Pittsburgh{{ title }}{% endblock %}
+{% block content %}
+{% regroup menu_items by category.name as menu_categories %}
+
+{% for category in menu_categories %}
+
+  {% cycle "primary" "secondary" "tertiary" as section_bg silent %}
+
+  <section class="py-6 px-12"
+    style="
+      background-color: var(--color-bg-{{ section_bg }});
+      color: var(--color-text-{{ section_bg }});
+    ">
+
+    <h3 class="text-2xl font-bold text-center">
+      {{ category.grouper }}
+    </h3>
+
+    {# Split items into those with and without a subcategory #}
+    {% with subcat_items=category.list|with_subcategory plain_items=category.list|without_subcategory %}
+
+    <div class="grid md:grid-cols-2 gap-2 p-1">
+
+      {# ── Plain items: one card each (existing behaviour) ── #}
+      {% for item in plain_items %}
+      <div class="{% if forloop.parentloop.counter|divisibleby:2 %}bg-white/10{% else %}bg-black/10{% endif %} rounded-lg shadow p-5 hover:shadow-lg transition">
+        <div class="flex justify-between items-start mb-2">
+
+          <h4 class="font-semibold text-lg" style="color: var(--color-text-heading);">
+            {{ item.name }}
+            {% if item.is_seasonal %}
+              <div class="mt-1 text-xs inline-block px-1 py-1 rounded bg-theme-badge text-white">
+                Seasonal
+              </div>
+            {% endif %}
+
+          </h4>
+
+          <span class="font-bold">
+            {% if item.is_on_sale %}
+              <span class="text-gray-400 line-through text-sm">{{ item.price|currency }}</span>
+              <span class="text-theme-accent font-bold">{{ item.sale_price|currency }}</span>
+            {% else %}
+              <span class="text-theme-accent font-bold">{{ item.display_price|currency }}</span>
+            {% endif %}
+          </span>
+
+        </div>
+
+        <p class="text-sm opacity-80" style="color: inherit;">
+          {{ item.description }}
+        </p>
+
+      </div>
+      {% endfor %}
+
+      {# ── Subcategory items: one card per subcategory ── #}
+      {% regroup subcat_items by subcategory.name as subcategories %}
+      {% for subcat in subcategories %}
+      <div class="{% if forloop.parentloop.counter|divisibleby:2 %}bg-white/10{% else %}bg-black/10{% endif %} rounded-lg shadow p-5 hover:shadow-lg transition">
+
+        <h4 class="font-semibold text-lg mb-3" style="color: var(--color-text-heading);">
+          {{ subcat.grouper }}
+        </h4>
+
+        <ul class="space-y-1">
+          {% for item in subcat.list %}
+          <li class="flex justify-between items-center text-sm">
+
+            <span class="opacity-90">
+              {{ item.name }}
+              {% if item.is_seasonal %}
+              <span class="ml-1 text-xs px-1.5 py-0.5 rounded bg-theme-badge text-white">Seasonal</span>
+              {% endif %}
+            </span>
+
+            <span class="font-semibold text-theme-accent ml-4 shrink-0">
+              {% if item.is_on_sale %}
+                <span class="text-gray-400 line-through text-xs">{{ item.price|currency }}</span>
+                {{ item.sale_price|currency }}
+              {% elif item.current_price %}
+                {{ item.current_price|currency }}
+              {% endif %}
+            </span>
+
+          </li>
+          {% endfor %}
+        </ul>
+
+      </div>
+      {% endfor %}
+
+    </div>
+    {% endwith %}
+
+  </section>
+
+{% endfor %}
+{% endblock %}

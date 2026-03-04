@@ -24,15 +24,17 @@
   /* --- Text Colors --------------------------------------------------------- */
   /* Overridden by ThemeStyle.*_text_color                                    */
   --color-text-primary:   #171717;   /* warm off-white — main body text */
-  --color-text-secondary: #eccb9c;   /* muted/supporting text */
+  --color-text-secondary: #fafafa;   /* muted/supporting text */
+  --color-text-tertiary:  #eccb9c;   /* muted/supporting text */
   --color-text-accent:    #8a6010;   /* gold — prices, highlights, links */
-  --color-text-heading:   #0a0a0a;   /* h1-h6 */
+  --color-text-heading:   #ffffff;   /* h1-h6 */
   --color-text-nav:       #eccb9c;   /* always light regardless of page theme */
 
   /* --- Background Colors --------------------------------------------------- */
   /* Overridden by ThemeStyle.*_bg_color                                      */
   --color-bg-primary:   #eccb9c;             /* page background */
   --color-bg-secondary: #171717;             /* cards, panels, surfaces */
+  --color-bg-tertiary:  #be141e;             
   --color-bg-accent:    #c9972a;             /* CTA buttons, badges */
   --color-nav-bg:       rgba(10,10,10,0.95); /* sticky nav */
 

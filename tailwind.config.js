@@ -10,6 +10,23 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        'brand': {
+          primary:   'var(--color-bg-primary)',
+          secondary: 'var(--color-bg-secondary)',
+          tertiary:  'var(--color-bg-tertiary)',
+          accent:    'var(--color-bg-accent)',
+        },
+        'text': {
+          primary:   'var(--color-text-primary)',
+          secondary: 'var(--color-text-secondary)',
+          tertiary:  'var(--color-text-tertiary)',
+          accent:    'var(--color-text-accent)',
+          heading:   'var(--color-text-heading)',
+          nav:       'var(--color-text-nav)',
+        },
+        'theme': {
+          badge:     'var(--color-bg-accent)',
+        },
         // Custom restaurant brand colors - customize these
         primary: {
           50: '#fef2f2',

@@ -31,9 +31,9 @@
     letter-spacing: -0.025em;
   }
 
-  h1 { @apply text-5xl font-bold; }
-  h2 { @apply text-4xl font-bold; }
-  h3 { @apply text-3xl font-semibold; }
+  h1 { @apply text-4xl md:text-6xl font-bold; }
+  h2 { @apply text-3xl md:text-4xl font-bold; }
+  h3 { @apply text-xl md:text-2xl font-semibold; }
   h4 { @apply text-xl font-semibold; }
   h5 { @apply text-lg font-semibold; }
   h6 { @apply text-base font-semibold; }

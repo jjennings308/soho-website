@@ -1,0 +1,530 @@
+{# ============================================================ #}
+{# menu_item_modal.html                                         #}
+{# Include once, near the closing </body> of your menu page:   #}
+{#   {% include "menu/partials/menu_item_modal.html" %}         #}
+{# ============================================================ #}
+
+<div
+  x-data="menuItemModal()"
+  x-on:open-menu-modal.window="open($event.detail)"
+  x-on:keydown.escape.window="close()"
+  class="menu-modal-root"
+>
+  {# ── Backdrop ── #}
+  <div
+    x-show="isOpen"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    x-on:click="close()"
+    class="menu-modal-backdrop"
+    aria-hidden="true"
+    style="display:none;"
+  ></div>
+
+  {# ── Panel ── #}
+  <div
+    x-show="isOpen"
+    x-transition:enter="transition ease-out duration-250"
+    x-transition:enter-start="opacity-0 translate-y-4"
+    x-transition:enter-end="opacity-100 translate-y-0"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 translate-y-0"
+    x-transition:leave-end="opacity-0 translate-y-4"
+    role="dialog"
+    aria-modal="true"
+    :aria-label="item.name"
+    class="menu-modal-panel"
+    style="display:none;"
+  >
+    {# ── Close button ── #}
+    <button
+      x-on:click="close()"
+      class="menu-modal-close"
+      aria-label="Close"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+
+    {# ── Scrollable body ── #}
+    <div class="menu-modal-body">
+
+      {# ── Left column: gallery ── #}
+      <div class="menu-modal-gallery" x-show="item.has_image || item.gallery.length">
+
+        {# Main image #}
+        <div class="menu-modal-main-image-wrap">
+          <img
+            :src="activeImage"
+            :alt="item.name"
+            class="menu-modal-main-image"
+            x-show="activeImage"
+          />
+          <div class="menu-modal-no-image" x-show="!activeImage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor" stroke-width="1" opacity="0.3">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+        </div>
+
+        {# Thumbnail strip — only shown when there are multiple images #}
+        <div
+          class="menu-modal-thumbs"
+          x-show="allImages.length > 1"
+        >
+          <template x-for="(img, idx) in allImages" :key="idx">
+            <button
+              class="menu-modal-thumb-btn"
+              :class="{ 'is-active': activeImage === img.url }"
+              x-on:click="activeImage = img.url"
+              :aria-label="'View image ' + (idx + 1)"
+            >
+              <img :src="img.url" :alt="img.alt || item.name" class="menu-modal-thumb-img" />
+            </button>
+          </template>
+        </div>
+      </div>
+
+      {# ── Right column: details ── #}
+      <div class="menu-modal-details">
+
+        {# Name + badges #}
+        <div class="menu-modal-header">
+          <h2 class="menu-modal-name" x-text="item.name"></h2>
+          <div class="menu-modal-badges">
+            <span class="menu-modal-badge badge-featured"  x-show="item.is_featured">Featured</span>
+            <span class="menu-modal-badge badge-chef"      x-show="item.is_chef_special">Chef's Special</span>
+            <span class="menu-modal-badge badge-new"       x-show="item.is_new">New</span>
+            <span class="menu-modal-badge badge-seasonal"  x-show="item.is_seasonal">Seasonal</span>
+          </div>
+        </div>
+
+        {# Full description (CKEditor HTML) #}
+        <div
+          class="menu-modal-description ck-content"
+          x-show="item.description"
+          x-html="item.description"
+        ></div>
+
+        {# ── Variations ── #}
+        <div class="menu-modal-section" x-show="item.variations && item.variations.length">
+          <h3 class="menu-modal-section-title">Options</h3>
+          <div class="menu-modal-variations">
+            <template x-for="v in item.variations" :key="v.name">
+              <div class="menu-modal-variation-row">
+                <span class="variation-label">
+                  <span x-text="v.name"></span>
+                  <span class="variation-size" x-show="v.size" x-text="'(' + v.size + ')'"></span>
+                </span>
+                <span class="variation-price" x-text="'$' + v.price"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        {# ── Add-ons ── #}
+        <div class="menu-modal-section" x-show="item.addons && item.addons.length">
+          <h3 class="menu-modal-section-title">Add-ons</h3>
+          <div class="menu-modal-addons">
+            <template x-for="a in item.addons" :key="a.name">
+              <div class="menu-modal-variation-row">
+                <span x-text="a.name"></span>
+                <span class="variation-price" x-text="'+$' + a.price"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        {# ── Dietary labels ── #}
+        <div class="menu-modal-section" x-show="item.dietary_labels && item.dietary_labels.length">
+          <h3 class="menu-modal-section-title">Dietary</h3>
+          <div class="menu-modal-dietary">
+            <template x-for="label in item.dietary_labels" :key="label">
+              <span class="menu-modal-dietary-tag" x-text="label"></span>
+            </template>
+          </div>
+        </div>
+
+        {# ── Allergen info ── #}
+        <div class="menu-modal-section" x-show="item.allergen_info">
+          <h3 class="menu-modal-section-title">Allergen Information</h3>
+          <p class="menu-modal-allergen" x-text="item.allergen_info"></p>
+        </div>
+
+        {# ── Base price (when no variations) ── #}
+        <div class="menu-modal-price-footer" x-show="item.display_price && (!item.variations || !item.variations.length)">
+          <span class="menu-modal-price" x-text="item.display_price"></span>
+          <span class="menu-modal-sale-badge" x-show="item.is_on_sale">Sale</span>
+        </div>
+
+      </div>{# /details #}
+    </div>{# /body #}
+  </div>{# /panel #}
+</div>
+
+
+{# ── Alpine component ── #}
+<script>
+  // Register before Alpine initializes. Works whether Alpine loads sync or deferred.
+  function menuItemModal() {
+    return {
+      isOpen: false,
+      item: { gallery: [], variations: [], addons: [], dietary_labels: [] },
+      activeImage: null,
+
+      get allImages() {
+        const imgs = [];
+        if (this.item.primary_image) {
+          imgs.push({ url: this.item.primary_image, alt: this.item.name });
+        }
+        if (this.item.gallery && this.item.gallery.length) {
+          this.item.gallery.forEach(g => imgs.push({ url: g.url, alt: g.alt || this.item.name }));
+        }
+        return imgs;
+      },
+
+      open(data) {
+        this.item = data;
+        this.activeImage = data.primary_image
+          || (data.gallery && data.gallery.length ? data.gallery[0].url : null);
+        this.isOpen = true;
+        document.body.style.overflow = 'hidden';
+      },
+
+      close() {
+        this.isOpen = false;
+        document.body.style.overflow = '';
+        setTimeout(() => { this.item = {}; this.activeImage = null; }, 200);
+      }
+    };
+  }
+</script>
+
+
+{# ── Modal styles using your theme CSS variables ── #}
+<style>
+  /* Backdrop */
+  .menu-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    z-index: 400;
+    backdrop-filter: blur(2px);
+  }
+
+  /* Panel */
+  .menu-modal-panel {
+    position: fixed;
+    inset: 0;
+    z-index: 401;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem;
+    pointer-events: none; /* let clicks pass to backdrop unless on panel itself */
+  }
+
+  .menu-modal-panel > * {
+    pointer-events: auto;
+  }
+
+  /* Inner card */
+  .menu-modal-body {
+    position: relative;
+    background: var(--color-surface, #1a1a1a);
+    border: 1px solid var(--color-border, rgba(255,255,255,0.1));
+    border-radius: 4px;
+    width: 100%;
+    max-width: 860px;
+    max-height: 90vh;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+  }
+
+  /* Close button */
+  .menu-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 10;
+    background: var(--color-surface, #1a1a1a);
+    border: 1px solid var(--color-border, rgba(255,255,255,0.15));
+    border-radius: 2px;
+    color: var(--color-text-muted, #888);
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .menu-modal-close:hover {
+    color: var(--color-text, #fff);
+    border-color: var(--color-accent, #FFB700);
+  }
+
+  /* Gallery column */
+  .menu-modal-gallery {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--color-border, rgba(255,255,255,0.08));
+  }
+
+  .menu-modal-main-image-wrap {
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--color-surface-raised, #222);
+  }
+
+  .menu-modal-main-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .menu-modal-no-image {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted, #555);
+  }
+
+  /* Thumbnail strip */
+  .menu-modal-thumbs {
+    display: flex;
+    gap: 0.375rem;
+    padding: 0.625rem;
+    overflow-x: auto;
+    background: var(--color-surface-raised, #1e1e1e);
+    border-top: 1px solid var(--color-border, rgba(255,255,255,0.07));
+  }
+
+  .menu-modal-thumb-btn {
+    flex-shrink: 0;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    padding: 0;
+    background: none;
+  }
+
+  .menu-modal-thumb-btn.is-active,
+  .menu-modal-thumb-btn:hover {
+    border-color: var(--color-accent, #FFB700);
+  }
+
+  .menu-modal-thumb-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Details column */
+  .menu-modal-details {
+    padding: 1.75rem 1.75rem 1.75rem 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    overflow-y: auto;
+  }
+
+  /* Header */
+  .menu-modal-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .menu-modal-name {
+    font-family: var(--font-heading, serif);
+    font-size: 1.5rem;
+    color: var(--color-heading, #fff);
+    margin: 0;
+    line-height: 1.2;
+    padding-right: 2rem; /* avoid overlap with close btn */
+  }
+
+  /* Badges */
+  .menu-modal-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .menu-modal-badge {
+    font-family: var(--font-ui, sans-serif);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2em 0.6em;
+    border-radius: 2px;
+  }
+
+  .badge-featured  { background: var(--color-accent, #FFB700);      color: #000; }
+  .badge-chef      { background: var(--color-primary, #1a1a6e);     color: #fff; border: 1px solid var(--color-accent, #FFB700); }
+  .badge-new       { background: transparent; border: 1px solid var(--color-accent, #FFB700); color: var(--color-accent, #FFB700); }
+  .badge-seasonal  { background: transparent; border: 1px solid var(--color-text-muted, #888); color: var(--color-text-muted, #888); }
+
+  /* Description */
+  .menu-modal-description {
+    font-family: var(--font-body, sans-serif);
+    font-size: 0.9rem;
+    color: var(--color-text, #ccc);
+    line-height: 1.65;
+    border-top: 1px solid var(--color-border, rgba(255,255,255,0.08));
+    padding-top: 1rem;
+  }
+
+  /* Sections (variations, addons, dietary, allergens) */
+  .menu-modal-section {
+    border-top: 1px solid var(--color-border, rgba(255,255,255,0.08));
+    padding-top: 1rem;
+  }
+
+  .menu-modal-section-title {
+    font-family: var(--font-ui, sans-serif);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--color-accent, #FFB700);
+    margin: 0 0 0.625rem;
+  }
+
+  /* Variation / add-on rows */
+  .menu-modal-variations,
+  .menu-modal-addons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .menu-modal-variation-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: var(--font-body, sans-serif);
+    font-size: 0.875rem;
+    color: var(--color-text, #ccc);
+    padding: 0.25rem 0;
+    border-bottom: 1px dotted var(--color-border, rgba(255,255,255,0.06));
+  }
+
+  .variation-label {
+    display: flex;
+    gap: 0.375rem;
+    align-items: baseline;
+  }
+
+  .variation-size {
+    font-size: 0.75rem;
+    color: var(--color-text-muted, #888);
+  }
+
+  .variation-price {
+    font-family: var(--font-ui, sans-serif);
+    font-weight: 600;
+    color: var(--color-heading, #fff);
+    white-space: nowrap;
+  }
+
+  /* Dietary tags */
+  .menu-modal-dietary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .menu-modal-dietary-tag {
+    font-family: var(--font-ui, sans-serif);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.25em 0.7em;
+    border-radius: 99px;
+    background: var(--color-surface-raised, #2a2a2a);
+    border: 1px solid var(--color-border, rgba(255,255,255,0.12));
+    color: var(--color-text, #ccc);
+  }
+
+  /* Allergen text */
+  .menu-modal-allergen {
+    font-family: var(--font-body, sans-serif);
+    font-size: 0.8rem;
+    color: var(--color-text-muted, #888);
+    line-height: 1.55;
+    margin: 0;
+  }
+
+  /* Price footer */
+  .menu-modal-price-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border, rgba(255,255,255,0.08));
+  }
+
+  .menu-modal-price {
+    font-family: var(--font-heading, serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--color-accent, #FFB700);
+  }
+
+  .menu-modal-sale-badge {
+    font-family: var(--font-ui, sans-serif);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: #c0392b;
+    color: #fff;
+    padding: 0.2em 0.6em;
+    border-radius: 2px;
+  }
+
+  /* ── Responsive: stack on mobile ── */
+  @media (max-width: 640px) {
+    .menu-modal-body {
+      grid-template-columns: 1fr;
+      max-height: 95vh;
+    }
+
+    .menu-modal-gallery {
+      border-right: none;
+      border-bottom: 1px solid var(--color-border, rgba(255,255,255,0.08));
+    }
+
+    .menu-modal-details {
+      padding: 1.25rem;
+    }
+
+    .menu-modal-name {
+      font-size: 1.25rem;
+    }
+  }
+</style>
