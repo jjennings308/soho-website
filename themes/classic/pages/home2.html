@@ -3,46 +3,15 @@
 {% load ui_tags %}
 {% block content %}
 
-{% include "core/components/banner_full.html" with title=hero_banner.title content=hero_banner.content bg_color=hero_banner.bg_color %}
+{% include "core/components/banner_full.html" with banner=hero_banner %}
 
+{% include "core/components/banner_full.html" with banner=grubhub_banner %}
 
-<!-- ========================= -->
-<!-- FULL WIDTH BANNER 2 -->
-<!-- ========================= -->
-<section class="w-full bg-white py-24">
-    <div class="max-w-7xl mx-auto px-6 text-center">
-        <h2 class="text-4xl font-bold mb-4">Banner Two Title</h2>
-        <p class="text-lg text-gray-600">
-            Secondary V2 full-width banner section. 
-            {% render_button label="Order Grubhub Directly from SoHo" href="http://menus.fyi/11489616" bg_color="bg-yellow-500" text_color="text-black" %}
-        </p>
-    </div>
-</section>
+{% include "core/components/50_50_r_img.html" with l_button=grubhub_banner.button l_title=grubhub_banner.title content=l_grubhub_banner.content r_content=right.content%}
 
+{% include "core/components/50_50_l_img.html" with r_button=grubhub_banner.button r_title=grubhub_banner.title content=r_grubhub_banner.content l_content=right.content%}
 
-<!-- ========================= -->
-<!-- 50 / 50 SPLIT SECTION -->
-<!-- ========================= -->
-<section class="w-full bg-gray-50 py-20">
-    <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
-
-        <!-- Left -->
-        <div>
-            <h2 class="text-4xl font-bold mb-6">50 / 50 Left</h2>
-            <p class="text-gray-600 mb-4">
-                Content for the left half of the section.
-            </p>
-        </div>
-
-        <!-- Right -->
-        <div>
-            <img src="https://via.placeholder.com/600x400"
-                 alt="Placeholder"
-                 class="rounded-2xl shadow-lg w-full">
-        </div>
-
-    </div>
-</section>
+{% include "core/components/50_50.html" with r_button=grubhub_banner.button r_title=grubhub_banner.title content=r_grubhub_banner.content %}
 
 
 <!-- ========================= -->

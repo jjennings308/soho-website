@@ -1,44 +1,35 @@
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.views.generic import TemplateView
+from .mixins import ThemedTemplateMixin
 from .models import SiteSettings
 
 
-def _get_template(settings, page_type, fallback):
-    """
-    Resolve the template path for a given page type from SiteSettings.
-    Falls back to the hardcoded path if no PageTemplate is assigned or
-    if the assigned template's file path is blank.
+class HomeView(ThemedTemplateMixin, TemplateView):
+    page_type = 'home'
+    fallback_template = 'core/home.html'
 
-    Args:
-        settings:   SiteSettings singleton (already loaded)
-        page_type:  one of 'home', 'menu', 'promotions'
-        fallback:   hardcoded template path string, used as a safety net
-
-    Returns:
-        A template path string ready to pass to render().
-    """
-    template_fk = getattr(settings, f'{page_type}_template', None)
-    if template_fk and template_fk.template_file:
-        theme = settings.active_theme
-        if theme and theme.theme_directory:
-            return f"{theme.theme_directory}/{template_fk.template_file}"
-        return template_fk.template_file
-    return fallback
-
-
-def home(request):
-    settings = SiteSettings.load()
-    template = _get_template(settings, 'home', 'core/home.html')
-
-    context = {
-        'hero_banner': {
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['hero_banner'] ={
             'title': 'Welcome to Soho',
             'content': 'Craft cocktails and seasonal plates.',
             'style': 'background-color: var(--color-bg-primary); color: var(--color-text-primary);',
+        }      
+        context['grubhub_banner'] ={
+            'title': 'Order Grub Hub',
+            'content': '',
+            'style': 'background-color: var(--color-bg-primary); color: var(--color-text-primary);',
+            'button': {
+                'label': 'Order Grubhub Directly from SoHo',
+                'href': 'http://menus.fyi/11489616',
+                'bg_color': 'bg-yellow-500',
+                'text_color': 'text-black',
+            }
         }
-    }
-    return render(request, template, context)
-
+        context['right'] ={
+            'content': '<img src="/static/img/front_door.webp" alt="Entrance" class="w-full h-full object-cover">',
+        }      
+        return context
 
 def about(request):
     settings = SiteSettings.load()
