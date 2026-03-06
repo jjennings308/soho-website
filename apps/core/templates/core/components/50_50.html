@@ -3,34 +3,50 @@
     <div class="grid md:grid-cols-2">
 
         <!-- Left - bleeds to left edge, content aligned right -->
-        <div class="bg-[--color-bg-secondary] text-[--color-text-secondary] flex justify-end">
-            <div class="w-full max-w-[calc(theme(maxWidth.7xl)/2)] px-8 py-12">
-                <h1 class="text-5xl font-bold mb-4">
-                    {{ l_title }}
-                </h1>
-                <p class="text-xl text-gray-600">
-                    {{ l_content }}
-                </p>
-                {% if l_button %}
-                    {% render_button label=l_button.label href=l_button.href bg_color=l_button.bg_color text_color=l_button.text_color %}
-                {% endif %}
+        {% if left.full_img %}
+            <div style="background-color: var(--color-{{left.full_img.bg_color |default:'bg-primary'}});">
+                <div class="w-full h-full">
+                    <img src={{left.full_img.img_src}} alt={{left.full_img.alt}} class="w-full h-full object-cover">
+                </div>
             </div>
-        </div>
+        {% else %}
+            <div style="background-color: var(--color-{{left.bg_color |default:'bg-primary'}}); color: var(--color-{{left.text_color |default:'text-primary'}});" class="flex justify-end">
+                <div class="w-full max-w-[calc(theme(maxWidth.7xl)/2)] px-8 py-12">
+                    <h1 class="text-5xl font-bold mb-4">
+                        {{ left.title }}
+                    </h1>
+                    <p class="text-xl text-gray-600">
+                        {{ left.content|safe }}
+                    </p>
+                    {% if left.button %}
+                        {% render_button button=left.button %}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
 
         <!-- Right - bleeds to right edge, content aligned left -->
-        <div class="bg-[--color-bg-primary] text-[--color-text-primary] flex justify-end">
-            <div class="w-full max-w-[calc(theme(maxWidth.7xl)/2)] px-8 py-12">
-                <h1 class="text-5xl font-bold mb-4">
-                    {{ r_title }}
-                </h1>
-                <p class="text-xl text-gray-600">
-                    {{ r_content }}
-                </p>
-                {% if r_button %}
-                    {% render_button label=r_button.label href=r_button.href bg_color=r_button.bg_color text_color=r_button.text_color %}
-                {% endif %}
+        {% if right.full_img %}
+            <div style="background-color: var(--color-{{right.full_img.bg_color |default:'bg-secondary'}});">
+                <div class="w-full h-full">
+                    <img src={{right.full_img.img_src}} alt={{right.full_img.alt}} class="w-full h-full object-cover">
+                </div>
             </div>
-        </div>
+        {% else %}
+            <div style="background-color: var(--color-{{right.bg_color |default:'bg-secondary'}}); color: var(--color-{{right.text_color |default:'text-secondary'}});" class="flex justify-end">
+                <div class="w-full max-w-[calc(theme(maxWidth.7xl)/2)] px-8 py-12">
+                    <h1 class="text-5xl font-bold mb-4">
+                        {{ right.title }}
+                    </h1>
+                    <p class="text-xl text-gray-600">
+                        {{ right.content|safe }}
+                    </p>
+                    {% if right.button %}
+                        {% render_button button=right.button %}
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
 
     </div>
 </section>

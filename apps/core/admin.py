@@ -1,10 +1,10 @@
 from django.contrib import admin
-from .models import Theme, ThemeStyle, ThemeOverlay, PageTemplate, SiteSettings
+from .models import Theme, ThemeStyle, ThemeOverlay, SiteSettings
 
 
 @admin.register(ThemeStyle)
 class ThemeStyleAdmin(admin.ModelAdmin):
-    list_display = ['name', 'primary_font', 'primary_bg_color', 'accent_text_color', 'updated_at']
+    list_display = ['name', 'primary_font', 'secondary_font', 'accent_font', 'updated_at']
     search_fields = ['name', 'description']
     readonly_fields = ['created_at', 'updated_at']
 
@@ -14,13 +14,10 @@ class ThemeStyleAdmin(admin.ModelAdmin):
         }),
         ('Typography', {
             'fields': ('primary_font', 'secondary_font', 'accent_font'),
-            'description': 'Fonts used for headings, body text, and accents.'
-        }),
-        ('Text Colors', {
-            'fields': ('primary_text_color', 'secondary_text_color', 'tertiary_text_color', 'accent_text_color', 'heading_text_color'),
-        }),
-        ('Background Colors', {
-            'fields': ('primary_bg_color', 'secondary_bg_color', 'tertiary_bg_color', 'accent_bg_color', 'nav_bg_color'),
+            'description': (
+                'Fonts used for headings, body text, and accents. '
+                'All colors are brand constants defined in theme.css — not configurable here.'
+            )
         }),
         ('Metadata', {
             'fields': ('created_at', 'updated_at'),
@@ -77,7 +74,8 @@ class ThemeAdmin(admin.ModelAdmin):
             'fields': ('theme_directory', 'base_style', 'preview_image', 'is_active'),
             'description': (
                 'theme_directory should match the folder name under your templates/themes/ directory. '
-                'base_style defines the fonts and colors for this theme.'
+                'base_style defines the fonts for this theme. '
+                'Colors are brand constants in theme.css.'
             )
         }),
         ('Metadata', {
@@ -85,33 +83,6 @@ class ThemeAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-
-
-@admin.register(PageTemplate)
-class PageTemplateAdmin(admin.ModelAdmin):
-    list_display = ['name', 'page_type', 'template_file', 'is_active', 'created_at']
-    list_filter = ['page_type', 'is_active', 'created_at']
-    search_fields = ['name', 'description']
-    prepopulated_fields = {'slug': ('name',)}
-    readonly_fields = ['created_at', 'updated_at']
-
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('name', 'slug', 'page_type', 'description')
-        }),
-        ('Template Settings', {
-            'fields': ('template_file', 'preview_image', 'is_active'),
-            'description': (
-                'template_file is the path relative to the theme directory, '
-                'e.g. "pages/home_v2.html".'
-            )
-        }),
-        ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
@@ -128,9 +99,9 @@ class SiteSettingsAdmin(admin.ModelAdmin):
         ('Contact Information', {
             'fields': ('phone', 'email', 'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country')
         }),
-        ('Hours of Operation', {
-            'fields': ('hours_text',)
-        }),
+        ('Hours of Operation', {'fields': ('hours_text',)}),
+        ('Homepage Short About', {'fields': ('short_about_text',)}),
+        ('Catering', {'fields': ('catering_text',)}),
         ('Social Media', {
             'fields': ('facebook_url', 'instagram_url', 'twitter_url', 'yelp_url'),
             'classes': ('collapse',)
@@ -138,14 +109,11 @@ class SiteSettingsAdmin(admin.ModelAdmin):
         ('Theme & Overlay', {
             'fields': ('active_theme', 'active_overlay'),
             'description': (
-                'active_theme sets the base look of the site. '
-                'active_overlay applies a seasonal or promotional style on top — '
-                'only activates if its date range is current or Is Active is checked.'
+                'active_theme sets the base fonts for the site. '
+                'active_overlay applies a seasonal font style on top — '
+                'only activates if its date range is current or Is Active is checked. '
+                'Colors are brand constants and are not affected by theme or overlay selection.'
             )
-        }),
-        ('Page Templates', {
-            'fields': ('home_template', 'menu_template', 'promotions_template'),
-            'description': 'Select which layout template to use for each page type.',
         }),
         ('SEO Settings', {
             'fields': ('meta_description', 'meta_keywords'),

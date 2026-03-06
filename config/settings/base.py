@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     # Local apps
     'apps.core',
     'apps.menu',
-    'apps.promotions',
 ]
 
 MIDDLEWARE = [
@@ -59,7 +58,6 @@ TEMPLATES = [
         'APP_DIRS': True,
         'DIRS': [
             BASE_DIR / 'templates',
-            BASE_DIR / 'themes',
         ],
         'OPTIONS': {
             'context_processors': [

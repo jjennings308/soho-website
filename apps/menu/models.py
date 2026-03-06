@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.utils import timezone
 from decimal import Decimal
 from django_ckeditor_5.fields import CKEditor5Field
 
@@ -150,8 +151,8 @@ class MenuItem(models.Model):
         blank=True,
         help_text="Brief description for menu listings"
     )
-    
-    # Pricing (base price - can be overridden by variations)
+
+    # Pricing
     PRICE_DISPLAY_CHOICES = [
         ('price', 'Show Price'),
         ('market', 'Market Price (MP)'),
@@ -182,20 +183,17 @@ class MenuItem(models.Model):
         null=True,
         validators=[MinValueValidator(Decimal('0.01'))],
         help_text="Optional discounted price"
-    ) 
-      
-    # Has size/quantity variations
+    )
+
     has_variations = models.BooleanField(
         default=False,
         help_text="Check if this item has multiple size/quantity options"
     )
-    
-    # Has add-ons
     has_addons = models.BooleanField(
         default=False,
         help_text="Check if this item has add-on options"
     )
-    
+
     # Images
     image = models.ImageField(
         upload_to='menu/items/',
@@ -208,7 +206,7 @@ class MenuItem(models.Model):
         blank=True,
         help_text="Alternative text for accessibility"
     )
-    
+
     # Dietary & Allergen Information
     dietary_type = models.CharField(
         max_length=20,
@@ -224,65 +222,29 @@ class MenuItem(models.Model):
         blank=True,
         help_text="Additional allergen warnings"
     )
-    
+
     # Additional Details
     spice_level = models.IntegerField(
         choices=SPICE_LEVELS,
         default=0,
         help_text="Spiciness level of the dish"
     )
-    calories = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text="Approximate calorie count"
-    )
-    preparation_time = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text="Preparation time in minutes"
-    )
-    
+    calories = models.PositiveIntegerField(blank=True, null=True)
+    preparation_time = models.PositiveIntegerField(blank=True, null=True)
+
     # Features
-    is_featured = models.BooleanField(
-        default=False,
-        help_text="Feature this item prominently"
-    )
-    is_chef_special = models.BooleanField(
-        default=False,
-        help_text="Mark as chef's special"
-    )
-    is_new = models.BooleanField(
-        default=False,
-        help_text="Mark as new item"
-    )
-    is_seasonal = models.BooleanField(
-        default=False,
-        help_text="Seasonal availability"
-    )
-    
+    is_featured = models.BooleanField(default=False)
+    is_chef_special = models.BooleanField(default=False)
+    is_new = models.BooleanField(default=False)
+    is_seasonal = models.BooleanField(default=False)
+
     # Availability
-    is_available = models.BooleanField(
-        default=True,
-        help_text="Currently available for order"
-    )
-    available_from = models.TimeField(
-        blank=True,
-        null=True,
-        help_text="Available from this time (optional)"
-    )
-    available_until = models.TimeField(
-        blank=True,
-        null=True,
-        help_text="Available until this time (optional)"
-    )
-    
-    # Ordering
-    order = models.PositiveIntegerField(
-        default=0,
-        help_text="Order within category (lower numbers first)"
-    )
-    
-    # Metadata
+    is_available = models.BooleanField(default=True)
+    available_from = models.TimeField(blank=True, null=True)
+    available_until = models.TimeField(blank=True, null=True)
+
+    order = models.PositiveIntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -300,14 +262,12 @@ class MenuItem(models.Model):
 
     @property
     def current_price(self):
-        """Return sale price if available, otherwise regular price. None if MP or hidden."""
         if self.price_display != 'price':
             return None
         return self.sale_price if self.sale_price else self.price
 
     @property
     def display_price(self):
-        """Human-readable price string for templates."""
         if self.price_display == 'market':
             return "MP"
         if self.price_display == 'hidden':
@@ -319,14 +279,12 @@ class MenuItem(models.Model):
 
     @property
     def is_on_sale(self):
-        """Check if item has a sale price"""
         if self.price_display != 'price' or self.price is None:
             return False
         return self.sale_price is not None and self.sale_price < self.price
 
     @property
     def dietary_labels(self):
-        """Return list of dietary labels for display"""
         labels = []
         if self.dietary_type != 'none':
             labels.append(self.get_dietary_type_display())
@@ -340,68 +298,29 @@ class MenuItem(models.Model):
 
     @property
     def price_range(self):
-        """Return price range if item has variations"""
         if not self.has_variations:
             return None
-        
         variations = self.variations.all()
         if not variations:
             return None
-            
         prices = [v.price for v in variations]
         min_price = min(prices)
         max_price = max(prices)
-        
         if min_price == max_price:
             return f"${min_price}"
         return f"${min_price} - ${max_price}"
 
 
 class MenuItemVariation(models.Model):
-    """
-    Size/quantity variations for menu items (e.g., Small/Large, 6pc/12pc/30pc)
-    """
-    menu_item = models.ForeignKey(
-        MenuItem,
-        on_delete=models.CASCADE,
-        related_name='variations'
-    )
-    name = models.CharField(
-        max_length=100,
-        help_text="Variation name (e.g., 'Small', 'Large', '6 Wings', '12 Wings')"
-    )
-    description = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Optional description of this variation"
-    )
-    price = models.DecimalField(
-        max_digits=8,
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]
-    )
-    quantity = models.PositiveIntegerField(
-        blank=True,
-        null=True,
-        help_text="Quantity/count for this variation (e.g., 6, 12, 30)"
-    )
-    size = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text="Size descriptor (e.g., 'Small', 'Medium', 'Large', 'Cup', 'Bowl')"
-    )
-    order = models.PositiveIntegerField(
-        default=0,
-        help_text="Display order (lower numbers first)"
-    )
-    is_default = models.BooleanField(
-        default=False,
-        help_text="Is this the default/recommended option?"
-    )
-    is_available = models.BooleanField(
-        default=True,
-        help_text="Is this variation currently available?"
-    )
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='variations')
+    name = models.CharField(max_length=100)
+    description = models.CharField(max_length=200, blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    quantity = models.PositiveIntegerField(blank=True, null=True)
+    size = models.CharField(max_length=50, blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_default = models.BooleanField(default=False)
+    is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -413,42 +332,16 @@ class MenuItemVariation(models.Model):
 
     def __str__(self):
         return f"{self.menu_item.name} - {self.name} (${self.price})"
-    
+
+
 class MenuItemAddon(models.Model):
-    """
-    Addons for menu items (e.g., cheese $2, Chicken $6)
-    """
-    menu_item = models.ForeignKey(
-        MenuItem,
-        on_delete=models.CASCADE,
-        related_name='addons'
-    )
-    name = models.CharField(
-        max_length=100,
-        help_text="Addon name (e.g., 'Chicken', 'Steak', etc.)"
-    )
-    description = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Optional description of this add-on"
-    )
-    price = models.DecimalField(
-        max_digits=8,
-        decimal_places=2,
-        validators=[MinValueValidator(Decimal('0.01'))]
-    )
-    order = models.PositiveIntegerField(
-        default=0,
-        help_text="Display order (lower numbers first)"
-    )
-    is_default = models.BooleanField(
-        default=False,
-        help_text="Is this the default/recommended option?"
-    )
-    is_available = models.BooleanField(
-        default=True,
-        help_text="Is this add-on currently available?"
-    )
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='addons')
+    name = models.CharField(max_length=100)
+    description = models.CharField(max_length=200, blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    order = models.PositiveIntegerField(default=0)
+    is_default = models.BooleanField(default=False)
+    is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -463,14 +356,7 @@ class MenuItemAddon(models.Model):
 
 
 class MenuItemImage(models.Model):
-    """
-    Additional images for menu items (gallery)
-    """
-    menu_item = models.ForeignKey(
-        MenuItem,
-        on_delete=models.CASCADE,
-        related_name='gallery_images'
-    )
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='gallery_images')
     image = models.ImageField(upload_to='menu/gallery/')
     alt_text = models.CharField(max_length=200, blank=True)
     caption = models.CharField(max_length=300, blank=True)
@@ -484,3 +370,200 @@ class MenuItemImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.menu_item.name}"
+
+
+# =============================================================================
+# PROMOTIONAL MENU SYSTEM
+# =============================================================================
+
+class PromoSettings(models.Model):
+    """
+    Singleton — global default promo color palette.
+    MenuPromotion instances fall back to these when their own color fields are blank.
+    Colors here fall back to theme.css :root defaults (transparent/inherit) when blank.
+
+    Inject resolved colors onto the component wrapper in templates:
+        {% with colors=promo.resolve_colors %}
+        <section style="
+            --color-promo-primary: {{ colors.primary }};
+            --color-promo-accent:  {{ colors.accent }};
+            --color-promo-text:    {{ colors.text }};
+            --color-promo-bg:      {{ colors.bg }};
+        ">
+        {% endwith %}
+    """
+    promo_primary_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="Global default: main promo color (hex, e.g. #ffb612)"
+    )
+    promo_accent_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="Global default: secondary promo color (hex)"
+    )
+    promo_text_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="Global default: text color within promo components (hex)"
+    )
+    promo_bg_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="Global default: background color for promo components (hex)"
+    )
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Promo Settings'
+        verbose_name_plural = 'Promo Settings'
+
+    def __str__(self):
+        return 'Promo Settings'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class MenuPromotion(models.Model):
+    """
+    A curated collection of menu items presented with promo colors.
+    Droppable as a component anywhere — home page, its own page, a section, etc.
+
+    Color resolution per field:
+        1. This instance's color field (if set)
+        2. PromoSettings global default (if set)
+        3. theme.css :root fallback (transparent / inherit)
+
+    Call resolve_colors() in the view to pass the final dict to the template.
+    """
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=200, unique=True)
+    description = models.TextField(blank=True)
+
+    # ── Scheduling ────────────────────────────────────────────────────────────
+    start_date = models.DateField(
+        blank=True, null=True,
+        help_text="Date this promotion becomes visible (leave blank for immediate)"
+    )
+    end_date = models.DateField(
+        blank=True, null=True,
+        help_text="Date this promotion expires (leave blank for no expiry)"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Master switch — uncheck to hide regardless of dates"
+    )
+
+    # ── Color Overrides ───────────────────────────────────────────────────────
+    # Leave blank to inherit from PromoSettings global defaults.
+    promo_primary_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="Override: main promo color for this promotion (hex)"
+    )
+    promo_accent_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="Override: secondary promo color for this promotion (hex)"
+    )
+    promo_text_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="Override: text color for this promotion's component (hex)"
+    )
+    promo_bg_color = models.CharField(
+        max_length=30, blank=True,
+        help_text="Override: background color for this promotion's component (hex)"
+    )
+
+    # ── Items ─────────────────────────────────────────────────────────────────
+    items = models.ManyToManyField(
+        MenuItem,
+        through='MenuPromotionItem',
+        related_name='promotions',
+        blank=True
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['start_date', 'title']
+        verbose_name = 'Menu Promotion'
+        verbose_name_plural = 'Menu Promotions'
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def is_currently_active(self):
+        """True if active flag is set and today falls within the date range."""
+        if not self.is_active:
+            return False
+        today = timezone.now().date()
+        if self.start_date and today < self.start_date:
+            return False
+        if self.end_date and today > self.end_date:
+            return False
+        return True
+
+    def resolve_colors(self):
+        """
+        Returns resolved hex values for all four promo color slots.
+        Instance fields win over PromoSettings; empty string means theme.css takes over.
+        """
+        defaults = PromoSettings.load()
+        return {
+            'primary': self.promo_primary_color or defaults.promo_primary_color,
+            'accent':  self.promo_accent_color  or defaults.promo_accent_color,
+            'text':    self.promo_text_color     or defaults.promo_text_color,
+            'bg':      self.promo_bg_color       or defaults.promo_bg_color,
+        }
+
+
+class MenuPromotionItem(models.Model):
+    """
+    Through model linking MenuPromotion to MenuItem.
+    promo_price overrides the item's standard price when set — leave blank to
+    display the item's normal price within the promotion.
+    """
+    promotion = models.ForeignKey(
+        MenuPromotion,
+        on_delete=models.CASCADE,
+        related_name='promotion_items'
+    )
+    menu_item = models.ForeignKey(
+        MenuItem,
+        on_delete=models.CASCADE,
+        related_name='promotion_entries'
+    )
+    promo_price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        help_text="Promotional price — overrides the item's standard price when set"
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order within this promotion (lower numbers first)"
+    )
+
+    class Meta:
+        ordering = ['order', 'menu_item__name']
+        verbose_name = 'Promotion Item'
+        verbose_name_plural = 'Promotion Items'
+        unique_together = ['promotion', 'menu_item']
+
+    def __str__(self):
+        price_str = f"${self.promo_price}" if self.promo_price else "standard price"
+        return f"{self.promotion.title} — {self.menu_item.name} ({price_str})"
+
+    @property
+    def display_price(self):
+        """Promo price if set, otherwise falls through to the item's standard display_price."""
+        if self.promo_price is not None:
+            return float(self.promo_price)
+        return self.menu_item.display_price

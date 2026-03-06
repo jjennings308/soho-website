@@ -50,14 +50,69 @@ td { font-family: monospace; color: var(--color-text-secondary, #fafafa); }
 .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
 .swatch { text-align: center; font-size: 0.75rem; font-family: monospace; color: var(--color-text-secondary, #fafafa); }
 .swatch-box { height: 48px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); margin-bottom: 0.35rem; }
-.font-samples { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; }
-.font-sample { font-size: 1.1rem; color: var(--color-text-secondary, #fafafa); }
 .s-primary   { font-family: var(--font-primary, serif); }
 .s-secondary { font-family: var(--font-secondary, sans-serif); }
 .s-accent    { font-family: var(--font-accent, sans-serif); color: var(--color-text-accent, #c9972a); }
 .note { color: var(--color-text-tertiary, #eccb9c); font-style: italic; font-size: 0.85rem; }
 .issue { color: #fbbf24; font-size: 0.85rem; margin-top: 0.5rem; }
-.issue li { margin-left: 1.25rem; margin-top: 0.25rem; }  </style>
+.issue li { margin-left: 1.25rem; margin-top: 0.25rem; }
+
+/* ── Font Showcase ─────────────────────────────────────────────── */
+.font-showcase { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.25rem; }
+.font-card {
+  background: var(--color-bg-primary, #0d0d0d);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 1.5rem 1.75rem;
+  overflow: hidden;
+}
+.font-pairing { border-color: var(--color-bg-accent, #c9972a); border-width: 1px; }
+.font-card-label {
+  font-size: 0.7rem; font-family: monospace; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--color-text-accent, #c9972a); margin-bottom: 0.25rem;
+}
+.font-card-name {
+  font-size: 0.85rem; color: var(--color-text-secondary, #aaa);
+  margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 0.75rem;
+}
+.font-hero {
+  font-size: 5rem; line-height: 1; font-weight: 700;
+  color: var(--color-text-heading, #fff); margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+.font-alpha {
+  font-size: 0.8rem; color: var(--color-text-secondary, #888);
+  letter-spacing: 0.15em; margin-bottom: 0.35rem; line-height: 1.8;
+  word-break: break-all;
+}
+.font-weights {
+  display: flex; flex-wrap: wrap; gap: 1.25rem; margin: 1rem 0;
+  padding: 0.75rem 0; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.font-weights span { font-size: 0.9rem; color: var(--color-text-secondary, #ccc); }
+.font-specimen {
+  font-size: 1.25rem; font-style: italic; line-height: 1.5;
+  color: var(--color-text-primary, #f5f0e8);
+  margin: 1rem 0 1rem; padding-left: 1rem;
+  border-left: 2px solid var(--color-bg-accent, #c9972a);
+}
+.font-sizes { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.75rem; color: var(--color-text-primary, #f5f0e8); }
+.accent-examples { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.accent-price { display: flex; align-items: center; gap: 1.25rem; }
+.price-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-text-secondary, #aaa); }
+.price-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+.badge-tag {
+  display: inline-block; padding: 0.2rem 0.6rem; border-radius: 3px;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  background: var(--color-bg-accent, #c9972a); color: var(--color-bg-primary, #0a0a0a);
+}
+.pairing-menu-item {}
+.pairing-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.35rem; }
+.pairing-dish { font-size: 1.2rem; color: var(--color-text-heading, #fff); font-weight: 600; }
+.pairing-price { font-size: 1.1rem; font-weight: 700; }
+.pairing-desc { font-size: 0.9rem; color: var(--color-text-secondary, #aaa); line-height: 1.6; margin-bottom: 0.5rem; }
+.pairing-tags { display: flex; gap: 0.5rem; }
+</style>
 </head>
 <body>
 
@@ -164,12 +219,112 @@ td { font-family: monospace; color: var(--color-text-secondary, #fafafa); }
     <div class="swatch"><div class="swatch-box" style="background:var(--color-text-heading,transparent);"></div>text-heading</div>
   </div>
 
-  <h3 style="font-size:0.9rem; margin-top:1.25rem; margin-bottom:0;">Font Samples</h3>
-  <div class="font-samples">
-    <p class="font-sample s-primary">Primary &mdash; The quick brown fox jumps over the lazy dog (headings)</p>
-    <p class="font-sample s-secondary">Secondary &mdash; The quick brown fox jumps over the lazy dog (body)</p>
-    <p class="font-sample s-accent">Accent &mdash; The quick brown fox jumps over the lazy dog (prices, labels)</p>
-  </div>
+  <h3 style="font-size:0.9rem; margin-top:1.25rem; margin-bottom:0.75rem;">Font Samples</h3>
+  <div class="font-showcase">
+
+    <!-- PRIMARY FONT -->
+    <div class="font-card">
+      <div class="font-card-label">--font-primary &mdash; headings &amp; titles</div>
+      <div class="font-card-name s-primary">{% for k,v in theme_style_vars.items %}{% if k == "font-primary" %}{{ v }}{% endif %}{% endfor %}</div>
+      <div class="font-hero s-primary">Aa</div>
+      <div class="font-alpha s-primary">A B C D E F G H I J K L M N O P Q R S T U V W X Y Z</div>
+      <div class="font-alpha s-primary" style="font-style:italic;">a b c d e f g h i j k l m n o p q r s t u v w x y z</div>
+      <div class="font-weights">
+        <span class="s-primary" style="font-weight:300;">Light 300</span>
+        <span class="s-primary" style="font-weight:400;">Regular 400</span>
+        <span class="s-primary" style="font-weight:600;">SemiBold 600</span>
+        <span class="s-primary" style="font-weight:700;">Bold 700</span>
+        <span class="s-primary" style="font-weight:900;">Black 900</span>
+      </div>
+      <div class="font-specimen s-primary">"Good food is the foundation of genuine happiness."</div>
+      <div class="font-sizes">
+        <div class="s-primary" style="font-size:2rem; line-height:1.1;">H1 — Welcome to SoHo Pittsburgh</div>
+        <div class="s-primary" style="font-size:1.5rem; line-height:1.2;">H2 — Our Dinner Menu</div>
+        <div class="s-primary" style="font-size:1.125rem; line-height:1.3;">H3 — Starters &amp; Small Plates</div>
+      </div>
+    </div>
+
+    <!-- SECONDARY FONT -->
+    <div class="font-card">
+      <div class="font-card-label">--font-secondary &mdash; body text &amp; descriptions</div>
+      <div class="font-card-name s-secondary">{% for k,v in theme_style_vars.items %}{% if k == "font-secondary" %}{{ v }}{% endif %}{% endfor %}</div>
+      <div class="font-hero s-secondary">Aa</div>
+      <div class="font-alpha s-secondary">A B C D E F G H I J K L M N O P Q R S T U V W X Y Z</div>
+      <div class="font-alpha s-secondary" style="font-style:italic;">a b c d e f g h i j k l m n o p q r s t u v w x y z</div>
+      <div class="font-weights">
+        <span class="s-secondary" style="font-weight:300;">Light 300</span>
+        <span class="s-secondary" style="font-weight:400;">Regular 400</span>
+        <span class="s-secondary" style="font-weight:600;">SemiBold 600</span>
+        <span class="s-secondary" style="font-weight:700;">Bold 700</span>
+      </div>
+      <div class="font-specimen s-secondary">"Good food is the foundation of genuine happiness."</div>
+      <div class="font-sizes">
+        <div class="s-secondary" style="font-size:1rem; line-height:1.7; max-width:52ch;">
+          Pan-seared Scottish salmon served over a bed of roasted fingerling potatoes, wilted baby spinach,
+          and finished with a lemon-caper beurre blanc. Accompanied by seasonal vegetables and your choice of soup or salad.
+        </div>
+        <div class="s-secondary" style="font-size:0.875rem; line-height:1.6; color:var(--color-text-secondary); margin-top:0.5rem;">
+          Small print: Consuming raw or undercooked meats, poultry, seafood, shellfish, or eggs may increase your risk of foodborne illness.
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCENT FONT -->
+    <div class="font-card">
+      <div class="font-card-label">--font-accent &mdash; prices, labels &amp; UI accents</div>
+      <div class="font-card-name s-accent">{% for k,v in theme_style_vars.items %}{% if k == "font-accent" %}{{ v }}{% endif %}{% endfor %}</div>
+      <div class="font-hero s-accent" style="color:var(--color-text-accent, #c9972a);">Aa</div>
+      <div class="font-alpha s-accent">A B C D E F G H I J K L M N O P Q R S T U V W X Y Z</div>
+      <div class="font-alpha s-accent" style="font-style:italic;">0 1 2 3 4 5 6 7 8 9 &mdash; $ . , %</div>
+      <div class="font-weights">
+        <span class="s-accent" style="font-weight:300;">Light 300</span>
+        <span class="s-accent" style="font-weight:400;">Regular 400</span>
+        <span class="s-accent" style="font-weight:600;">SemiBold 600</span>
+        <span class="s-accent" style="font-weight:700;">Bold 700</span>
+      </div>
+      <div class="font-specimen s-accent" style="color:var(--color-text-accent, #c9972a);">"Good food is the foundation of genuine happiness."</div>
+      <!-- Real-world accent use cases -->
+      <div class="accent-examples">
+        <div class="accent-price">
+          <span class="s-accent price-label">Market Price</span>
+          <span class="s-accent price-value" style="color:var(--color-text-accent,#c9972a);">$38</span>
+        </div>
+        <div class="accent-price">
+          <span class="s-accent badge-tag">CHEF'S SPECIAL</span>
+          <span class="s-accent badge-tag" style="background:transparent; border:1px solid var(--color-text-accent,#c9972a); color:var(--color-text-accent,#c9972a);">SEASONAL</span>
+          <span class="s-accent badge-tag" style="background:transparent; border:1px solid var(--color-text-secondary,#aaa); color:var(--color-text-secondary,#aaa);">GF</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAIRING PREVIEW -->
+    <div class="font-card font-pairing">
+      <div class="font-card-label">Live pairing preview — as it will appear on the site</div>
+      <div class="pairing-menu-item">
+        <div class="pairing-header">
+          <span class="s-primary pairing-dish">Pan-Seared Duck Breast</span>
+          <span class="s-accent pairing-price" style="color:var(--color-text-accent,#c9972a);">$34</span>
+        </div>
+        <div class="s-secondary pairing-desc">
+          Cherry demi-glace, roasted root vegetables, crispy duck fat potatoes, microgreens.
+        </div>
+        <div class="pairing-tags">
+          <span class="s-accent badge-tag">SIGNATURE</span>
+          <span class="s-accent badge-tag" style="background:transparent; border:1px solid var(--color-text-secondary,#aaa); color:var(--color-text-secondary,#aaa);">GF</span>
+        </div>
+      </div>
+      <div class="pairing-menu-item" style="margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.08);">
+        <div class="pairing-header">
+          <span class="s-primary pairing-dish">Lobster Bisque</span>
+          <span class="s-accent pairing-price" style="color:var(--color-text-accent,#c9972a);">$16</span>
+        </div>
+        <div class="s-secondary pairing-desc">
+          Classic New England style, sherry cream, chive oil, oyster crackers.
+        </div>
+      </div>
+    </div>
+
+  </div>{% comment %} end .font-showcase {% endcomment %}
 
   {% else %}
   <p class="issue">No CSS variables resolved. Check:</p>

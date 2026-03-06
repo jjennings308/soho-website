@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.db.models import Prefetch
+from apps.core.utils import get_active_template
 from .models import MenuItem, MenuItemVariation, MenuItemAddon, MenuItemImage
 
 def full(request):
@@ -27,4 +28,4 @@ def full(request):
         'title': titles.get(menu_type, ' - Full Menu'),
         'active_type': menu_type,  # useful for highlighting active nav link
     }
-    return render(request, 'menu/full.html', context)
+    return render(request, get_active_template('menu'), context)
