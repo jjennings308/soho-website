@@ -1,0 +1,14 @@
+{% if block %}
+  <div class="content-block {% if css_class %}{{ css_class }}{% endif %}">
+    {% if block.body %}
+      <div class="content-block__body">
+        {{ block.body|safe }}
+      </div>
+    {% endif %}
+    {% if block.image %}
+      <div class="content-block__image">
+        <img src="{{ block.image.url }}" alt="">
+      </div>
+    {% endif %}
+  </div>
+{% endif %}
