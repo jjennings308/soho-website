@@ -1,5 +1,13 @@
 # core/utils.py
 
+from apps.content.models import ContentBlock, ContentSlot
+
+def get_block_body(slug):
+    try:
+        return ContentSlot.objects.get(slug=slug).get_active_block()
+    except ContentSlot.DoesNotExist:
+        return None
+
 def get_active_template(page):
     """
     Returns a list of template path strings in priority order.

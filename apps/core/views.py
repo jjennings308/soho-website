@@ -4,8 +4,7 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from .mixins import ThemedTemplateMixin
 from .models import SiteSettings
-from .utils import get_active_template
-
+from .utils import get_active_template, get_block_body
 
 class HomeView(ThemedTemplateMixin, TemplateView):
     """
@@ -41,9 +40,10 @@ class HomeView(ThemedTemplateMixin, TemplateView):
                 'bg_color': 'bg-secondary',
             }
         }
+        block = get_block_body('about_short')
         context['right_about'] = {
             'title': '',
-            'content': settings.short_about_text,
+            'content': block.body if block else '',
             'bg_color': 'bg-secondary',
             'text_color': 'text-secondary',
             'button': {
@@ -53,9 +53,10 @@ class HomeView(ThemedTemplateMixin, TemplateView):
                 'text_color': 'steeler-black',
             }
         }
+        block = get_block_body('catering_body')
         context['left_cater'] = {
             'title': '',
-            'content': settings.catering_text,
+            'content': block.body if block else '',
             'bg_color': 'bg-primary',
             'text_color': 'text-primary',
             'button': {

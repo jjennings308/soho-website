@@ -1,6 +1,8 @@
 {% extends "base.html" %}
-{% block title %}{{ site_settings.restaurant_name|default:"SoHo Pittsburgh" }} - {{ site_settings.tagline|default:"The Original North Shore Restaurant" }}{% endblock %}
 {% load ui_tags %}
+{% load content_tags %}
+{% block title %}{{ site_settings.restaurant_name}} - {% get_active_block 'site_tagline' as b %}{{ b.body|safe }}{% endblock %}
+
 {% block content %}
 
 {% include "core/components/banner_full.html" with banner=hero_banner %}

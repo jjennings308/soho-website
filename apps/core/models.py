@@ -201,10 +201,26 @@ class Theme(models.Model):
 
 
 class SiteSettings(models.Model):
-    """Singleton (pk=1 always) — global site settings."""
+    """
+    Singleton (pk=1 always) — global site configuration.
+
+    Editable copy (taglines, body text, hours, etc.) lives in apps/content
+    and is managed via ContentSlot / ContentBlock. Use the content_tags
+    template tag to render those blocks:
+
+        {% load content_tags %}
+        {% get_active_block 'hours_text' as block %}
+        {{ block.body|safe }}
+
+    Slots that correspond to removed fields:
+        tagline             → 'site_tagline'
+        description         → 'site_description'
+        hours_text          → 'hours_text'
+        short_about_text    → 'about_short'
+        catering_text       → 'catering_body'
+        maintenance_message → 'maintenance_message'
+    """
     restaurant_name = models.CharField(max_length=200, default="Your Restaurant")
-    tagline = models.CharField(max_length=300, blank=True)
-    description = CKEditor5Field(blank=True)
 
     phone_regex = RegexValidator(
         regex=r'^\+?1?\d{9,15}$',
@@ -219,10 +235,6 @@ class SiteSettings(models.Model):
     state = models.CharField(max_length=100, blank=True)
     zip_code = models.CharField(max_length=20, blank=True)
     country = models.CharField(max_length=100, blank=True, default="USA")
-
-    hours_text = CKEditor5Field(blank=True)
-    short_about_text = CKEditor5Field(blank=True)
-    catering_text = CKEditor5Field(blank=True)
 
     facebook_url = models.URLField(blank=True)
     instagram_url = models.URLField(blank=True)
@@ -246,7 +258,6 @@ class SiteSettings(models.Model):
     favicon = models.ImageField(upload_to='site/', blank=True, null=True)
 
     maintenance_mode = models.BooleanField(default=False)
-    maintenance_message = models.TextField(blank=True)
 
     updated_at = models.DateTimeField(auto_now=True)
 
