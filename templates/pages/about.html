@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% load content_tags %}
+{% block title %}{{ site_settings.restaurant_name}} - {% get_active_block 'site_tagline' as b %}{{ b.body|striptags }}{% endblock %}
 {% block content %}
 <div class="p-4 p-md-5 mb-4 bg-light rounded-3">
   <div class="container-fluid py-3">

@@ -2,63 +2,586 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom base styles */
+/* =============================================================================
+   @layer base
+   Element-level defaults that override Tailwind Preflight.
+   Uses CSS custom properties from theme.css so the active ThemeStyle
+   (injected as :root{} in base.html) controls fonts and colors at runtime.
+   ============================================================================= */
 @layer base {
-  h1 {
-    @apply text-4xl font-bold font-display;
+
+  html {
+    scroll-behavior: smooth;
   }
-  
-  h2 {
-    @apply text-3xl font-bold font-display;
+
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-secondary);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  
-  h3 {
-    @apply text-2xl font-semibold font-display;
+
+  /* Headings — font-family and color from theme vars, size from Tailwind */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-primary);
+    color: inherit;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
   }
-  
-  h4 {
-    @apply text-xl font-semibold;
+
+  h1 { @apply text-4xl md:text-6xl font-bold; }
+  h2 { @apply text-3xl md:text-4xl font-bold; }
+  h3 { @apply text-xl md:text-2xl font-semibold; }
+  h4 { @apply text-xl font-semibold; }
+  h5 { @apply text-lg font-semibold; }
+  h6 { @apply text-base font-semibold; }
+
+  p {
+    line-height: 1.8;
+  }
+
+  /* Links — theme-driven color, hover from extended gold token */
+  a {
+    color: var(--color-text-accent);
+    text-decoration: none;
+    transition: color var(--transition-fast, 150ms ease);
+  }
+  a:hover {
+    color: var(--color-gold-bright);
   }
 }
 
-/* Custom component styles */
+/* =============================================================================
+   @layer components
+   All BEM component classes. No hardcoded colors — everything references
+   a CSS custom property so ThemeStyle + ThemeOverlay control the output.
+
+   Rule: if a value needs to change per-theme, it uses a var().
+         if it's structural (flex, grid, padding), it uses Tailwind utilities
+         or plain CSS values.
+   ============================================================================= */
 @layer components {
+
+  /* ── Typography System ─────────────────────────────────────────────────── */
+
+  /* Theme layer: what a piece of text IS */
+  .t-heading {
+    font-family: var(--font-primary);
+    color: var(--color-text-heading, var(--color-text-primary));
+    @apply font-bold tracking-wide;
+  }
+
+  .t-title {
+    font-family: var(--font-primary);
+    color: var(--color-text-primary);
+    @apply font-semibold;
+  }
+
+  .t-body {
+    font-family: var(--font-secondary);
+    color: var(--color-text-secondary);
+    @apply font-normal leading-relaxed;
+  }
+
+  .t-price {
+    font-family: var(--font-accent, var(--font-secondary));
+    color: var(--color-text-accent);
+    @apply font-semibold;
+  }
+
+  .t-label {
+    font-family: var(--font-secondary);
+    color: var(--color-text-secondary);
+    @apply font-medium uppercase tracking-widest;
+  }
+
+  .t-nav {
+    font-family: var(--font-accent);
+    color: var(--color-text-primary);
+    @apply font-medium tracking-wide;
+  }
+
+  .t-accent {
+    font-family: var(--font-accent, var(--font-primary));
+    color: var(--color-text-accent);
+    @apply font-semibold;
+  }
+
+  /* Application layer: HOW text fits its container */
+  .t-card        { @apply text-lg truncate max-w-full; }
+  .t-table       { @apply text-sm truncate max-w-xs; }
+  .t-badge       { @apply text-xs px-2 py-0.5 rounded-full inline-block; }
+  .t-page        { @apply text-4xl leading-tight; }
+  .t-section     { @apply text-3xl leading-snug; }
+  .t-subheading  { @apply text-xl leading-snug; }
+  .t-price-lg    { @apply text-xl; }
+  .t-price-sm    { @apply text-sm; }
+
+  .t-description {
+    @apply text-sm leading-relaxed;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .t-description-full { @apply text-base leading-relaxed; }
+
+  /* Eyebrow / section label */
+  .text-eyebrow {
+    font-family: var(--font-accent);
+    color: var(--color-text-accent);
+    @apply text-xs font-semibold uppercase tracking-widest;
+  }
+
+  /* ── Background Helpers ────────────────────────────────────────────────── */
+  .bg-theme-primary   { background-color: var(--color-bg-primary); }
+  .bg-theme-secondary { background-color: var(--color-bg-secondary); }
+  .bg-theme-accent    { background-color: var(--color-bg-accent); }
+  .bg-theme-nav       { background-color: var(--color-nav-bg); }
+
+  /* ── Buttons ───────────────────────────────────────────────────────────── */
+  .btn {
+    font-family: var(--font-accent);
+    @apply inline-flex items-center justify-center gap-2
+           text-xs font-semibold uppercase tracking-widest
+           px-8 py-3.5 cursor-pointer no-underline
+           transition-all duration-200;
+  }
+
+  /* Gold fill */
   .btn-primary {
-    @apply bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors duration-200;
+    background-color: var(--color-bg-accent);
+    border: 1px solid var(--color-bg-accent);
+    color: #0a0a0a;
   }
-  
+  .btn-primary:hover {
+    background-color: var(--color-gold-bright);
+    border-color: var(--color-gold-bright);
+    box-shadow: var(--shadow-gold);
+    @apply -translate-y-px;
+  }
+
+  /* Gold outline */
   .btn-secondary {
-    @apply bg-secondary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-secondary-700 transition-colors duration-200;
+    background-color: transparent;
+    color: var(--color-text-accent);
+    border: 1px solid var(--color-text-accent);
   }
-  
+  .btn-secondary:hover {
+    background-color: var(--color-bg-accent);
+    color: var(--color-text-primary) !important;
+    box-shadow: var(--shadow-gold);
+    @apply -translate-y-px;
+  }
+
+  /* White outline (for use on dark hero sections) */
+  .btn-ghost {
+    background-color: transparent;
+    color: #ffffff;
+    border: 1px solid rgba(255,255,255,0.4);
+  }
+  .btn-ghost:hover {
+    border-color: #ffffff;
+  }
+
+  /* Deprecated — btn-outline kept for backward compat, maps to btn-secondary */
   .btn-outline {
-    @apply border-2 border-primary-600 text-primary-600 px-6 py-3 rounded-lg font-semibold hover:bg-primary-600 hover:text-white transition-colors duration-200;
+    background-color: transparent;
+    color: var(--color-text-accent);
+    border: 1px solid var(--color-text-accent);
+    @apply inline-flex items-center justify-center gap-2
+           text-xs font-semibold uppercase tracking-widest
+           px-6 py-3 cursor-pointer transition-all duration-200;
   }
-  
+  .btn-outline:hover {
+    background-color: var(--color-bg-accent);
+    color: #0a0a0a;
+  }
+
+  /* ── Cards ─────────────────────────────────────────────────────────────── */
   .card {
-    @apply bg-white rounded-lg shadow-lg overflow-hidden;
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-dark-gray);
+    @apply overflow-hidden transition-all duration-200;
   }
-  
+  .card:hover {
+    border-color: var(--color-gold-deep);
+    box-shadow: var(--shadow-gold);
+  }
+
+  /* menu-item-card — alias used in existing templates */
   .menu-item-card {
-    @apply card hover:shadow-xl transition-shadow duration-300;
+    @apply relative rounded-lg overflow-hidden cursor-pointer transition-shadow duration-200;
   }
-  
-  .section-padding {
-    @apply py-16 px-4 md:px-8;
+  .menu-item-card:hover {
+    box-shadow: var(--shadow-gold);
   }
-  
+
+  .card__image {
+    @apply w-full h-full object-cover transition-all duration-500;
+    filter: brightness(0.9);
+  }
+  .card:hover .card__image {
+    filter: brightness(1.05);
+    @apply scale-[1.02];
+  }
+
+  .card__body { @apply p-6; }
+
+  .card__label {
+    font-family: var(--font-accent);
+    color: var(--color-text-accent);
+    @apply block text-xs font-semibold uppercase tracking-widest mb-2;
+  }
+
+  .card__title {
+    font-family: var(--font-primary);
+    color: var(--color-text-heading);
+    @apply text-xl mb-3 leading-snug;
+  }
+
+  .card__desc {
+    color: var(--color-text-secondary);
+    @apply text-sm leading-relaxed;
+  }
+
+  /* ── Menu Items ─────────────────────────────────────────────────────────── */
+  .menu-item {
+    border-bottom: 1px dotted var(--color-dark-gray);
+    @apply flex justify-between items-baseline gap-4 py-5;
+  }
+  .menu-item:last-child { border-bottom: none; }
+
+  .menu-item__name {
+    font-family: var(--font-primary);
+    color: var(--color-text-primary);
+    @apply text-base font-semibold mb-1;
+  }
+
+  .menu-item__desc {
+    color: var(--color-text-secondary);
+    @apply text-sm italic leading-snug;
+  }
+
+  .menu-item__price {
+    font-family: var(--font-accent);
+    color: var(--color-text-accent);
+    @apply text-base font-semibold whitespace-nowrap shrink-0;
+  }
+
+  .menu-item__prices { @apply flex flex-col items-end gap-0.5; }
+
+  .menu-item__price-label {
+    color: var(--color-mid-gray);
+    @apply text-xs uppercase tracking-wide mr-1;
+  }
+
+  /* ── Navigation ─────────────────────────────────────────────────────────── */
+  .site-nav {
+    background-color: var(--color-nav-bg);
+    border-bottom: var(--gold-rule);
+    @apply sticky top-0 z-50 flex items-center justify-between
+           px-8 py-4 backdrop-blur-md;
+  }
+
+  .site-nav__logo {
+    font-family: var(--font-primary);
+    color: var(--color-text-accent);
+    @apply text-xl font-bold uppercase tracking-wide;
+  }
+  .site-nav__logo span { color: var(--color-text-primary); }
+
+  .site-nav__links {
+    @apply flex gap-8 list-none items-center;
+  }
+
+  .site-nav__links a {
+    font-family: var(--font-accent);
+    color: var(--color-text-nav);
+    @apply relative text-xs font-semibold uppercase tracking-widest pb-0.5
+           transition-colors duration-150;
+  }
+  .site-nav__links a::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-0 h-px transition-all duration-200;
+    background-color: var(--color-text-accent);
+  }
+  .site-nav__links a:hover,
+  .site-nav__links a.active {
+    color: var(--color-gold-bright);
+  }
+  .site-nav__links a:hover::after,
+  .site-nav__links a.active::after {
+    @apply w-full;
+  }
+
+  /* ── Section Helpers ────────────────────────────────────────────────────── */
   .container-custom {
-    @apply max-w-7xl mx-auto;
+    max-width: var(--max-width);
+    @apply mx-auto px-6;
+  }
+
+  .section-padding { @apply py-20 px-4 md:px-8; }
+
+  .section--surface { background-color: var(--color-bg-secondary); }
+
+  .section__header { @apply text-center mb-16; }
+
+  .section__eyebrow {
+    font-family: var(--font-accent);
+    color: var(--color-text-accent);
+    @apply block text-xs font-semibold uppercase tracking-widest mb-3;
+  }
+
+  .section__title {
+    font-family: var(--font-primary);
+    color: var(--color-text-heading);
+    @apply text-4xl mb-4;
+  }
+
+  .section__subtitle {
+    color: var(--color-text-secondary);
+    @apply text-lg max-w-xl mx-auto leading-relaxed;
+  }
+
+  /* Decorative heading with centered gold underline */
+  .heading-decorated {
+    @apply relative inline-block pb-4;
+  }
+  .heading-decorated::after {
+    content: '';
+    @apply absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-0.5;
+    background: linear-gradient(90deg, transparent, var(--color-bg-accent), transparent);
+  }
+
+  /* Gold decorative horizontal rule */
+  .gold-divider {
+    @apply flex items-center gap-4 mx-auto my-8;
+    max-width: 200px;
+  }
+  .gold-divider::before {
+    content: '';
+    @apply flex-1 h-px;
+    background: linear-gradient(90deg, transparent, var(--color-gold-deep));
+  }
+  .gold-divider::after {
+    content: '';
+    @apply flex-1 h-px;
+    background: linear-gradient(90deg, var(--color-gold-deep), transparent);
+  }
+  .gold-divider__dot {
+    background-color: var(--color-text-accent);
+    @apply w-1 h-1 rounded-full;
+  }
+
+  /* ── Hero ───────────────────────────────────────────────────────────────── */
+  .hero {
+    background-color: var(--color-bg-primary);
+    @apply relative min-h-[80vh] flex items-center justify-center
+           text-center overflow-hidden;
+  }
+
+  .hero__bg {
+    @apply absolute inset-0 bg-cover bg-center;
+    filter: brightness(0.5);
+  }
+
+  .hero__overlay {
+    @apply absolute inset-0 z-[1];
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%);
+  }
+
+  .hero__content {
+    @apply relative z-[2] max-w-4xl px-6 py-8;
+  }
+
+  .hero__title {
+    font-family: var(--font-primary);
+    @apply text-7xl font-black text-white leading-none mb-6;
+  }
+  .hero__title em {
+    @apply italic;
+    color: var(--color-text-accent);
+  }
+
+  .hero__subtitle {
+    color: rgba(245, 240, 232, 0.85);
+    @apply text-lg font-light max-w-lg mx-auto mb-10 leading-relaxed tracking-wide;
+  }
+
+  /* ── Footer ─────────────────────────────────────────────────────────────── */
+  .site-footer {
+    background-color: #060606;
+    border-top: var(--gold-rule-thick);
+    color: var(--color-text-secondary);
+    @apply pt-16 pb-8;
+  }
+
+  .site-footer__logo {
+    font-family: var(--font-primary);
+    color: var(--color-text-accent);
+    @apply text-3xl uppercase tracking-wide mb-2;
+  }
+
+  .site-footer__nav {
+    @apply list-none flex flex-wrap gap-6;
+  }
+
+  .site-footer__nav a {
+    font-family: var(--font-accent);
+    color: var(--color-text-secondary);
+    @apply text-xs uppercase tracking-widest transition-colors duration-150;
+  }
+  .site-footer__nav a:hover {
+    color: var(--color-text-accent);
+  }
+
+  .site-footer__bottom {
+    border-top: 1px solid var(--color-dark-gray);
+    color: var(--color-mid-gray);
+    @apply pt-8 flex flex-wrap items-center justify-between gap-2 text-xs tracking-wide;
+  }
+
+  /* ── Seasonal Badge ──────────────────────────────────────────────────────── */
+  /* Used in templates to surface an active overlay (Christmas, etc.) */
+  .seasonal-badge {
+    font-family: var(--font-accent);
+    background-color: var(--color-bg-accent);
+    color: #0a0a0a;
+    @apply text-xs uppercase tracking-widest px-3 py-1 inline-block;
   }
 }
 
-/* Custom utility styles */
+/* =============================================================================
+   @layer utilities
+   One-off helpers that need to beat component styles.
+   ============================================================================= */
 @layer utilities {
   .text-shadow {
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
   }
-  
+
   .text-shadow-lg {
-    text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.2);
+    text-shadow: 4px 4px 12px rgba(0,0,0,0.5);
+  }
+
+  /* Hide element but keep accessible to screen readers */
+  .sr-only-focusable:focus {
+    @apply not-sr-only;
+  }
+}
+@layer components {
+  /* Use when container height is explicitly set (e.g., h-64, h-screen) */
+  .full-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Use when content inside drives the container height, or for image overlays */
+  .img-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .img-container .full-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ── Surface Contexts ───────────────────────────────────────────────────────
+     Apply .surface-light or .surface-dark to any container (modal, drawer,
+     card, panel) to automatically flip all t-* text classes to the correct
+     contrast values for that background.
+
+     Rules:
+     - Accent-colored text (t-price, text-eyebrow, t-accent) is NOT overridden
+       here — --color-text-accent (gold) reads well on both light and dark.
+     - Structural styles (padding, borders, layout) are never touched here.
+     - These classes only set background + scoped text color. Nothing else.
+  ── */
+
+  .surface-light {
+    background-color: var(--color-bg-surface-light);
+  }
+  .surface-light h1,
+  .surface-light h2,
+  .surface-light h3,
+  .surface-light h4,
+  .surface-light h5,
+  .surface-light h6,
+  .surface-light .t-title,
+  .surface-light .t-heading,
+  .surface-light .t-subheading,
+  .surface-light .t-page,
+  .surface-light .t-section {
+    color: var(--color-text-primary);
+  }
+  .surface-light .t-body,
+  .surface-light .t-description,
+  .surface-light .t-description-full,
+  .surface-light .t-card,
+  .surface-light .t-table,
+  .surface-light .menu-item__name,
+  .surface-light .menu-item__desc,
+  .surface-light .menu-modal-variation-row,
+  .surface-light .variation-label {
+    color: var(--color-text-primary);
+  }
+  .surface-light .t-label,
+  .surface-light .t-nav,
+  .surface-light .card__desc,
+  .surface-light .menu-item__price-label {
+    color: var(--color-text-primary);
+    opacity: 0.65;
+  }
+  .surface-light .card__label,
+  .surface-light .card__title {
+    color: var(--color-text-primary);
+  }
+
+  .surface-dark {
+    background-color: var(--color-bg-surface);
+  }
+  .surface-dark h1,
+  .surface-dark h2,
+  .surface-dark h3,
+  .surface-dark h4,
+  .surface-dark h5,
+  .surface-dark h6,
+  .surface-dark .t-title,
+  .surface-dark .t-heading,
+  .surface-dark .t-subheading,
+  .surface-dark .t-page,
+  .surface-dark .t-section {
+    color: var(--color-text-heading);
+  }
+  .surface-dark .t-body,
+  .surface-dark .t-description,
+  .surface-dark .t-description-full,
+  .surface-dark .t-card,
+  .surface-dark .t-table,
+  .surface-dark .menu-item__name,
+  .surface-dark .menu-item__desc,
+  .surface-dark .menu-modal-variation-row,
+  .surface-dark .variation-label {
+    color: var(--color-text-secondary);
+  }
+  .surface-dark .t-label,
+  .surface-dark .t-nav,
+  .surface-dark .card__desc,
+  .surface-dark .menu-item__price-label {
+    color: var(--color-mid-gray);
+  }
+  .surface-dark .card__label,
+  .surface-dark .card__title {
+    color: var(--color-text-heading);
   }
 }

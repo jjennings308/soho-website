@@ -31,11 +31,50 @@
 
       {# ── Plain items: one card each ── #}
       {% for item in plain_items %}
-      <div class="{% if forloop.parentloop.counter|divisibleby:2 %}bg-white/10{% else %}bg-black/10{% endif %} rounded-lg shadow hover:shadow-lg transition overflow-hidden">
-        {% include "menu/partials/menu_item_card.html" %}
-      </div>
+      <div
+        class="{% if forloop.parentloop.counter|divisibleby:2 %}bg-white/10{% else %}bg-black/10{% endif %} rounded-lg shadow p-5 hover:shadow-lg transition cursor-pointer"
+        x-data="{}"
+        x-on:click="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+        role="button"
+        tabindex="0"
+        x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+        data-item='{{ item|item_to_json }}'
+      >
+        <div class="flex flex-row-reverse gap-3">
+
+          {% if item.image %}
+          <div class="shrink-0 w-20 h-20 rounded overflow-hidden">
+            <img src="{{ item.image.url }}" alt="{{ item.name }}"
+                 class="w-full h-full object-cover" loading="lazy">
+          </div>
+          {% endif %}
+
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-start mb-2">
+              <h4 class="font-semibold text-lg" style="color: var(--color-text-heading);">
+                {{ item.name }}
+                {% if item.is_seasonal %}
+                  <div class="mt-1 text-xs inline-block px-1 py-1 rounded bg-theme-badge text-white">Seasonal</div>
+                {% endif %}
+              </h4>
+              <span class="font-bold shrink-0 ml-2">
+                {% if item.is_on_sale %}
+                  <span class="text-gray-400 line-through text-sm">{{ item.price|currency }}</span>
+                  <span class="text-theme-accent font-bold">{{ item.sale_price|currency }}</span>
+                {% else %}
+                  <span class="text-theme-accent font-bold">{{ item.display_price|currency }}</span>
+                {% endif %}
+              </span>
+            </div>
+            <p class="text-sm opacity-80" style="color: inherit;">
+              {{ item.short_description }}
+            </p>
+          </div>
+
+        </div>
+      </div> 
       {% endfor %}
-      
+
       {# ── Subcategory items: one card per subcategory ── #}
       {% regroup subcat_items by subcategory.name as subcategories %}
       {% for subcat in subcategories %}
@@ -64,7 +103,12 @@
             </span>
 
             <span class="font-semibold text-theme-accent ml-4 shrink-0">
-                {{ item.display_price }}
+              {% if item.is_on_sale %}
+                <span class="text-gray-400 line-through text-xs">{{ item.price|currency }}</span>
+                {{ item.sale_price|currency }}
+              {% elif item.current_price %}
+                {{ item.current_price|currency }}
+              {% endif %}
             </span>
 
           </li>

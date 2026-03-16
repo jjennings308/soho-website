@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 {% load content_tags %}
-{% block title %}{{ site_settings.restaurant_name}} - {% get_active_block 'site_tagline' as b %}{{ b.body|safe }}{% endblock %}
+{% block title %}{{ site_settings.restaurant_name}} - {% get_active_block 'site_tagline' as b %}{{ b.body|striptags }}{% endblock %}
 
 {% block content %}
 

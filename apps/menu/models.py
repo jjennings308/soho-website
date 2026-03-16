@@ -268,14 +268,19 @@ class MenuItem(models.Model):
 
     @property
     def display_price(self):
+        from apps.menu.templatetags.menu_filters import currency
         if self.price_display == 'market':
-            return "MP"
+            return 'MP'
         if self.price_display == 'hidden':
-            return ""
+            return ''
         if self.has_variations:
-            return self.price_range or "See Options"
-        price = self.current_price
-        return float(price) if price is not None else "—"
+            prices = [v.price for v in self.variations.all()]
+            if prices:
+                lo, hi = min(prices), max(prices)
+                return currency(lo) if lo == hi else f'{currency(lo)} – {currency(hi)}'
+        if self.is_on_sale:
+            return currency(self.sale_price)
+        return currency(self.price)
 
     @property
     def is_on_sale(self):
@@ -296,6 +301,7 @@ class MenuItem(models.Model):
             labels.append('Nut Free')
         return labels
 
+'''
     @property
     def price_range(self):
         if not self.has_variations:
@@ -307,8 +313,9 @@ class MenuItem(models.Model):
         min_price = min(prices)
         max_price = max(prices)
         if min_price == max_price:
-            return f"${min_price}"
-        return f"${min_price} - ${max_price}"
+            return f"{min_price}"
+        return f"{min_price} - {max_price}"
+'''
 
 
 class MenuItemVariation(models.Model):

@@ -26,7 +26,7 @@
   /* Headings — font-family and color from theme vars, size from Tailwind */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-primary);
-    color: var(--color-text-heading);
+    color: inherit;
     line-height: 1.2;
     letter-spacing: -0.025em;
   }
@@ -214,17 +214,14 @@
 
   /* menu-item-card — alias used in existing templates */
   .menu-item-card {
-    background-color: var(--color-bg-secondary);
-    border: 1px solid var(--color-dark-gray);
-    @apply overflow-hidden transition-shadow duration-300;
+    @apply relative rounded-lg overflow-hidden cursor-pointer transition-shadow duration-200;
   }
   .menu-item-card:hover {
     box-shadow: var(--shadow-gold);
   }
 
   .card__image {
-    @apply w-full object-cover transition-all duration-500;
-    aspect-ratio: 16/9;
+    @apply object-cover transition-all duration-500;
     filter: brightness(0.9);
   }
   .card:hover .card__image {
@@ -474,5 +471,117 @@
   /* Hide element but keep accessible to screen readers */
   .sr-only-focusable:focus {
     @apply not-sr-only;
+  }
+}
+@layer components {
+  /* Use when container height is explicitly set (e.g., h-64, h-screen) */
+  .full-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Use when content inside drives the container height, or for image overlays */
+  .img-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .img-container .full-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* ── Surface Contexts ───────────────────────────────────────────────────────
+     Apply .surface-light or .surface-dark to any container (modal, drawer,
+     card, panel) to automatically flip all t-* text classes to the correct
+     contrast values for that background.
+
+     Rules:
+     - Accent-colored text (t-price, text-eyebrow, t-accent) is NOT overridden
+       here — --color-text-accent (gold) reads well on both light and dark.
+     - Structural styles (padding, borders, layout) are never touched here.
+     - These classes only set background + scoped text color. Nothing else.
+  ── */
+
+  .surface-light {
+    background-color: var(--color-bg-surface-light);
+  }
+  .surface-light h1,
+  .surface-light h2,
+  .surface-light h3,
+  .surface-light h4,
+  .surface-light h5,
+  .surface-light h6,
+  .surface-light .t-title,
+  .surface-light .t-heading,
+  .surface-light .t-subheading,
+  .surface-light .t-page,
+  .surface-light .t-section {
+    color: var(--color-text-primary);
+  }
+  .surface-light .t-body,
+  .surface-light .t-description,
+  .surface-light .t-description-full,
+  .surface-light .t-card,
+  .surface-light .t-table,
+  .surface-light .menu-item__name,
+  .surface-light .menu-item__desc,
+  .surface-light .menu-modal-variation-row,
+  .surface-light .variation-label {
+    color: var(--color-text-primary);
+  }
+  .surface-light .t-label,
+  .surface-light .t-nav,
+  .surface-light .card__desc,
+  .surface-light .menu-item__price-label {
+    color: var(--color-text-primary);
+    opacity: 0.65;
+  }
+  .surface-light .card__label,
+  .surface-light .card__title {
+    color: var(--color-text-primary);
+  }
+
+  .surface-dark {
+    background-color: var(--color-bg-surface);
+  }
+  .surface-dark h1,
+  .surface-dark h2,
+  .surface-dark h3,
+  .surface-dark h4,
+  .surface-dark h5,
+  .surface-dark h6,
+  .surface-dark .t-title,
+  .surface-dark .t-heading,
+  .surface-dark .t-subheading,
+  .surface-dark .t-page,
+  .surface-dark .t-section {
+    color: var(--color-text-heading);
+  }
+  .surface-dark .t-body,
+  .surface-dark .t-description,
+  .surface-dark .t-description-full,
+  .surface-dark .t-card,
+  .surface-dark .t-table,
+  .surface-dark .menu-item__name,
+  .surface-dark .menu-item__desc,
+  .surface-dark .menu-modal-variation-row,
+  .surface-dark .variation-label {
+    color: var(--color-text-secondary);
+  }
+  .surface-dark .t-label,
+  .surface-dark .t-nav,
+  .surface-dark .card__desc,
+  .surface-dark .menu-item__price-label {
+    color: var(--color-mid-gray);
+  }
+  .surface-dark .card__label,
+  .surface-dark .card__title {
+    color: var(--color-text-heading);
   }
 }

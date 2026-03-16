@@ -1,10 +1,22 @@
 import json
 from django import template
 from django.utils.safestring import mark_safe
-from django.utils.html import escapejs
+# from django.utils.html import escapejs
 
 register = template.Library()
 
+def _currency(value):
+    """Mirrors the currency filter logic for use in item_to_json."""
+    try:
+        amount = float(value)
+        if amount == 0:
+            return ""
+        if amount == int(amount):
+            return f"{int(amount):,}"
+        formatted = f"{amount:,.2f}".rstrip('0')
+        return formatted
+    except (ValueError, TypeError):
+        return str(value)
 
 @register.filter(is_safe=True)
 def item_to_json(item):
@@ -28,7 +40,7 @@ def item_to_json(item):
     variations = [
         {
             'name': v.name,
-            'price': str(v.price),
+            'price': _currency(v.price),
             'size': v.size or '',
             'quantity': v.quantity,
             'is_default': v.is_default,
@@ -40,7 +52,7 @@ def item_to_json(item):
     addons = [
         {
             'name': a.name,
-            'price': str(a.price),
+            'price': _currency(a.price),
             'is_default': a.is_default,
         }
         for a in item.addons.all()
@@ -49,21 +61,7 @@ def item_to_json(item):
     # Dietary labels via the model property
     dietary_labels = item.dietary_labels  # list of strings from the model property
 
-    # Price display
-    if item.price_display == 'market':
-        display_price = 'MP'
-    elif item.price_display == 'hidden':
-        display_price = ''
-    elif item.has_variations and variations:
-        prices = [float(v['price']) for v in variations]
-        lo, hi = min(prices), max(prices)
-        display_price = f'${lo:.2f}' if lo == hi else f'${lo:.2f} – ${hi:.2f}'
-    elif item.is_on_sale:
-        display_price = f'${item.sale_price}'
-    elif item.price is not None:
-        display_price = f'${item.price}'
-    else:
-        display_price = ''
+    display_price = item.display_price
 
     data = {
         # Identity

@@ -11,6 +11,9 @@ dotenv==0.9.9
 easy-thumbnails==2.10.1
 pillow==12.1.1
 psycopg2-binary==2.9.11
+pydotplus==2.0.2
+pygraphviz==1.14
+pyparsing==3.3.2
 python-decouple==3.8
 python-dotenv==1.2.1
 python-slugify==8.0.4

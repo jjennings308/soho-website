@@ -38,6 +38,14 @@
   --color-bg-accent:    #c9972a;             /* CTA buttons, badges */
   --color-nav-bg:       rgba(10,10,10,0.95); /* sticky nav */
 
+  /* --- Surface Colors ------------------------------------------------------ */
+  /* Elevated surfaces (modals, drawers, popovers) that layer over bg-secondary */
+  /* Light enough that --color-text-* vars are readable without overrides.     */
+  --color-bg-surface:              #2a2a2a;   /* dark modal / panel surface     */
+  --color-bg-surface-raised:       #333333;   /* thumbnail strip, nested panels */
+  --color-bg-surface-light:        #f5efe6;   /* light modal / panel surface    */
+  --color-bg-surface-light-raised: #ede4d8;   /* nested elements on light surface */
+
   /* --- Extended Gold (CSS-only, not overridable via admin) ----------------- */
   --color-gold-bright: #e8b84b;   /* hover states */
   --color-gold-deep:   #a07820;   /* borders, subtle dividers */

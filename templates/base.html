@@ -1,4 +1,6 @@
-{% load static %}<!DOCTYPE html>
+{% load static %}
+{% load content_tags %}
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -7,8 +9,7 @@
   {% if site_settings.meta_keywords %}
   <meta name="keywords" content="{{ site_settings.meta_keywords }}" />
   {% endif %}
-
-  <title>{% block title %}{{ restaurant_name }}{% endblock %}</title>
+  <title>{% block title %}{{ site_settings.restaurant_name}} - {% get_active_block 'site_tagline' as b %}{{ b.body|safe }}{% endblock %}</title>
 
   {# ── Favicon ──────────────────────────────────────────────────────────── #}
 {% if site_settings.favicon %}
