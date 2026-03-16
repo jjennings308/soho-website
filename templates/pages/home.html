@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load ui_tags %}
 {% load content_tags %}
+{% load menu_tags %}
 {% block title %}{{ site_settings.restaurant_name}} - {% get_active_block 'site_tagline' as b %}{{ b.body|striptags }}{% endblock %}
 
 {% block content %}
@@ -24,10 +25,10 @@
 
         <!-- 60% Column -->
         <div class="md:col-span-3">
-            <h2 class="text-4xl font-bold mb-6">60% Content Area</h2>
-            <p class="text-gray-600 mb-4">
-                Larger content area. Perfect for text-heavy sections.
-            </p>
+            {% get_active_promotions as promotions %}
+            {% for promo in promotions %}
+                {% include "menu/partials/promo_card.html" with promo=promo %}
+            {% endfor %}
         </div>
 
         <!-- 40% Column -->
@@ -39,5 +40,7 @@
 
     </div>
 </section>
+{% include "menu/partials/menu_item_modal.html" %}
+{% include "menu/partials/promo_item_modal.html" %}
 
 {% endblock %}

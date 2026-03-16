@@ -1,0 +1,65 @@
+{% load menu_filters menu_tags %}
+
+{% with name=entry.resolved_name description=entry.resolved_description %}
+{% if entry.menu_item %}
+  {# ── Linked item: dispatches to the existing full menu modal ── #}
+  <div
+    class="{% if forloop.counter|divisibleby:2 %}bg-white/10{% else %}bg-black/10{% endif %} rounded-lg shadow p-5 hover:shadow-lg transition cursor-pointer"
+    x-data="{}"
+    x-on:click="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+    role="button"
+    tabindex="0"
+    x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+    data-item='{{ entry.menu_item|item_to_json }}'
+  >
+{% else %}
+  {# ── Standalone item: dispatches to the lightweight promo modal ── #}
+  <div
+    class="{% if forloop.counter|divisibleby:2 %}bg-white/10{% else %}bg-black/10{% endif %} rounded-lg shadow p-5 hover:shadow-lg transition cursor-pointer"
+    x-data="{}"
+    x-on:click="$dispatch('open-promo-modal', JSON.parse($el.dataset.item))"
+    role="button"
+    tabindex="0"
+    x-on:keydown.enter="$dispatch('open-promo-modal', JSON.parse($el.dataset.item))"
+    data-item='{{ entry|promo_item_to_json }}'
+  >
+{% endif %}
+
+    <div class="flex justify-between items-start mb-2">
+      <h4 class="font-semibold text-lg" style="color: var(--color-text-heading);">
+        {{ name }}
+        {% if entry.note %}
+          <span class="ml-2 text-xs inline-block px-1.5 py-0.5 rounded bg-theme-badge text-white">
+            {{ entry.note }}
+          </span>
+        {% endif %}
+      </h4>
+
+      <span class="font-bold shrink-0 ml-2">
+        {% if entry.promo_price %}
+          {% if entry.menu_item and entry.menu_item.price %}
+            <span class="text-gray-400 line-through text-sm">
+              {{ entry.menu_item.price|currency }}
+            </span>
+          {% endif %}
+          <span style="color: var(--color-text-accent);">
+            {{ entry.promo_price|currency }}
+          </span>
+        {% elif entry.menu_item %}
+          <span style="color: var(--color-text-accent);">
+            {{ entry.menu_item.display_price|currency }}
+          </span>
+        {% endif %}
+      </span>
+    </div>
+
+    {% if description %}
+    <div class="text-sm opacity-80 ck-content">
+      {{ description|safe }}
+    </div>
+    {% endif %}
+
+    <span class="text-eyebrow mt-3 block">View Details →</span>
+
+  </div>
+{% endwith %}

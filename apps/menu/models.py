@@ -301,23 +301,6 @@ class MenuItem(models.Model):
             labels.append('Nut Free')
         return labels
 
-'''
-    @property
-    def price_range(self):
-        if not self.has_variations:
-            return None
-        variations = self.variations.all()
-        if not variations:
-            return None
-        prices = [v.price for v in variations]
-        min_price = min(prices)
-        max_price = max(prices)
-        if min_price == max_price:
-            return f"{min_price}"
-        return f"{min_price} - {max_price}"
-'''
-
-
 class MenuItemVariation(models.Model):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='variations')
     name = models.CharField(max_length=100)
@@ -530,20 +513,29 @@ class MenuPromotion(models.Model):
 
 
 class MenuPromotionItem(models.Model):
-    """
-    Through model linking MenuPromotion to MenuItem.
-    promo_price overrides the item's standard price when set — leave blank to
-    display the item's normal price within the promotion.
-    """
     promotion = models.ForeignKey(
         MenuPromotion,
         on_delete=models.CASCADE,
         related_name='promotion_items'
     )
+    # Now optional — leave blank for a fresh/standalone promo item
     menu_item = models.ForeignKey(
         MenuItem,
-        on_delete=models.CASCADE,
-        related_name='promotion_entries'
+        on_delete=models.SET_NULL,      # changed from CASCADE
+        related_name='promotion_entries',
+        null=True,                       # added
+        blank=True,                      # added
+        help_text="Link to an existing menu item, or leave blank to enter details below."
+    )
+    # Standalone fields — used when menu_item is blank, or to override when linked
+    name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Item name. Auto-filled from the linked item if left blank."
+    )
+    description = CKEditor5Field(
+        blank=True,
+        help_text="Description. Auto-filled from the linked item if left blank."
     )
     promo_price = models.DecimalField(
         max_digits=8,
@@ -551,26 +543,36 @@ class MenuPromotionItem(models.Model):
         blank=True,
         null=True,
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="Promotional price — overrides the item's standard price when set"
+        help_text="Promotional price — overrides the item's standard price when set."
     )
-    order = models.PositiveIntegerField(
-        default=0,
-        help_text="Display order within this promotion (lower numbers first)"
+    note = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Short callout shown on the item, e.g. 'Limited time!' or 'While supplies last'."
     )
+    order = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ['order', 'menu_item__name']
         verbose_name = 'Promotion Item'
         verbose_name_plural = 'Promotion Items'
-        unique_together = ['promotion', 'menu_item']
+        # unique_together removed — a blank menu_item can appear multiple times
 
     def __str__(self):
+        item_name = self.name or (self.menu_item.name if self.menu_item else 'Unnamed item')
         price_str = f"${self.promo_price}" if self.promo_price else "standard price"
-        return f"{self.promotion.title} — {self.menu_item.name} ({price_str})"
+        return f"{self.promotion.title} — {item_name} ({price_str})"
+
+    def resolved_name(self):
+        return self.name or (self.menu_item.name if self.menu_item else '')
+
+    def resolved_description(self):
+        return self.description or (self.menu_item.description if self.menu_item else '')
 
     @property
     def display_price(self):
-        """Promo price if set, otherwise falls through to the item's standard display_price."""
         if self.promo_price is not None:
             return float(self.promo_price)
-        return self.menu_item.display_price
+        if self.menu_item:
+            return self.menu_item.display_price
+        return None

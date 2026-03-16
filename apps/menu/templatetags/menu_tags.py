@@ -100,3 +100,43 @@ def item_to_json(item):
     }
 
     return mark_safe(json.dumps(data, ensure_ascii=False))
+
+@register.simple_tag
+def get_active_promotions(limit=None):
+    """
+    Returns all currently active promotions with items prefetched.
+
+    Usage:
+        {% get_active_promotions as promotions %}
+        {% get_active_promotions limit=3 as promotions %}
+    """
+    from apps.menu.models import MenuPromotion, MenuPromotionItem
+    from django.db.models import Prefetch
+
+    qs = MenuPromotion.objects.filter(is_active=True).prefetch_related(
+        Prefetch(
+            'promotion_items',
+            queryset=MenuPromotionItem.objects.select_related('menu_item').order_by('order'),
+        )
+    )
+
+    active = [p for p in qs if p.is_currently_active]
+
+    if limit:
+        active = active[:limit]
+
+    return active
+
+@register.filter(is_safe=True)
+def promo_item_to_json(entry):
+    """
+    Serialize a MenuPromotionItem for the lightweight promo modal.
+    Only used for standalone items (no source MenuItem).
+    """
+    data = {
+        'name':        entry.resolved_name(),
+        'description': entry.resolved_description() or '',
+        'promo_price': str(entry.promo_price) if entry.promo_price else None,
+        'note':        entry.note or '',
+    }
+    return mark_safe(json.dumps(data, ensure_ascii=False))

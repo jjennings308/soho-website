@@ -256,14 +256,37 @@ class MenuItemImageAdmin(admin.ModelAdmin):
 # PROMOTIONAL MENU SYSTEM
 # =============================================================================
 
-class MenuPromotionItemInline(admin.TabularInline):
+class MenuPromotionItemInline(admin.StackedInline):  # Stacked gives more room for description field
     model = MenuPromotionItem
     extra = 1
-    fields = ('menu_item', 'promo_price', 'order')
-    ordering = ['order', 'menu_item__name']
     autocomplete_fields = ['menu_item']
+    ordering = ['order']
+    fields = (
+        'menu_item',
+        'name',
+        'description',
+        'promo_price',
+        'note',
+        'order',
+    )
+    readonly_fields = []
 
-
+    def get_fieldsets(self, request, obj=None):
+        return [
+            (None, {
+                'fields': ('menu_item',),
+                'description': (
+                    'Link to an existing menu item to pre-fill name/description/price, '
+                    'or leave blank to enter a standalone promo item below.'
+                ),
+            }),
+            ('Item Details', {
+                'fields': ('name', 'description', 'promo_price', 'note', 'order'),
+            }),
+        ]
+    class Media:
+        js = ('admin/js/promo_item_autofill.js',)
+        
 @admin.register(PromoSettings)
 class PromoSettingsAdmin(admin.ModelAdmin):
     """
