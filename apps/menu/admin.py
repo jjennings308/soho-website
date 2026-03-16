@@ -189,6 +189,9 @@ class MenuItemAdmin(admin.ModelAdmin):
     def mark_as_unavailable(self, request, queryset):
         queryset.update(is_available=False)
     mark_as_unavailable.short_description = 'Mark selected as unavailable'
+    
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 @admin.register(MenuItemVariation)
@@ -295,9 +298,6 @@ class PromoSettingsAdmin(admin.ModelAdmin):
     """
     def has_add_permission(self, request):
         return not PromoSettings.objects.exists()
-
-    def has_delete_permission(self, request, obj=None):
-        return False
 
     fieldsets = (
         ('Global Promo Color Defaults', {
