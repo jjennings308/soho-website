@@ -94,14 +94,11 @@ class SiteSettingsAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Restaurant Information', {
-            'fields': ('restaurant_name', 'tagline', 'description', 'logo', 'favicon')
+            'fields': ('restaurant_name', 'logo', 'favicon')
         }),
         ('Contact Information', {
             'fields': ('phone', 'email', 'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country')
         }),
-        ('Hours of Operation', {'fields': ('hours_text',)}),
-        ('Homepage Short About', {'fields': ('short_about_text',)}),
-        ('Catering', {'fields': ('catering_text',)}),
         ('Social Media', {
             'fields': ('facebook_url', 'instagram_url', 'twitter_url', 'yelp_url'),
             'classes': ('collapse',)
@@ -120,7 +117,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
         ('Maintenance', {
-            'fields': ('maintenance_mode', 'maintenance_message'),
+            'fields': ('maintenance_mode',),
             'classes': ('collapse',)
         }),
     )
