@@ -13,6 +13,9 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+with open(BASE_DIR / 'VERSION') as f:
+    VERSION = f.read().strip()
+
 # Build paths inside the project
 #BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
