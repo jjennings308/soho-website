@@ -19,5 +19,3 @@ node_modules/
 # Misc
 tmp.txt
 .DS_Store
-
-config/settings/development.py
