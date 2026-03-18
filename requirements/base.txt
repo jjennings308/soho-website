@@ -1,0 +1,28 @@
+Django==5.0.14
+asgiref==3.11.1
+sqlparse==0.5.5
+
+# Admin
+django-admin-sortable2==2.3.1
+
+# Rich text
+django-ckeditor-5==0.2.19
+django-js-asset==3.1.2
+
+# Forms
+django-crispy-forms==2.5
+crispy-tailwind==1.0.3
+
+# Environment / config — verify which one your settings actually imports
+# and remove the other two
+python-decouple==3.8
+python-dotenv==1.2.1
+
+# Images
+pillow==12.1.1
+easy-thumbnails==2.10.1
+
+# Utilities
+python-slugify==8.0.4
+text-unidecode==1.3
+pytz==2025.2
