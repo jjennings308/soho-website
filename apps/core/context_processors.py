@@ -71,3 +71,8 @@ def active_theme(request):
         'theme_style_vars': style_vars,
         'google_fonts_url': google_fonts_url,
     }
+
+from django.conf import settings
+
+def site_version(request):
+    return {'VERSION': getattr(settings, 'VERSION', '')}

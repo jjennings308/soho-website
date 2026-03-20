@@ -29,3 +29,25 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    # urls.py — temporary local preview only, remove before deploy
+    from django.views.defaults import page_not_found, server_error, permission_denied, bad_request
+    from django.http import HttpRequest
+
+    def preview_404(request):
+        return page_not_found(request, exception=Exception())
+
+    def preview_500(request):
+        return server_error(request)
+
+    def preview_403(request):
+        return permission_denied(request, exception=Exception())
+
+    def preview_400(request):
+        return bad_request(request, exception=Exception())
+
+    urlpatterns += [
+        path('preview/404/', preview_404),
+        path('preview/500/', preview_500),
+        path('preview/403/', preview_403),
+        path('preview/400/', preview_400),
+    ]

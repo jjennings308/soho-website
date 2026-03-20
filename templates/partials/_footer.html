@@ -102,6 +102,9 @@
       <span>© {% now "Y" %} {{ site_settings.site_name|default:"SoHo Pittsburgh" }} — All rights reserved.</span>
       <span style="color:var(--color-gold-deep);">&#9670;</span>
       <span>203 Federal Street, Pittsburgh, PA 15212</span>
+      {% if VERSION %}
+        <span style="color:var(--color-text-muted);font-size:0.7rem;">v{{ VERSION }}</span>
+      {% endif %}
     </div>
 
   </div>

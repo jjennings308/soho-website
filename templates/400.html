@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bad Request | SoHo Pittsburgh</title>
+  <style>
+    /* ── Brand tokens (self-contained, no Django context needed) ── */
+    :root {
+      --color-bg-primary:   #0a0a0a;
+      --color-bg-surface:   #111111;
+      --color-text-primary: #f5f0e8;
+      --color-text-muted:   rgba(245, 240, 232, 0.6);
+      --color-accent:       #c9a84c;
+      --color-accent-dark:  #a8893a;
+      --font-heading:       Georgia, 'Times New Roman', serif;
+      --font-body:          system-ui, -apple-system, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--color-bg-primary);
+      color: var(--color-text-primary);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Minimal header ── */
+    .error-header {
+      border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+      padding: 1.25rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .error-header__logo {
+      font-family: var(--font-heading);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-text-primary);
+      text-decoration: none;
+    }
+
+    .error-header__logo span {
+      color: var(--color-accent);
+    }
+
+    .error-header__home {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+      text-decoration: none;
+      border: 1px solid var(--color-accent);
+      padding: 0.4rem 1rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .error-header__home:hover {
+      background: var(--color-accent);
+      color: var(--color-bg-primary);
+    }
+
+    /* ── Main content ── */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 1.5rem;
+    }
+
+    .error-body {
+      text-align: center;
+      max-width: 36rem;
+    }
+
+    .error-code {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+      margin-bottom: 1rem;
+    }
+
+    .error-heading {
+      font-family: var(--font-heading);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 700;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+    }
+
+    .error-message {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--color-text-muted);
+      margin-bottom: 2.5rem;
+    }
+
+    .error-divider {
+      width: 3rem;
+      height: 2px;
+      background: var(--color-accent);
+      margin: 0 auto 2.5rem;
+    }
+
+    .error-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    @media (min-width: 480px) {
+      .error-actions { flex-direction: row; justify-content: center; }
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 0.75rem 2rem;
+      background: var(--color-accent);
+      color: var(--color-bg-primary);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .btn-primary:hover { background: var(--color-accent-dark); }
+
+    /* ── Footer ── */
+    footer {
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="error-header">
+    <a href="/" class="error-header__logo">
+      So<span>Ho</span> Pittsburgh
+    </a>
+    <a href="/" class="error-header__home">Home</a>
+  </header>
+
+  <main>
+    <div class="error-body">
+      <p class="error-code">400 &mdash; Bad Request</p>
+      <h1 class="error-heading">That Order Didn't Go Through</h1>
+      <div class="error-divider"></div>
+      <p class="error-message">
+        The server couldn't understand your request &mdash; it may be
+        malformed or missing required information. Head back home and
+        try again.
+      </p>
+      <div class="error-actions">
+        <a href="/" class="btn-primary">Back to Home</a>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; SoHo Pittsburgh &mdash; Upscale Bar &amp; Grille
+  </footer>
+
+</body>
+</html>

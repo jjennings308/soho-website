@@ -298,24 +298,55 @@
     @apply flex gap-8 list-none items-center;
   }
 
-  .site-nav__links a {
+  /* Nudge non-dropdown links up to share baseline with the dropdown trigger */
+  .site-nav__links > li:not(:has(.nav-dropdown__link)) {
+    margin-top: -3px;
+  }
+
+  /* Scoped to exclude dropdown panel links */
+  .site-nav__links a:not(.nav-dropdown__link) {
     font-family: var(--font-accent);
     color: var(--color-text-nav);
     @apply relative text-xs font-semibold uppercase tracking-widest pb-0.5
            transition-colors duration-150;
   }
-  .site-nav__links a::after {
+  .site-nav__links a:not(.nav-dropdown__link)::after {
     content: '';
     @apply absolute bottom-0 left-0 w-0 h-px transition-all duration-200;
     background-color: var(--color-text-accent);
   }
-  .site-nav__links a:hover,
-  .site-nav__links a.active {
+  .site-nav__links a:not(.nav-dropdown__link):hover,
+  .site-nav__links a:not(.nav-dropdown__link).active {
     color: var(--color-gold-bright);
   }
-  .site-nav__links a:hover::after,
-  .site-nav__links a.active::after {
+  .site-nav__links a:not(.nav-dropdown__link):hover::after,
+  .site-nav__links a:not(.nav-dropdown__link).active::after {
     @apply w-full;
+  }
+
+  /* Dropdown trigger li — flex so it doesn't stretch taller than siblings */
+  .site-nav__links li:has(.nav-dropdown__link) {
+    display: flex;
+    align-items: center;
+    margin-top: 1px;
+  }
+
+  /* Dropdown panel links — fully isolated from site-nav__links a rules */
+  .nav-dropdown__link {
+    display: block;
+    font-family: var(--font-accent);
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    text-decoration: none;
+    padding: 0.6rem 1.25rem;
+    transition: color 0.15s, background 0.15s;
+  }
+  .nav-dropdown__link:hover {
+    color: var(--color-text-accent);
+    background: rgba(255, 255, 255, 0.05);
   }
 
   /* ── Section Helpers ────────────────────────────────────────────────────── */

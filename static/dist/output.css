@@ -1353,6 +1353,13 @@ a:hover {
 
 /* Theme layer: what a piece of text IS */
 
+.t-heading {
+  font-family: var(--font-primary);
+  color: var(--color-text-heading, var(--color-text-primary));
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
 .t-title {
   font-family: var(--font-primary);
   color: var(--color-text-primary);
@@ -1378,6 +1385,12 @@ a:hover {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+}
+
+.t-accent {
+  font-family: var(--font-accent, var(--font-primary));
+  color: var(--color-text-accent);
+  font-weight: 600;
 }
 
 /* Application layer: HOW text fits its container */
@@ -1608,7 +1621,15 @@ a:hover {
   gap: 2rem;
 }
 
-.site-nav__links a {
+/* Nudge non-dropdown links up to share baseline with the dropdown trigger */
+
+.site-nav__links > li:not(:has(.nav-dropdown__link)) {
+  margin-top: -3px;
+}
+
+/* Scoped to exclude dropdown panel links */
+
+.site-nav__links a:not(.nav-dropdown__link) {
   font-family: var(--font-accent);
   color: var(--color-text-nav);
   position: relative;
@@ -1623,7 +1644,7 @@ a:hover {
   transition-duration: 150ms;
 }
 
-.site-nav__links a::after {
+.site-nav__links a:not(.nav-dropdown__link)::after {
   content: '';
   position: absolute;
   bottom: 0px;
@@ -1636,14 +1657,42 @@ a:hover {
   background-color: var(--color-text-accent);
 }
 
-.site-nav__links a:hover,
-  .site-nav__links a.active {
+.site-nav__links a:not(.nav-dropdown__link):hover,
+  .site-nav__links a:not(.nav-dropdown__link).active {
   color: var(--color-gold-bright);
 }
 
-.site-nav__links a:hover::after,
-  .site-nav__links a.active::after {
+.site-nav__links a:not(.nav-dropdown__link):hover::after,
+  .site-nav__links a:not(.nav-dropdown__link).active::after {
   width: 100%;
+}
+
+/* Dropdown trigger li — flex so it doesn't stretch taller than siblings */
+
+.site-nav__links li:has(.nav-dropdown__link) {
+  display: flex;
+  align-items: center;
+  margin-top: 1px;
+}
+
+/* Dropdown panel links — fully isolated from site-nav__links a rules */
+
+.nav-dropdown__link {
+  display: block;
+  font-family: var(--font-accent);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-decoration: none;
+  padding: 0.6rem 1.25rem;
+  transition: color 0.15s, background 0.15s;
+}
+
+.nav-dropdown__link:hover {
+  color: var(--color-text-accent);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* ── Section Helpers ────────────────────────────────────────────────────── */
@@ -1801,6 +1850,10 @@ a:hover {
   color: var(--color-text-primary);
 }
 
+.surface-dark {
+  background-color: var(--color-bg-surface);
+}
+
 .surface-dark h1,
   .surface-dark h2,
   .surface-dark h3,
@@ -1949,6 +2002,10 @@ a:hover {
   margin-top: 2rem;
 }
 
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
+
 .block {
   display: block;
 }
@@ -1989,6 +2046,10 @@ a:hover {
   height: 100%;
 }
 
+.min-h-\[60vh\] {
+  min-height: 60vh;
+}
+
 .w-20 {
   width: 5rem;
 }
@@ -2015,6 +2076,10 @@ a:hover {
 
 .max-w-\[calc\(theme\(maxWidth\.7xl\)\/2\)\] {
   max-width: calc(80rem / 2);
+}
+
+.max-w-lg {
+  max-width: 32rem;
 }
 
 .flex-1 {
@@ -2061,6 +2126,10 @@ a:hover {
   flex-direction: row-reverse;
 }
 
+.flex-col {
+  flex-direction: column;
+}
+
 .flex-wrap {
   flex-wrap: wrap;
 }
@@ -2075,6 +2144,10 @@ a:hover {
 
 .justify-end {
   justify-content: flex-end;
+}
+
+.justify-center {
+  justify-content: center;
 }
 
 .justify-between {
@@ -2340,8 +2413,16 @@ a:hover {
   line-height: 1.625;
 }
 
+.leading-tight {
+  line-height: 1.25;
+}
+
 .tracking-widest {
   letter-spacing: 0.1em;
+}
+
+.tracking-wide {
+  letter-spacing: 0.025em;
 }
 
 .text-\[--color-text-secondary\] {
@@ -2517,6 +2598,12 @@ a:hover {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
+@media (min-width: 640px) {
+  .sm\:flex-row {
+    flex-direction: row;
+  }
+}
+
 @media (min-width: 768px) {
   .md\:col-span-2 {
     grid-column: span 2 / span 2;
@@ -2532,5 +2619,10 @@ a:hover {
 
   .md\:grid-cols-5 {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .md\:text-6xl {
+    font-size: 3.75rem;
+    line-height: 1;
   }
 }

@@ -62,7 +62,7 @@
           left:50%;
           transform:translateX(-50%);
           min-width:160px;
-          background:rgba(10,10,10,0.97);
+          background:#0a0a0a;
           border:1px solid var(--color-gold-deep);
           border-radius:3px;
           padding:0.5rem 0;
@@ -70,38 +70,8 @@
           box-shadow:0 8px 24px rgba(0,0,0,0.5);
         "
       >
-        <a
-          href="{% url 'menu:full' %}?type=Food"
-          style="
-            display:block;
-            padding:0.6rem 1.25rem;
-            font-family:var(--font-nav);
-            font-size:0.72rem;
-            letter-spacing:0.15em;
-            text-transform:uppercase;
-            color:var(--color-text-primary);
-            text-decoration:none;
-            transition:color 0.15s, background 0.15s;
-          "
-          onmouseover="this.style.color='var(--color-gold-primary)';this.style.background='rgba(255,255,255,0.05)'"
-          onmouseout="this.style.color='var(--color-text-primary)';this.style.background=''"
-        >Food</a>
-        <a
-          href="{% url 'menu:full' %}?type=Drinks"
-          style="
-            display:block;
-            padding:0.6rem 1.25rem;
-            font-family:var(--font-nav);
-            font-size:0.72rem;
-            letter-spacing:0.15em;
-            text-transform:uppercase;
-            color:var(--color-text-primary);
-            text-decoration:none;
-            transition:color 0.15s, background 0.15s;
-          "
-          onmouseover="this.style.color='var(--color-gold-primary)';this.style.background='rgba(255,255,255,0.05)'"
-          onmouseout="this.style.color='var(--color-text-primary)';this.style.background=''"
-        >Drinks</a>
+        <a href="{% url 'menu:full' %}?type=Food" class="nav-dropdown__link">Food</a>
+        <a href="{% url 'menu:full' %}?type=Drinks" class="nav-dropdown__link">Drinks</a>
       </div>
     </li>
 
