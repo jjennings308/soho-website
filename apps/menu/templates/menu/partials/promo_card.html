@@ -2,14 +2,14 @@
 
 {% with colors=promo.resolve_colors %}
 <section class="py-6 px-12" style="
-  background-color: {{ colors.bg|default:'var(--color-bg-primary)' }};
-  color: {{ colors.text|default:'var(--color-text-primary)' }};
   --color-promo-primary: {{ colors.primary }};
   --color-promo-accent: {{ colors.accent }};
   --color-promo-text: {{ colors.text }};
   --color-promo-bg: {{ colors.bg }};
+  background-color: var(--color-promo-bg);
+  color: var(--color-promo-text);
 ">
-  <h2 class="text-center" style="color: var(--color-text-heading);">
+  <h2 class="text-center" style="color: var(--color-promo-text);">
     {{ promo.title }}
   </h2>
 

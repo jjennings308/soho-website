@@ -25,7 +25,7 @@
 
         <!-- 60% Column -->
         <div class="md:col-span-3">
-            {% get_active_promotions as promotions %}
+            {% get_active_promotions homepage_only=True as promotions %}
             {% for promo in promotions %}
                 {% include "menu/partials/promo_card.html" with promo=promo %}
             {% endfor %}

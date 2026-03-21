@@ -102,7 +102,7 @@ def item_to_json(item):
     return mark_safe(json.dumps(data, ensure_ascii=False))
 
 @register.simple_tag
-def get_active_promotions(limit=None):
+def get_active_promotions(limit=None, homepage_only=False):
     """
     Returns all currently active promotions with items prefetched.
 
@@ -113,7 +113,12 @@ def get_active_promotions(limit=None):
     from apps.menu.models import MenuPromotion, MenuPromotionItem
     from django.db.models import Prefetch
 
-    qs = MenuPromotion.objects.filter(is_active=True).prefetch_related(
+    qs = MenuPromotion.objects.filter(is_active=True)
+
+    if homepage_only:
+        qs = qs.filter(show_on_homepage=True)
+
+    qs = qs.prefetch_related(
         Prefetch(
             'promotion_items',
             queryset=MenuPromotionItem.objects.select_related('menu_item').order_by('order'),

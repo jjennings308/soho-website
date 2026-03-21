@@ -1954,6 +1954,10 @@ a:hover {
   margin-bottom: 0.25rem;
 }
 
+.mb-10 {
+  margin-bottom: 2.5rem;
+}
+
 .mb-2 {
   margin-bottom: 0.5rem;
 }
@@ -2000,10 +2004,6 @@ a:hover {
 
 .mt-8 {
   margin-top: 2rem;
-}
-
-.mb-10 {
-  margin-bottom: 2.5rem;
 }
 
 .block {
@@ -2417,12 +2417,12 @@ a:hover {
   line-height: 1.25;
 }
 
-.tracking-widest {
-  letter-spacing: 0.1em;
-}
-
 .tracking-wide {
   letter-spacing: 0.025em;
+}
+
+.tracking-widest {
+  letter-spacing: 0.1em;
 }
 
 .text-\[--color-text-secondary\] {
