@@ -366,11 +366,12 @@ class MenuItemImage(models.Model):
 # PROMOTIONAL MENU SYSTEM
 # =============================================================================
 
-class PromoSettings(models.Model):
+class PromoColorScheme(models.Model):
     """
-    Singleton — global default promo color palette.
-    MenuPromotion instances fall back to these when their own color fields are blank.
-    Colors here fall back to theme.css :root defaults (transparent/inherit) when blank.
+    A named, reusable color palette for promo components.
+    Assign to any MenuPromotion via its color_scheme FK.
+    One scheme may be flagged as the default — used when a promotion has no
+    scheme assigned and PromoSettings has no relevant override.
 
     Inject resolved colors onto the component wrapper in templates:
         {% with colors=promo.resolve_colors %}
@@ -381,6 +382,75 @@ class PromoSettings(models.Model):
             --color-promo-bg:      {{ colors.bg }};
         ">
         {% endwith %}
+    """
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Internal label shown in the admin, e.g. 'Black & Gold', 'Holiday Red'"
+    )
+    primary_color = models.CharField(
+        max_length=30,
+        blank=True,
+        help_text="Main promo color (hex, e.g. #ffb612)"
+    )
+    accent_color = models.CharField(
+        max_length=30,
+        blank=True,
+        help_text="Secondary / highlight color (hex)"
+    )
+    text_color = models.CharField(
+        max_length=30,
+        blank=True,
+        help_text="Text color within promo components (hex)"
+    )
+    bg_color = models.CharField(
+        max_length=30,
+        blank=True,
+        help_text="Background color for promo components (hex)"
+    )
+    is_default = models.BooleanField(
+        default=False,
+        help_text=(
+            "Use this scheme when a promotion has no scheme assigned. "
+            "Saving a new default automatically clears the flag on the previous one."
+        )
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-is_default', 'name']
+        verbose_name = 'Promo Color Scheme'
+        verbose_name_plural = 'Promo Color Schemes'
+
+    def __str__(self):
+        return f"{self.name} (default)" if self.is_default else self.name
+
+    def save(self, *args, **kwargs):
+        # Enforce at most one default — clear other schemes before saving this one.
+        if self.is_default:
+            PromoColorScheme.objects.exclude(pk=self.pk).filter(
+                is_default=True
+            ).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def as_dict(self):
+        """Returns the four color values as a plain dict, ready for resolve_colors()."""
+        return {
+            'primary': self.primary_color,
+            'accent':  self.accent_color,
+            'text':    self.text_color,
+            'bg':      self.bg_color,
+        }
+
+
+class PromoSettings(models.Model):
+    """
+    Singleton — legacy global default promo color palette.
+    Still used as a last-resort fallback in MenuPromotion.resolve_colors()
+    when neither a per-promo scheme nor an is_default scheme exists.
+    Colors here fall back to theme.css :root defaults (transparent/inherit) when blank.
     """
     promo_primary_color = models.CharField(
         max_length=30, blank=True,
@@ -420,19 +490,31 @@ class PromoSettings(models.Model):
 
 class MenuPromotion(models.Model):
     """
-    A curated collection of menu items presented with promo colors.
+    A curated collection of menu items presented with a promo color scheme.
     Droppable as a component anywhere — home page, its own page, a section, etc.
 
-    Color resolution per field:
-        1. This instance's color field (if set)
-        2. PromoSettings global default (if set)
-        3. theme.css :root fallback (transparent / inherit)
-
-    Call resolve_colors() in the view to pass the final dict to the template.
+    Color resolution order in resolve_colors():
+        1. This promotion's assigned color_scheme (FK)
+        2. The PromoColorScheme flagged is_default
+        3. PromoSettings singleton (legacy fallback)
+        4. Empty string → theme.css :root takes over
     """
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     description = models.TextField(blank=True)
+
+    # ── Color Scheme ──────────────────────────────────────────────────────────
+    color_scheme = models.ForeignKey(
+        PromoColorScheme,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='promotions',
+        help_text=(
+            "Color scheme for this promotion. "
+            "Leave blank to use the default scheme."
+        )
+    )
 
     # ── Scheduling ────────────────────────────────────────────────────────────
     start_date = models.DateField(
@@ -447,24 +529,9 @@ class MenuPromotion(models.Model):
         default=True,
         help_text="Master switch — uncheck to hide regardless of dates"
     )
-
-    # ── Color Overrides ───────────────────────────────────────────────────────
-    # Leave blank to inherit from PromoSettings global defaults.
-    promo_primary_color = models.CharField(
-        max_length=30, blank=True,
-        help_text="Override: main promo color for this promotion (hex)"
-    )
-    promo_accent_color = models.CharField(
-        max_length=30, blank=True,
-        help_text="Override: secondary promo color for this promotion (hex)"
-    )
-    promo_text_color = models.CharField(
-        max_length=30, blank=True,
-        help_text="Override: text color for this promotion's component (hex)"
-    )
-    promo_bg_color = models.CharField(
-        max_length=30, blank=True,
-        help_text="Override: background color for this promotion's component (hex)"
+    show_on_homepage = models.BooleanField(
+        default=False,
+        help_text="Promoted on the home page"
     )
 
     # ── Items ─────────────────────────────────────────────────────────────────
@@ -501,14 +568,25 @@ class MenuPromotion(models.Model):
     def resolve_colors(self):
         """
         Returns resolved hex values for all four promo color slots.
-        Instance fields win over PromoSettings; empty string means theme.css takes over.
+
+        Resolution order:
+          1. This promotion's assigned color_scheme (FK)
+          2. The PromoColorScheme flagged is_default
+          3. PromoSettings singleton (legacy fallback)
+          4. Empty string → theme.css :root takes over
         """
+        scheme = self.color_scheme
+        if scheme is None:
+            scheme = PromoColorScheme.objects.filter(is_default=True).first()
+        if scheme is not None:
+            return scheme.as_dict()
+        # Legacy fallback — can be removed once all promos use schemes
         defaults = PromoSettings.load()
         return {
-            'primary': self.promo_primary_color or defaults.promo_primary_color,
-            'accent':  self.promo_accent_color  or defaults.promo_accent_color,
-            'text':    self.promo_text_color     or defaults.promo_text_color,
-            'bg':      self.promo_bg_color       or defaults.promo_bg_color,
+            'primary': defaults.promo_primary_color,
+            'accent':  defaults.promo_accent_color,
+            'text':    defaults.promo_text_color,
+            'bg':      defaults.promo_bg_color,
         }
 
 
