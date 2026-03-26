@@ -2046,6 +2046,10 @@ a:hover {
   height: 100%;
 }
 
+.h-14 {
+  height: 3.5rem;
+}
+
 .min-h-\[60vh\] {
   min-height: 60vh;
 }
@@ -2060,6 +2064,10 @@ a:hover {
 
 .w-full {
   width: 100%;
+}
+
+.w-14 {
+  width: 3.5rem;
 }
 
 .min-w-0 {
@@ -2619,6 +2627,10 @@ a:hover {
 
   .md\:grid-cols-5 {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .md\:text-6xl {

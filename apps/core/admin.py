@@ -1,88 +1,68 @@
 from django.contrib import admin
-from .models import Theme, ThemeStyle, ThemeOverlay, SiteSettings
-
-
-@admin.register(ThemeStyle)
-class ThemeStyleAdmin(admin.ModelAdmin):
-    list_display = ['name', 'primary_font', 'secondary_font', 'accent_font', 'updated_at']
-    search_fields = ['name', 'description']
-    readonly_fields = ['created_at', 'updated_at']
-
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('name', 'description')
-        }),
-        ('Typography', {
-            'fields': ('primary_font', 'secondary_font', 'accent_font'),
-            'description': (
-                'Fonts used for headings, body text, and accents. '
-                'All colors are brand constants defined in theme.css — not configurable here.'
-            )
-        }),
-        ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-
-@admin.register(ThemeOverlay)
-class ThemeOverlayAdmin(admin.ModelAdmin):
-    list_display = ['name', 'style', 'valid_from', 'valid_to', 'is_active', 'is_currently_active']
-    list_filter = ['is_active']
-    search_fields = ['name', 'description']
-    readonly_fields = ['created_at', 'updated_at', 'is_currently_active']
-
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('name', 'description', 'style')
-        }),
-        ('Activation', {
-            'fields': ('valid_from', 'valid_to', 'is_active'),
-            'description': (
-                'Set a date range to activate this overlay automatically. '
-                'If no dates are set, use the Is Active toggle for manual control.'
-            )
-        }),
-        ('Status', {
-            'fields': ('is_currently_active',),
-        }),
-        ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-    @admin.display(boolean=True, description='Active Right Now?')
-    def is_currently_active(self, obj):
-        return obj.is_currently_active
+from django.utils.html import format_html
+from .models import Theme, SiteSettings
 
 
 @admin.register(Theme)
 class ThemeAdmin(admin.ModelAdmin):
-    list_display = ['name', 'slug', 'theme_directory', 'base_style', 'is_active', 'created_at']
+    list_display = ['name', 'slug', 'theme_directory', 'primary_font', 'is_active', 'current_theme_radio', 'created_at']
+    list_editable = ('is_active',)
     list_filter = ['is_active', 'created_at']
     search_fields = ['name', 'description']
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ['created_at', 'updated_at']
 
-    fieldsets = (
-        ('Basic Information', {
-            'fields': ('name', 'slug', 'description')
-        }),
-        ('Theme Settings', {
-            'fields': ('theme_directory', 'base_style', 'preview_image', 'is_active'),
-            'description': (
-                'theme_directory should match the folder name under your templates/themes/ directory. '
-                'base_style defines the fonts for this theme. '
-                'Colors are brand constants in theme.css.'
+    def current_theme_radio(self, obj):
+        """
+        Renders a radio button for each row. Only enabled for active themes.
+        Selecting one and saving the changelist sets SiteSettings.active_theme.
+        """
+        site = SiteSettings.load()
+        is_current = site.active_theme_id == obj.pk
+
+        if obj.is_active:
+            return format_html(
+                '<input type="radio" name="_current_theme" value="{}" {}>',
+                obj.pk,
+                'checked' if is_current else '',
             )
-        }),
-        ('Metadata', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
+        else:
+            # Greyed out — must be active before it can be set as current
+            return format_html(
+                '<input type="radio" name="_current_theme" value="{}" disabled '
+                'title="Activate this theme first">',
+                obj.pk,
+            )
+
+    current_theme_radio.short_description = 'Current'
+    current_theme_radio.allow_tags = True
+
+    def changelist_view(self, request, extra_context=None):
+        response = super().changelist_view(request, extra_context)
+
+        if request.method == 'POST':
+            # Handle current theme radio selection
+            selected_pk = request.POST.get('_current_theme')
+            if selected_pk:
+                try:
+                    selected_theme = Theme.objects.get(pk=int(selected_pk), is_active=True)
+                    site = SiteSettings.load()
+                    if site.active_theme_id != selected_theme.pk:
+                        site.active_theme = selected_theme
+                        site.save()
+                        self.message_user(
+                            request,
+                            f'"{selected_theme.name}" is now the current site theme.',
+                        )
+                except Theme.DoesNotExist:
+                    self.message_user(
+                        request,
+                        "Could not set current theme — the selected theme is not active.",
+                        level='error',
+                    )
+
+        return response
+
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
@@ -103,13 +83,12 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             'fields': ('facebook_url', 'instagram_url', 'twitter_url', 'yelp_url'),
             'classes': ('collapse',)
         }),
-        ('Theme & Overlay', {
-            'fields': ('active_theme', 'active_overlay'),
+        ('Theme', {
+            'fields': ('active_theme',),
             'description': (
-                'active_theme sets the base fonts for the site. '
-                'active_overlay applies a seasonal font style on top — '
-                'only activates if its date range is current or Is Active is checked. '
-                'Colors are brand constants and are not affected by theme or overlay selection.'
+                'The theme currently in use on the site. Only active themes are available. '
+                'Colors are brand constants and are not affected by theme selection. '
+                'You can also set the current theme directly from the Themes list.'
             )
         }),
         ('SEO Settings', {

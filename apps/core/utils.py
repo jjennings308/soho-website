@@ -17,10 +17,9 @@ def get_active_template(page):
         2. pages/{page}.html                           (default fallback)
 
     CBVs:  return this list directly from get_template_names()
-    FBVs:  pass to select_template() to get a single resolved Template object
     """
-    from apps.core.models import Theme
-    theme = Theme.get_active_theme()
+    from apps.core.models import SiteSettings
+    theme = SiteSettings.load().active_theme
     if theme and theme.theme_directory:
         return [
             f"themes/{theme.theme_directory}/pages/{page}.html",

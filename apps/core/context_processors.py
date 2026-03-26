@@ -29,7 +29,7 @@ def site_settings(request):
 
 def active_theme(request):
     """
-    Resolves the active theme + any currently active overlay into CSS variables
+    Resolves the current site theme (SiteSettings.active_theme) into CSS variables
     and a Google Fonts URL. Everything needed to render the <head> of base.html.
 
     Available in templates as:
@@ -54,7 +54,7 @@ def active_theme(request):
           }
         </style>
     """
-    theme = Theme.get_active_theme()
+    theme = SiteSettings.load().active_theme
 
     if theme:
         style_vars = theme.resolve_style_vars()
@@ -71,6 +71,7 @@ def active_theme(request):
         'theme_style_vars': style_vars,
         'google_fonts_url': google_fonts_url,
     }
+
 
 from django.conf import settings
 
