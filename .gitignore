@@ -27,3 +27,4 @@ config/settings/development.py
 
 # VS Code
 .vscode/db.sqlite3
+db.sqlite3
