@@ -27,7 +27,7 @@
     {# Split items into those with and without a subcategory #}
     {% with subcat_items=category.list|with_subcategory plain_items=category.list|without_subcategory %}
 
-    <div class="grid md:grid-cols-2 gap-2 p-1">
+    <div class="grid md:grid-cols-3 gap-2 p-1">
 
       {# ── Plain items: one card each ── #}
       {% for item in plain_items %}
@@ -43,7 +43,7 @@
         <div class="flex flex-row-reverse gap-3">
 
           {% if item.image %}
-          <div class="shrink-0 w-20 h-20 rounded overflow-hidden">
+          <div class="shrink-0 w-14 h-14 rounded overflow-hidden">
             <img src="{{ item.image.url }}" alt="{{ item.name }}"
                  class="w-full h-full object-cover" loading="lazy">
           </div>
