@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator
 from django.utils import timezone
 from decimal import Decimal
 from django_ckeditor_5.fields import CKEditor5Field
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 class MenuType(models.Model):
@@ -34,9 +35,6 @@ class MenuType(models.Model):
 
 
 class MenuCategory(models.Model):
-    """
-    Categories for organizing menu items (e.g., Appetizers, Entrees, Desserts, Beverages)
-    """
     menu_type = models.ForeignKey(
         MenuType,
         on_delete=models.CASCADE,
@@ -46,12 +44,6 @@ class MenuCategory(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
-    icon = models.ImageField(
-        upload_to='menu/category_icons/',
-        blank=True,
-        null=True,
-        help_text="Optional icon for the category"
-    )
     order = models.PositiveIntegerField(
         default=0,
         help_text="Order in which categories appear within their type (lower numbers first)"
@@ -62,6 +54,10 @@ class MenuCategory(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    media = GenericRelation(
+        'media_manager.Media',
+        related_query_name='menu_category',
+    )
 
     class Meta:
         ordering = ['menu_type__order', 'order', 'name']
@@ -70,7 +66,6 @@ class MenuCategory(models.Model):
 
     def __str__(self):
         return f"{self.menu_type.name} › {self.name}"
-
 
 class MenuSubCategory(models.Model):
     """
@@ -194,19 +189,6 @@ class MenuItem(models.Model):
         help_text="Check if this item has add-on options"
     )
 
-    # Images
-    image = models.ImageField(
-        upload_to='menu/items/',
-        blank=True,
-        null=True,
-        help_text="Primary image of the dish"
-    )
-    image_alt_text = models.CharField(
-        max_length=200,
-        blank=True,
-        help_text="Alternative text for accessibility"
-    )
-
     # Dietary & Allergen Information
     dietary_type = models.CharField(
         max_length=20,
@@ -247,6 +229,10 @@ class MenuItem(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    media = GenericRelation(
+            'media_manager.Media',
+            related_query_name='menu_item',
+        )    
 
     class Meta:
         ordering = ['category__menu_type__order', 'category__order', 'order', 'name']
@@ -343,23 +329,6 @@ class MenuItemAddon(models.Model):
 
     def __str__(self):
         return f"{self.menu_item.name} - {self.name} (${self.price})"
-
-
-class MenuItemImage(models.Model):
-    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='gallery_images')
-    image = models.ImageField(upload_to='menu/gallery/')
-    alt_text = models.CharField(max_length=200, blank=True)
-    caption = models.CharField(max_length=300, blank=True)
-    order = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['order', 'created_at']
-        verbose_name = 'Menu Item Image'
-        verbose_name_plural = 'Menu Item Images'
-
-    def __str__(self):
-        return f"Image for {self.menu_item.name}"
 
 
 # =============================================================================
@@ -544,6 +513,10 @@ class MenuPromotion(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    media = GenericRelation(
+        'media_manager.Media',
+        related_query_name='promotion',
+    )
 
     class Meta:
         ordering = ['start_date', 'title']

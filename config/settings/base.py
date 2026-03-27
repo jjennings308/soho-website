@@ -37,6 +37,10 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_tailwind',
     'easy_thumbnails',
+    'taggit',
+    
+    # My Repo
+    'media_manager',
 
     # Local apps
     'apps.core',

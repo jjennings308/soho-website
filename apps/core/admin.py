@@ -1,6 +1,18 @@
 from django.contrib import admin
+from django.contrib.contenttypes.admin import GenericTabularInline
 from django.utils.html import format_html
+from media_manager.models import Media
 from .models import Theme, SiteSettings
+
+
+class ThemeMediaInline(GenericTabularInline):
+    model = Media
+    ct_field = 'content_type'
+    ct_fk_field = 'object_id'
+    extra = 1
+    fields = ['file', 'title', 'alt_text', 'is_featured', 'display_order', 'category']
+    verbose_name = 'Theme Image'
+    verbose_name_plural = 'Theme Images'
 
 
 @admin.register(Theme)
@@ -11,12 +23,18 @@ class ThemeAdmin(admin.ModelAdmin):
     search_fields = ['name', 'description']
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ['created_at', 'updated_at']
+    inlines = [ThemeMediaInline]
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+        for instance in instances:
+            if isinstance(instance, Media) and not instance.pk:
+                instance.uploaded_by = request.user
+                instance.is_user_generated = False
+            instance.save()
+        formset.save_m2m()
 
     def current_theme_radio(self, obj):
-        """
-        Renders a radio button for each row. Only enabled for active themes.
-        Selecting one and saving the changelist sets SiteSettings.active_theme.
-        """
         site = SiteSettings.load()
         is_current = site.active_theme_id == obj.pk
 
@@ -27,7 +45,6 @@ class ThemeAdmin(admin.ModelAdmin):
                 'checked' if is_current else '',
             )
         else:
-            # Greyed out — must be active before it can be set as current
             return format_html(
                 '<input type="radio" name="_current_theme" value="{}" disabled '
                 'title="Activate this theme first">',
@@ -41,7 +58,6 @@ class ThemeAdmin(admin.ModelAdmin):
         response = super().changelist_view(request, extra_context)
 
         if request.method == 'POST':
-            # Handle current theme radio selection
             selected_pk = request.POST.get('_current_theme')
             if selected_pk:
                 try:

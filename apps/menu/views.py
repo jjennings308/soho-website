@@ -2,7 +2,7 @@ from django.shortcuts import render
 from django.db.models import Prefetch
 from apps.core.utils import get_active_template
 from django.shortcuts import get_object_or_404
-from .models import MenuItem, MenuItemVariation, MenuItemAddon, MenuItemImage, MenuPromotion, MenuPromotionItem
+from .models import MenuItem, MenuItemVariation, MenuItemAddon, MenuPromotion, MenuPromotionItem
 def full(request):
     menu_type = request.GET.get('type')  # ?type=Food or ?type=Drinks, absent = all
 
@@ -16,7 +16,6 @@ def full(request):
     ).prefetch_related(
         Prefetch('variations',     queryset=MenuItemVariation.objects.filter(is_available=True).order_by('order', 'price')),
         Prefetch('addons',         queryset=MenuItemAddon.objects.filter(is_available=True).order_by('order', 'price')),
-        Prefetch('gallery_images', queryset=MenuItemImage.objects.order_by('order')),
     ).order_by(
         'category__menu_type__order', 'category__order', 'category__name',
         'subcategory__order', 'subcategory__name', 'order', 'name',

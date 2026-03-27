@@ -26,4 +26,5 @@ tmp.txt
 config/settings/development.py
 
 # VS Code
-.vscode/
+.vscode/db.sqlite3
+db.sqlite3
