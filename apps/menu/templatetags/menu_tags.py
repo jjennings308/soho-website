@@ -1,9 +1,9 @@
 import json
 from django import template
 from django.utils.safestring import mark_safe
-# from django.utils.html import escapejs
 
 register = template.Library()
+
 
 def _currency(value):
     """Mirrors the currency filter logic for use in item_to_json."""
@@ -18,6 +18,24 @@ def _currency(value):
     except (ValueError, TypeError):
         return str(value)
 
+
+@register.simple_tag
+def get_primary_media(obj):
+    """
+    Returns the first approved image attached via the media manager.
+
+    Usage:
+        {% get_primary_media item as primary_image %}
+        {% if primary_image %}
+            <img src="{{ primary_image.file.url }}" alt="{{ primary_image.alt_text|default:item.name }}">
+        {% endif %}
+    """
+    return obj.media.filter(
+        media_type='image',
+        is_approved=True
+    ).order_by('display_order').first()
+
+
 @register.filter(is_safe=True)
 def item_to_json(item):
     """
@@ -27,16 +45,21 @@ def item_to_json(item):
     Usage in template:
         x-on:click="$dispatch('open-menu-modal', {{ item|item_to_json }})"
     """
-    # Gallery images
+    # Gallery images via media manager
     gallery = [
         {
-            'url': img.image.url,
-            'alt': img.alt_text or '',
+            'url': m.file.url,
+            'alt': m.alt_text or '',
         }
-        for img in item.gallery_images.all()
+        for m in item.media.filter(media_type='image', is_approved=True).order_by('display_order')
     ]
 
-    # Variations (available only)
+    # Primary image — first featured, or first approved image
+    primary = item.media.filter(
+        media_type='image', is_approved=True
+    ).order_by('-is_featured', 'display_order').first()
+
+    # Variations
     variations = [
         {
             'name': v.name,
@@ -48,7 +71,7 @@ def item_to_json(item):
         for v in item.variations.all()
     ]
 
-    # Add-ons (available only)
+    # Add-ons
     addons = [
         {
             'name': a.name,
@@ -58,48 +81,47 @@ def item_to_json(item):
         for a in item.addons.all()
     ]
 
-    # Dietary labels via the model property
-    dietary_labels = item.dietary_labels  # list of strings from the model property
-
+    dietary_labels = item.dietary_labels
     display_price = item.display_price
 
     data = {
         # Identity
-        'id':              item.pk,
-        'name':            item.name,
+        'id':                item.pk,
+        'name':              item.name,
 
-        # Description — CKEditor HTML, rendered safely
-        'description':     item.description or '',
+        # Description
+        'description':       item.description or '',
         'short_description': item.short_description or '',
 
         # Images
-        'primary_image':   item.image.url if item.image else None,
-        'has_image':       bool(item.image),
-        'gallery':         gallery,
+        'primary_image':     primary.file.url if primary else None,
+        'has_image':         primary is not None,
+        'gallery':           gallery,
 
         # Pricing
-        'price_display':   item.price_display,
-        'display_price':   display_price,
-        'is_on_sale':      item.is_on_sale,
+        'price_display':     item.price_display,
+        'display_price':     display_price,
+        'is_on_sale':        item.is_on_sale,
 
         # Variations & add-ons
-        'has_variations':  item.has_variations,
-        'variations':      variations,
-        'has_addons':      item.has_addons,
-        'addons':          addons,
+        'has_variations':    item.has_variations,
+        'variations':        variations,
+        'has_addons':        item.has_addons,
+        'addons':            addons,
 
         # Dietary & allergens
-        'dietary_labels':  dietary_labels,
-        'allergen_info':   item.allergen_info or '',
+        'dietary_labels':    dietary_labels,
+        'allergen_info':     item.allergen_info or '',
 
         # Feature flags
-        'is_featured':     item.is_featured,
-        'is_chef_special': item.is_chef_special,
-        'is_new':          item.is_new,
-        'is_seasonal':     item.is_seasonal,
+        'is_featured':       item.is_featured,
+        'is_chef_special':   item.is_chef_special,
+        'is_new':            item.is_new,
+        'is_seasonal':       item.is_seasonal,
     }
 
     return mark_safe(json.dumps(data, ensure_ascii=False))
+
 
 @register.simple_tag
 def get_active_promotions(limit=None, homepage_only=False):
@@ -131,6 +153,7 @@ def get_active_promotions(limit=None, homepage_only=False):
         active = active[:limit]
 
     return active
+
 
 @register.filter(is_safe=True)
 def promo_item_to_json(entry):

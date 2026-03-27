@@ -42,13 +42,14 @@
       >
         <div class="flex flex-row-reverse gap-3">
 
-          {% if item.image %}
+          {% get_primary_media item as primary_image %}
+          {% if primary_image %}
           <div class="shrink-0 w-20 h-20 rounded overflow-hidden">
-            <img src="{{ item.image.url }}" alt="{{ item.name }}"
+            <img src="{{ primary_image.file.url }}" alt="{{ primary_image.alt_text|default:item.name }}"
                  class="w-full h-full object-cover" loading="lazy">
           </div>
           {% endif %}
-
+          
           <div class="flex-1 min-w-0">
             <div class="flex justify-between items-start mb-2">
               <h4 class="font-semibold text-lg" style="color: var(--color-text-heading);">

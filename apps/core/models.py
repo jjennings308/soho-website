@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import RegexValidator
+from django.contrib.contenttypes.fields import GenericRelation
 
 
 GOOGLE_FONTS_MAP = {
@@ -72,6 +73,10 @@ class Theme(models.Model):
     )
 
     preview_image = models.ImageField(upload_to='theme_previews/', blank=True, null=True)
+    media = GenericRelation(
+        'media_manager.Media',
+        related_query_name='theme',
+    )
     is_active = models.BooleanField(
         default=False,
         help_text="Enable this theme so it can be selected as the site's active theme."

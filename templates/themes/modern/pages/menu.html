@@ -42,9 +42,10 @@
       >
         <div class="flex flex-row-reverse gap-3">
 
-          {% if item.image %}
+          {% get_primary_media item as primary_image %}
+          {% if primary_image %}
           <div class="shrink-0 w-14 h-14 rounded overflow-hidden">
-            <img src="{{ item.image.url }}" alt="{{ item.name }}"
+            <img src="{{ primary_image.file.url }}" alt="{{ primary_image.alt_text|default:item.name }}"
                  class="w-full h-full object-cover" loading="lazy">
           </div>
           {% endif %}
