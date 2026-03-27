@@ -28,3 +28,4 @@ text-unidecode==1.3
 pytz==2025.2
 
 django-media-manager @ git+https://github.com/jjennings308/django-media-manager.git@v0.1.0
+psycopg2-binary
