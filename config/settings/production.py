@@ -6,8 +6,9 @@ from .base import *
 DEBUG = False
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
 
+# Database
 '''
-# Database - SQLite
+# SQLite
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -15,7 +16,7 @@ DATABASES = {
     }
 }
 '''
-
+# POSTGRES
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',

@@ -78,6 +78,8 @@ class ThemeAdmin(admin.ModelAdmin):
                     )
 
         return response
+    class Media:
+        js = ('admin/js/theme_font_preview.js',)
 
 
 @admin.register(SiteSettings)

@@ -53,7 +53,7 @@
   <style>
     :root {
       {% for var, val in theme_style_vars.items %}
-      --{{ var }}: {{ val }};
+      --{{ var }}: {{ val|safe }};
       {% endfor %}
     }
   </style>
