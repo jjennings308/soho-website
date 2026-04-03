@@ -50,6 +50,11 @@ class MenuCategory(models.Model):
         default=True,
         help_text="Inactive categories are hidden everywhere regardless of menu assignment."
     )
+    show_disclaimer = models.BooleanField(
+        default=False,
+        help_text="Show the menu footer disclaimer at the bottom of this category section."
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     media = GenericRelation(
