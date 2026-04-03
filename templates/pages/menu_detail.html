@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load menu_tags menu_filters %}
+
+{% block title %}SoHo Pittsburgh{{ title }}{% endblock %}
+
+{% block content %}
+
+{# ── Game day notice ── #}
+{% if limited_menu %}
+<div class="menu-game-day-notice text-center py-3 px-6" style="background-color: var(--color-bg-accent); color: var(--color-text-accent);">
+  <strong>Game Day Menu</strong> — We're serving a limited selection today. Full menu returns after the event.
+</div>
+{% endif %}
+
+{# ── Menu detail — renders like a promo card but full-page ── #}
+<div
+  class="menu-promo-block py-8 px-6 md:px-12"
+  style="--color-promo-primary: {{ colors.primary }}; --color-promo-accent: {{ colors.accent }}; --color-promo-text: {{ colors.text }}; --color-promo-bg: {{ colors.bg }}; background-color: var(--color-promo-bg); color: var(--color-promo-text);"
+>
+
+  <h1 class="text-center mb-1" style="color: var(--color-promo-primary);">
+    {{ menu.title }}
+  </h1>
+
+  {% if menu.description %}
+    <p class="text-center opacity-80 max-w-2xl mx-auto mb-8 ck-content">
+      {{ menu.description|safe }}
+    </p>
+  {% endif %}
+
+  {# ── Categories ── #}
+  {% for cat_assignment in category_assignments %}
+    {% with category=cat_assignment.category %}
+      {% get_category_assignments category limited_menu=limited_menu as assignments %}
+      {% if assignments %}
+
+        {# Per-category heading when there are multiple categories #}
+        {% if category_assignments|length > 1 %}
+          <h2 class="text-center mt-8 mb-2" style="color: var(--color-promo-accent);">
+            {{ category.name }}
+          </h2>
+        {% endif %}
+
+        <div class="grid md:grid-cols-2 gap-2 p-1">
+          {% with plain=assignments|without_subcategory subcat_items=assignments|with_subcategory %}
+
+          {% for assignment in plain %}
+            <div class="promo-item-card {% if forloop.counter|divisibleby:2 %}bg-white/10{% else %}bg-black/5{% endif %} rounded-lg shadow p-5 hover:shadow-lg transition cursor-pointer"
+                 x-data="{}"
+                 x-on:click="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+                 x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+                 x-on:keydown.space.prevent="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+                 role="button"
+                 tabindex="0"
+                 data-item='{{ assignment|item_to_json }}'
+                 aria-label="View details for {{ assignment.menu_item.name }}">
+
+              <div class="flex justify-between items-start mb-2">
+                <h4 class="font-semibold text-lg" style="color: var(--color-promo-text);">
+                  {{ assignment.menu_item.name }}
+                  {% if assignment.note %}
+                    <span class="ml-2 t-badge badge-seasonal">{{ assignment.note }}</span>
+                  {% endif %}
+                </h4>
+                <span class="font-bold shrink-0 ml-2" style="color: var(--color-promo-accent);">
+                  {% if assignment.menu_item.is_on_sale and not assignment.override_price %}
+                    <span class="line-through text-sm opacity-60">{{ assignment.menu_item.price|currency }}</span>
+                    {{ assignment.menu_item.sale_price|currency }}
+                  {% else %}
+                    {{ assignment.display_price }}
+                  {% endif %}
+                </span>
+              </div>
+
+              {% if assignment.menu_item.short_description %}
+                <p class="text-sm opacity-80">{{ assignment.menu_item.short_description|truncatechars:120 }}</p>
+              {% endif %}
+
+              <span class="mt-3 block text-eyebrow" style="color: var(--color-promo-accent);">View Details →</span>
+
+            </div>
+          {% endfor %}
+
+          {% regroup subcat_items by subcategory.name as subcategories %}
+          {% for subcat in subcategories %}
+            <div class="promo-subcat-card rounded-lg shadow p-5 bg-black/5">
+              <h4 class="font-semibold text-lg mb-3" style="color: var(--color-promo-accent);">{{ subcat.grouper }}</h4>
+              <ul class="space-y-1">
+                {% for assignment in subcat.list %}
+                  <li class="flex justify-between items-center text-sm cursor-pointer rounded px-2 py-1 -mx-2 hover:bg-white/10 transition"
+                      x-data="{}"
+                      x-on:click="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+                      x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+                      role="button"
+                      tabindex="0"
+                      data-item='{{ assignment|item_to_json }}'
+                      aria-label="View details for {{ assignment.menu_item.name }}">
+                    <span style="color: var(--color-promo-text);">{{ assignment.menu_item.name }}</span>
+                    <span class="font-semibold ml-4 shrink-0" style="color: var(--color-promo-accent);">{{ assignment.display_price }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endfor %}
+
+          {% endwith %}
+        </div>
+
+      {% endif %}
+    {% endwith %}
+  {% endfor %}
+
+  <div class="text-center mt-8">
+    <a href="{% url 'menu:promotions' %}" class="text-eyebrow hover:underline" style="color: var(--color-promo-primary);">
+      ← All Promotions
+    </a>
+  </div>
+
+</div>
+
+{% include "menu/partials/menu_item_modal.html" %}
+
+{% endblock %}

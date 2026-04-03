@@ -6,51 +6,49 @@ from django_ckeditor_5.fields import CKEditor5Field
 from django.contrib.contenttypes.fields import GenericRelation
 
 
-class MenuType(models.Model):
-    """
-    Top-level grouping for the menu (e.g., Food, Beverages, Specials).
-    Managed entirely through the admin — no hardcoded choices.
-    """
-    name = models.CharField(max_length=100)
-    slug = models.SlugField(max_length=100, unique=True)
-    description = models.TextField(blank=True)
-    order = models.PositiveIntegerField(
-        default=0,
-        help_text="Order in which types appear (lower numbers first)"
-    )
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Display this type on the menu"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['order', 'name']
-        verbose_name = 'Menu Type'
-        verbose_name_plural = 'Menu Types'
-
-    def __str__(self):
-        return self.name
-
+# =============================================================================
+# MENU CATEGORY
+# =============================================================================
 
 class MenuCategory(models.Model):
-    menu_type = models.ForeignKey(
-        MenuType,
-        on_delete=models.CASCADE,
-        related_name='categories',
-        help_text="The top-level type this category belongs to (e.g., Food, Beverages)"
-    )
+    """
+    A named grouping of menu items — e.g. Starters, Burgers, Desserts,
+    Signature Cocktails, Beer, Sweet Street, Happy Hour Food.
+
+    category_type determines whether this category belongs on the Food tab
+    or the Drinks tab when rendered inside a combined Menu. The Menu itself
+    declares which categories it uses via MenuCategoryAssignment.
+
+    Categories are shared infrastructure — the same category can appear on
+    multiple Menus. A Menu selects the categories it wants to show; it does
+    not own them.
+    """
+
+    CATEGORY_TYPE_CHOICES = [
+        ('food',   'Food'),
+        ('drinks', 'Drinks'),
+    ]
+
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True)
+    category_type = models.CharField(
+        max_length=10,
+        choices=CATEGORY_TYPE_CHOICES,
+        default='food',
+        help_text=(
+            "Food or Drinks — used by combined menus to split categories "
+            "into the correct tab."
+        )
+    )
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(
         default=0,
-        help_text="Order in which categories appear within their type (lower numbers first)"
+        help_text="Default display order within this category type. "
+                  "Per-menu ordering is set on MenuCategoryAssignment."
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Display this category on the menu"
+        help_text="Inactive categories are hidden everywhere regardless of menu assignment."
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -60,57 +58,73 @@ class MenuCategory(models.Model):
     )
 
     class Meta:
-        ordering = ['menu_type__order', 'order', 'name']
+        ordering = ['category_type', 'order', 'name']
         verbose_name = 'Menu Category'
         verbose_name_plural = 'Menu Categories'
 
     def __str__(self):
-        return f"{self.menu_type.name} › {self.name}"
+        return f"{self.get_category_type_display()} › {self.name}"
+
+
+# =============================================================================
+# MENU SUB-CATEGORY
+# =============================================================================
 
 class MenuSubCategory(models.Model):
     """
-    Optional sub-grouping within a category (e.g., Category: Beer → SubCategory: Bottled, Draft).
-    Not every category will use sub-categories.
+    Optional sub-grouping within a category.
+    Example: Category=Beer → SubCategories: On Tap, IPA & Craft, Bottles & Cans.
+    Not every category uses sub-categories.
     """
     category = models.ForeignKey(
         MenuCategory,
         on_delete=models.CASCADE,
         related_name='subcategories',
-        help_text="The category this sub-category belongs to (e.g., Beer)"
+        help_text="The category this sub-category belongs to."
     )
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(
         default=0,
-        help_text="Order in which sub-categories appear within their category (lower numbers first)"
+        help_text="Order within the parent category (lower numbers first)."
     )
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Display this sub-category on the menu"
-    )
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['category__menu_type__order', 'category__order', 'order', 'name']
+        ordering = ['category__order', 'order', 'name']
         verbose_name = 'Menu Sub-Category'
         verbose_name_plural = 'Menu Sub-Categories'
 
     def __str__(self):
-        return f"{self.category.menu_type.name} › {self.category.name} › {self.name}"
+        return f"{self.category.name} › {self.name}"
 
+
+# =============================================================================
+# MENU ITEM  (item library — no inherent menu home)
+# =============================================================================
 
 class MenuItem(models.Model):
     """
-    Individual menu items with details, pricing, and dietary information
+    A single item in the item library. Not bound to any specific menu.
+
+    Items are placed onto menus via MenuItemCategoryAssignment, which records
+    which category the item appears in, its display order within that category,
+    an optional price override, and game-day availability for that placement.
+
+    The same item can appear in multiple categories across multiple menus —
+    e.g. Potstickers in Starters (order=3) and Happy Hour Food (order=1) at
+    a different price.
     """
+
     DIETARY_CHOICES = [
-        ('none', 'None'),
-        ('vegetarian', 'Vegetarian'),
-        ('vegan', 'Vegan'),
+        ('none',        'None'),
+        ('vegetarian',  'Vegetarian'),
+        ('vegan',       'Vegan'),
         ('gluten_free', 'Gluten Free'),
-        ('dairy_free', 'Dairy Free'),
+        ('dairy_free',  'Dairy Free'),
     ]
 
     SPICE_LEVELS = [
@@ -121,46 +135,34 @@ class MenuItem(models.Model):
         (4, 'Extra Hot'),
     ]
 
-    # Basic Information
-    category = models.ForeignKey(
-        MenuCategory,
-        on_delete=models.CASCADE,
-        related_name='items'
-    )
-    subcategory = models.ForeignKey(
-        MenuSubCategory,
-        on_delete=models.SET_NULL,
-        related_name='items',
-        blank=True,
-        null=True,
-        help_text="Optional sub-category (e.g., Bottled, Draft). Leave blank if not applicable."
-    )
+    PRICE_DISPLAY_CHOICES = [
+        ('price',  'Show Price'),
+        ('market', 'Market Price (MP)'),
+        ('hidden', 'Hide Price'),
+    ]
+
+    # ── Identity ──────────────────────────────────────────────────────────────
     name = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     description = CKEditor5Field(
         blank=True,
-        help_text="Detailed description of the dish"
+        help_text="Detailed description shown in the item modal."
     )
     short_description = models.CharField(
         max_length=300,
         blank=True,
-        help_text="Brief description for menu listings"
+        help_text="Brief description for menu listings."
     )
 
-    # Pricing
-    PRICE_DISPLAY_CHOICES = [
-        ('price', 'Show Price'),
-        ('market', 'Market Price (MP)'),
-        ('hidden', 'Hide Price'),
-    ]
+    # ── Pricing ───────────────────────────────────────────────────────────────
     price_display = models.CharField(
         max_length=10,
         choices=PRICE_DISPLAY_CHOICES,
         default='price',
         help_text=(
             "'Show Price' displays the price field. "
-            "'Market Price' shows 'MP' on the menu. "
-            "'Hide Price' shows nothing — useful when price isn't relevant for web display."
+            "'Market Price' shows 'MP'. "
+            "'Hide Price' shows nothing — useful for drinks with no listed price."
         )
     )
     price = models.DecimalField(
@@ -169,7 +171,7 @@ class MenuItem(models.Model):
         blank=True,
         null=True,
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="Base price or price for standard size. Leave blank for Market Price or Hidden."
+        help_text="Base price. Leave blank for Market Price or Hidden."
     )
     sale_price = models.DecimalField(
         max_digits=8,
@@ -177,19 +179,18 @@ class MenuItem(models.Model):
         blank=True,
         null=True,
         validators=[MinValueValidator(Decimal('0.01'))],
-        help_text="Optional discounted price"
+        help_text="Optional sale price. Shown instead of base price when set."
     )
-
     has_variations = models.BooleanField(
         default=False,
-        help_text="Check if this item has multiple size/quantity options"
+        help_text="Check if this item has multiple size/quantity options."
     )
     has_addons = models.BooleanField(
         default=False,
-        help_text="Check if this item has add-on options"
+        help_text="Check if this item has add-on options."
     )
 
-    # Dietary & Allergen Information
+    # ── Dietary & Allergens ───────────────────────────────────────────────────
     dietary_type = models.CharField(
         max_length=20,
         choices=DIETARY_CHOICES,
@@ -202,49 +203,53 @@ class MenuItem(models.Model):
     contains_shellfish = models.BooleanField(default=False)
     allergen_info = models.TextField(
         blank=True,
-        help_text="Additional allergen warnings"
+        help_text="Additional allergen warnings."
     )
 
-    # Additional Details
-    spice_level = models.IntegerField(
-        choices=SPICE_LEVELS,
-        default=0,
-        help_text="Spiciness level of the dish"
-    )
+    # ── Details ───────────────────────────────────────────────────────────────
+    spice_level = models.IntegerField(choices=SPICE_LEVELS, default=0)
     calories = models.PositiveIntegerField(blank=True, null=True)
     preparation_time = models.PositiveIntegerField(blank=True, null=True)
 
-    # Features
-    is_featured = models.BooleanField(default=False)
+    # ── Feature flags ─────────────────────────────────────────────────────────
+    is_featured = models.BooleanField(
+        default=False,
+        help_text=(
+            "Spotlight this item on the home page and menu featured sections. "
+            "Independent of any promotion."
+        )
+    )
     is_chef_special = models.BooleanField(default=False)
     is_new = models.BooleanField(default=False)
     is_seasonal = models.BooleanField(default=False)
 
-    # Availability
-    is_available = models.BooleanField(default=True)
+    # ── Availability ──────────────────────────────────────────────────────────
+    is_available = models.BooleanField(
+        default=True,
+        help_text="Global availability switch. Overrides all menu placements."
+    )
     available_from = models.TimeField(blank=True, null=True)
     available_until = models.TimeField(blank=True, null=True)
-
-    order = models.PositiveIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     media = GenericRelation(
-            'media_manager.Media',
-            related_query_name='menu_item',
-        )    
+        'media_manager.Media',
+        related_query_name='menu_item',
+    )
 
     class Meta:
-        ordering = ['category__menu_type__order', 'category__order', 'order', 'name']
+        ordering = ['name']
         verbose_name = 'Menu Item'
         verbose_name_plural = 'Menu Items'
         indexes = [
-            models.Index(fields=['category', 'order']),
             models.Index(fields=['is_featured', 'is_available']),
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.category.name})"
+        return self.name
+
+    # ── Properties ────────────────────────────────────────────────────────────
 
     @property
     def current_price(self):
@@ -287,11 +292,25 @@ class MenuItem(models.Model):
             labels.append('Nut Free')
         return labels
 
+
+# =============================================================================
+# MENU ITEM VARIATION & ADDON
+# =============================================================================
+
 class MenuItemVariation(models.Model):
-    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='variations')
+    """Size/quantity variants of a MenuItem (e.g. 12oz / 16oz draft pours)."""
+    menu_item = models.ForeignKey(
+        MenuItem,
+        on_delete=models.CASCADE,
+        related_name='variations'
+    )
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=200, blank=True)
-    price = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
     quantity = models.PositiveIntegerField(blank=True, null=True)
     size = models.CharField(max_length=50, blank=True)
     order = models.PositiveIntegerField(default=0)
@@ -307,14 +326,23 @@ class MenuItemVariation(models.Model):
         unique_together = ['menu_item', 'name']
 
     def __str__(self):
-        return f"{self.menu_item.name} - {self.name} (${self.price})"
+        return f"{self.menu_item.name} — {self.name} (${self.price})"
 
 
 class MenuItemAddon(models.Model):
-    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE, related_name='addons')
+    """Optional add-ons for a MenuItem (e.g. Bacon +2, Guacamole +2)."""
+    menu_item = models.ForeignKey(
+        MenuItem,
+        on_delete=models.CASCADE,
+        related_name='addons'
+    )
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=200, blank=True)
-    price = models.DecimalField(max_digits=8, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    price = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
     order = models.PositiveIntegerField(default=0)
     is_default = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
@@ -328,22 +356,20 @@ class MenuItemAddon(models.Model):
         unique_together = ['menu_item', 'name']
 
     def __str__(self):
-        return f"{self.menu_item.name} - {self.name} (${self.price})"
+        return f"{self.menu_item.name} — {self.name} (${self.price})"
 
 
 # =============================================================================
-# PROMOTIONAL MENU SYSTEM
+# COLOR SCHEME  (unchanged — applies to any Menu)
 # =============================================================================
 
 class PromoColorScheme(models.Model):
     """
-    A named, reusable color palette for promo components.
-    Assign to any MenuPromotion via its color_scheme FK.
-    One scheme may be flagged as the default — used when a promotion has no
-    scheme assigned and PromoSettings has no relevant override.
+    A named, reusable color palette assignable to any Menu.
+    One scheme may be flagged as the default fallback.
 
-    Inject resolved colors onto the component wrapper in templates:
-        {% with colors=promo.resolve_colors %}
+    Inject resolved colors in templates:
+        {% with colors=menu.resolve_colors %}
         <section style="
             --color-promo-primary: {{ colors.primary }};
             --color-promo-accent:  {{ colors.accent }};
@@ -355,49 +381,35 @@ class PromoColorScheme(models.Model):
     name = models.CharField(
         max_length=100,
         unique=True,
-        help_text="Internal label shown in the admin, e.g. 'Black & Gold', 'Holiday Red'"
+        help_text="Internal label, e.g. 'Black & Gold', 'Holiday Red'."
     )
-    primary_color = models.CharField(
-        max_length=30,
-        blank=True,
-        help_text="Main promo color (hex, e.g. #ffb612)"
-    )
-    accent_color = models.CharField(
-        max_length=30,
-        blank=True,
-        help_text="Secondary / highlight color (hex)"
-    )
-    text_color = models.CharField(
-        max_length=30,
-        blank=True,
-        help_text="Text color within promo components (hex)"
-    )
-    bg_color = models.CharField(
-        max_length=30,
-        blank=True,
-        help_text="Background color for promo components (hex)"
-    )
+    primary_color = models.CharField(max_length=30, blank=True,
+        help_text="Main color (hex, e.g. #ffb612).")
+    accent_color  = models.CharField(max_length=30, blank=True,
+        help_text="Secondary / highlight color (hex).")
+    text_color    = models.CharField(max_length=30, blank=True,
+        help_text="Text color (hex).")
+    bg_color      = models.CharField(max_length=30, blank=True,
+        help_text="Background color (hex).")
     is_default = models.BooleanField(
         default=False,
         help_text=(
-            "Use this scheme when a promotion has no scheme assigned. "
-            "Saving a new default automatically clears the flag on the previous one."
+            "Use this scheme when a menu has no scheme assigned. "
+            "Saving a new default clears the flag on the previous one."
         )
     )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-is_default', 'name']
-        verbose_name = 'Promo Color Scheme'
-        verbose_name_plural = 'Promo Color Schemes'
+        verbose_name = 'Color Scheme'
+        verbose_name_plural = 'Color Schemes'
 
     def __str__(self):
         return f"{self.name} (default)" if self.is_default else self.name
 
     def save(self, *args, **kwargs):
-        # Enforce at most one default — clear other schemes before saving this one.
         if self.is_default:
             PromoColorScheme.objects.exclude(pk=self.pk).filter(
                 is_default=True
@@ -405,7 +417,6 @@ class PromoColorScheme(models.Model):
         super().save(*args, **kwargs)
 
     def as_dict(self):
-        """Returns the four color values as a plain dict, ready for resolve_colors()."""
         return {
             'primary': self.primary_color,
             'accent':  self.accent_color,
@@ -416,28 +427,14 @@ class PromoColorScheme(models.Model):
 
 class PromoSettings(models.Model):
     """
-    Singleton — legacy global default promo color palette.
-    Still used as a last-resort fallback in MenuPromotion.resolve_colors()
-    when neither a per-promo scheme nor an is_default scheme exists.
-    Colors here fall back to theme.css :root defaults (transparent/inherit) when blank.
+    Singleton — legacy global color fallback.
+    Used as last resort in Menu.resolve_colors() when no scheme is assigned
+    and no default scheme exists. Can be removed once all menus use schemes.
     """
-    promo_primary_color = models.CharField(
-        max_length=30, blank=True,
-        help_text="Global default: main promo color (hex, e.g. #ffb612)"
-    )
-    promo_accent_color = models.CharField(
-        max_length=30, blank=True,
-        help_text="Global default: secondary promo color (hex)"
-    )
-    promo_text_color = models.CharField(
-        max_length=30, blank=True,
-        help_text="Global default: text color within promo components (hex)"
-    )
-    promo_bg_color = models.CharField(
-        max_length=30, blank=True,
-        help_text="Global default: background color for promo components (hex)"
-    )
-
+    promo_primary_color = models.CharField(max_length=30, blank=True)
+    promo_accent_color  = models.CharField(max_length=30, blank=True)
+    promo_text_color    = models.CharField(max_length=30, blank=True)
+    promo_bg_color      = models.CharField(max_length=30, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
@@ -457,78 +454,130 @@ class PromoSettings(models.Model):
         return obj
 
 
-class MenuPromotion(models.Model):
-    """
-    A curated collection of menu items presented with a promo color scheme.
-    Droppable as a component anywhere — home page, its own page, a section, etc.
+# =============================================================================
+# MENU  (unified — replaces MenuPromotion; default menu IS the regular menu)
+# =============================================================================
 
-    Color resolution order in resolve_colors():
-        1. This promotion's assigned color_scheme (FK)
-        2. The PromoColorScheme flagged is_default
-        3. PromoSettings singleton (legacy fallback)
-        4. Empty string → theme.css :root takes over
+class Menu(models.Model):
     """
+    A named collection of menu items, unified across regular menus and
+    promotional menus.
+
+    menu_type controls rendering:
+        'food'     — renders food categories only
+        'drinks'   — renders drink categories only
+        'combined' — renders both with Food / Drinks tabs
+        'promo'    — promotional menu; uses color_scheme and show_on_homepage
+
+    is_default:
+        One menu per menu_type can be flagged as default. The default food,
+        drinks, and combined menus are what render on the main menu pages.
+        Non-default menus are promos, happy hour, specials, etc.
+
+    Categories are declared via MenuCategoryAssignment. Items within each
+    category are placed via MenuItemCategoryAssignment.
+
+    Color resolution for non-default menus (resolve_colors()):
+        1. This menu's assigned color_scheme FK
+        2. PromoColorScheme flagged is_default
+        3. PromoSettings singleton (legacy fallback)
+        4. Empty string → theme.css :root defaults
+    """
+
+    MENU_TYPE_CHOICES = [
+        ('food',     'Food'),
+        ('drinks',   'Drinks'),
+        ('combined', 'Combined (Food & Drinks)'),
+        ('promo',    'Promotion'),
+    ]
+
+    # ── Identity ──────────────────────────────────────────────────────────────
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     description = models.TextField(blank=True)
 
-    # ── Color Scheme ──────────────────────────────────────────────────────────
+    # ── Type & default ────────────────────────────────────────────────────────
+    menu_type = models.CharField(
+        max_length=10,
+        choices=MENU_TYPE_CHOICES,
+        default='promo',
+        help_text=(
+            "Controls how this menu is rendered. "
+            "'Combined' shows Food and Drinks tabs. "
+            "'Promotion' enables color scheme and homepage display."
+        )
+    )
+    is_default = models.BooleanField(
+        default=False,
+        help_text=(
+            "Marks this as the default menu for its type. "
+            "One default per menu_type. The default combined/food/drinks menu "
+            "is what renders on the main menu pages."
+        )
+    )
+
+    # ── Color scheme (promos) ─────────────────────────────────────────────────
     color_scheme = models.ForeignKey(
         PromoColorScheme,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='promotions',
-        help_text=(
-            "Color scheme for this promotion. "
-            "Leave blank to use the default scheme."
-        )
+        related_name='menus',
+        help_text="Color scheme for this menu. Leave blank to use the default scheme."
     )
 
     # ── Scheduling ────────────────────────────────────────────────────────────
     start_date = models.DateField(
         blank=True, null=True,
-        help_text="Date this promotion becomes visible (leave blank for immediate)"
+        help_text="Date this menu becomes visible (leave blank for immediate)."
     )
     end_date = models.DateField(
         blank=True, null=True,
-        help_text="Date this promotion expires (leave blank for no expiry)"
+        help_text="Date this menu expires (leave blank for no expiry)."
     )
     is_active = models.BooleanField(
         default=True,
-        help_text="Master switch — uncheck to hide regardless of dates"
-    )
-    show_on_homepage = models.BooleanField(
-        default=False,
-        help_text="Promoted on the home page"
+        help_text="Master switch — uncheck to hide regardless of dates."
     )
 
-    # ── Items ─────────────────────────────────────────────────────────────────
-    items = models.ManyToManyField(
-        MenuItem,
-        through='MenuPromotionItem',
-        related_name='promotions',
-        blank=True
+    # ── Homepage display ──────────────────────────────────────────────────────
+    show_on_homepage = models.BooleanField(
+        default=False,
+        help_text=(
+            "Show this menu as a block on the home page. "
+            "Typically used for promotions and featured specials."
+        )
+    )
+
+    # ── Categories (declared via through table) ───────────────────────────────
+    categories = models.ManyToManyField(
+        MenuCategory,
+        through='MenuCategoryAssignment',
+        related_name='menus',
+        blank=True,
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     media = GenericRelation(
         'media_manager.Media',
-        related_query_name='promotion',
+        related_query_name='menu',
     )
 
     class Meta:
-        ordering = ['start_date', 'title']
-        verbose_name = 'Menu Promotion'
-        verbose_name_plural = 'Menu Promotions'
+        ordering = ['menu_type', 'title']
+        verbose_name = 'Menu'
+        verbose_name_plural = 'Menus'
 
     def __str__(self):
-        return self.title
+        marker = ' (default)' if self.is_default else ''
+        return f"{self.title}{marker}"
+
+    # ── Properties ────────────────────────────────────────────────────────────
 
     @property
     def is_currently_active(self):
-        """True if active flag is set and today falls within the date range."""
+        """True if active flag is set and today falls within any date range."""
         if not self.is_active:
             return False
         today = timezone.now().date()
@@ -540,20 +589,19 @@ class MenuPromotion(models.Model):
 
     def resolve_colors(self):
         """
-        Returns resolved hex values for all four promo color slots.
+        Returns resolved hex values for all four color slots.
 
         Resolution order:
-          1. This promotion's assigned color_scheme (FK)
-          2. The PromoColorScheme flagged is_default
-          3. PromoSettings singleton (legacy fallback)
-          4. Empty string → theme.css :root takes over
+            1. This menu's assigned color_scheme FK
+            2. PromoColorScheme flagged is_default
+            3. PromoSettings singleton (legacy fallback)
+            4. Empty string → theme.css :root takes over
         """
         scheme = self.color_scheme
         if scheme is None:
             scheme = PromoColorScheme.objects.filter(is_default=True).first()
         if scheme is not None:
             return scheme.as_dict()
-        # Legacy fallback — can be removed once all promos use schemes
         defaults = PromoSettings.load()
         return {
             'primary': defaults.promo_primary_color,
@@ -562,68 +610,150 @@ class MenuPromotion(models.Model):
             'bg':      defaults.promo_bg_color,
         }
 
+    def get_categories(self, category_type=None):
+        """
+        Returns assigned categories ordered by their MenuCategoryAssignment
+        display_order. Optionally filter by category_type ('food'/'drinks').
+        """
+        qs = self.menu_category_assignments.select_related(
+            'category'
+        ).filter(
+            category__is_active=True
+        ).order_by('display_order')
+        if category_type:
+            qs = qs.filter(category__category_type=category_type)
+        return [a.category for a in qs]
 
-class MenuPromotionItem(models.Model):
-    promotion = models.ForeignKey(
-        MenuPromotion,
+
+# =============================================================================
+# MENU CATEGORY ASSIGNMENT
+# (Menu declares which categories it uses, and in what order)
+# =============================================================================
+
+class MenuCategoryAssignment(models.Model):
+    """
+    Declares that a Menu uses a specific MenuCategory, and at what display order.
+
+    This is the menu's scope declaration — "this menu shows these categories."
+    Item placement within a category is handled by MenuItemCategoryAssignment.
+    """
+    menu = models.ForeignKey(
+        Menu,
         on_delete=models.CASCADE,
-        related_name='promotion_items'
+        related_name='menu_category_assignments'
     )
-    # Now optional — leave blank for a fresh/standalone promo item
+    category = models.ForeignKey(
+        MenuCategory,
+        on_delete=models.CASCADE,
+        related_name='menu_assignments'
+    )
+    display_order = models.PositiveIntegerField(
+        default=0,
+        help_text="Order in which this category appears within this menu."
+    )
+
+    class Meta:
+        ordering = ['display_order']
+        unique_together = ['menu', 'category']
+        verbose_name = 'Menu Category Assignment'
+        verbose_name_plural = 'Menu Category Assignments'
+
+    def __str__(self):
+        return f"{self.menu.title} → {self.category.name} (order {self.display_order})"
+
+
+# =============================================================================
+# MENU ITEM CATEGORY ASSIGNMENT
+# (Places an item into a category, with per-placement order and overrides)
+# =============================================================================
+
+class MenuItemCategoryAssignment(models.Model):
+    """
+    Places a MenuItem into a MenuCategory at a specific position.
+
+    Key design points:
+    - The same item can appear in multiple categories across multiple menus.
+    - order is per-placement, not per-item — Potstickers can be #3 in Starters
+      and #1 in Happy Hour Food.
+    - override_price replaces the item's base price for this placement only.
+      The item's own price is never modified.
+    - available_game_day controls whether this placement appears during
+      limited menu mode (game days, busy events). Defaults to False —
+      staff must explicitly opt items into the game day menu.
+    - note is a short callout shown on the item in this placement only,
+      e.g. 'Limited time!' or 'Half price during Happy Hour'.
+    """
     menu_item = models.ForeignKey(
         MenuItem,
-        on_delete=models.SET_NULL,      # changed from CASCADE
-        related_name='promotion_entries',
-        null=True,                       # added
-        blank=True,                      # added
-        help_text="Link to an existing menu item, or leave blank to enter details below."
+        on_delete=models.CASCADE,
+        related_name='category_assignments'
     )
-    # Standalone fields — used when menu_item is blank, or to override when linked
-    name = models.CharField(
-        max_length=200,
+    category = models.ForeignKey(
+        MenuCategory,
+        on_delete=models.CASCADE,
+        related_name='item_assignments'
+    )
+    subcategory = models.ForeignKey(
+        MenuSubCategory,
+        on_delete=models.SET_NULL,
+        related_name='item_assignments',
+        null=True,
         blank=True,
-        help_text="Item name. Auto-filled from the linked item if left blank."
+        help_text="Optional sub-grouping within the category (e.g. On Tap, Bottles & Cans)."
     )
-    description = CKEditor5Field(
-        blank=True,
-        help_text="Description. Auto-filled from the linked item if left blank."
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text="Display order within this category. Independent per placement."
     )
-    promo_price = models.DecimalField(
+    override_price = models.DecimalField(
         max_digits=8,
         decimal_places=2,
         blank=True,
         null=True,
         validators=[MinValueValidator(Decimal('0.00'))],
-        help_text="Promotional price — overrides the item's standard price when set."
+        help_text=(
+            "Price for this placement only — overrides the item's base price. "
+            "Used for Happy Hour, specials pricing, etc. "
+            "Leave blank to use the item's standard price."
+        )
     )
     note = models.CharField(
         max_length=200,
         blank=True,
-        help_text="Short callout shown on the item, e.g. 'Limited time!' or 'While supplies last'."
+        help_text=(
+            "Short callout shown on this item in this placement only, "
+            "e.g. 'Half price during Happy Hour' or 'Limited time!'."
+        )
     )
-    order = models.PositiveIntegerField(default=0)
+    available_game_day = models.BooleanField(
+        default=False,
+        help_text=(
+            "Include this item when the venue is in limited menu mode "
+            "(game days, busy events). Defaults to False — opt in explicitly."
+        )
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Uncheck to hide this item from this category without removing the assignment."
+    )
 
     class Meta:
-        ordering = ['order', 'menu_item__name']
-        verbose_name = 'Promotion Item'
-        verbose_name_plural = 'Promotion Items'
-        # unique_together removed — a blank menu_item can appear multiple times
+        ordering = ['category__order', 'subcategory__order', 'order']
+        unique_together = ['menu_item', 'category']
+        verbose_name = 'Item Category Assignment'
+        verbose_name_plural = 'Item Category Assignments'
 
     def __str__(self):
-        item_name = self.name or (self.menu_item.name if self.menu_item else 'Unnamed item')
-        price_str = f"${self.promo_price}" if self.promo_price else "standard price"
-        return f"{self.promotion.title} — {item_name} ({price_str})"
-
-    def resolved_name(self):
-        return self.name or (self.menu_item.name if self.menu_item else '')
-
-    def resolved_description(self):
-        return self.description or (self.menu_item.description if self.menu_item else '')
+        price_note = f' (override ${self.override_price})' if self.override_price else ''
+        return f"{self.menu_item.name} → {self.category.name}{price_note}"
 
     @property
     def display_price(self):
-        if self.promo_price is not None:
-            return float(self.promo_price)
-        if self.menu_item:
-            return self.menu_item.display_price
-        return None
+        """
+        Returns the effective display price for this placement.
+        Resolution order: override_price → item's own display_price logic.
+        """
+        if self.override_price is not None:
+            from apps.menu.templatetags.menu_filters import currency
+            return currency(self.override_price)
+        return self.menu_item.display_price

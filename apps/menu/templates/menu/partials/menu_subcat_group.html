@@ -1,0 +1,58 @@
+{# ============================================================ #}
+{# menu/partials/menu_subcat_group.html                         #}
+{#                                                              #}
+{# Renders a subcategory card containing a compact list of      #}
+{# items. Expects:                                              #}
+{#   subcat  — the subcategory grouper object (has .grouper     #}
+{#             for name and .list for assignments)              #}
+{#   section_bg — cycling background class from parent         #}
+{#                                                              #}
+{# Usage (via regroup in menu_category_section.html):          #}
+{#   {% for subcat in subcategories %}                          #}
+{#     {% include "menu/partials/menu_subcat_group.html" %}     #}
+{#   {% endfor %}                                               #}
+{# ============================================================ #}
+
+{% load menu_tags menu_filters %}
+
+<div class="menu-subcat-card {% if section_bg == 'secondary' %}bg-white/10{% else %}bg-black/10{% endif %}">
+
+  <h4 class="menu-subcat-title">{{ subcat.grouper }}</h4>
+
+  <ul class="menu-subcat-list">
+    {% for assignment in subcat.list %}
+    <li
+      class="menu-subcat-item"
+      x-data="{}"
+      x-on:click="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+      x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+      x-on:keydown.space.prevent="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+      role="button"
+      tabindex="0"
+      data-item='{{ assignment|item_to_json }}'
+      aria-label="View details for {{ assignment.menu_item.name }}"
+    >
+      <span class="menu-subcat-item-name">
+        {{ assignment.menu_item.name }}
+        {% if assignment.menu_item.is_seasonal %}
+          <span class="t-badge badge-seasonal ml-1">Seasonal</span>
+        {% endif %}
+        {% if assignment.note %}
+          <span class="t-badge badge-featured ml-1">{{ assignment.note }}</span>
+        {% endif %}
+      </span>
+      <span class="menu-item__price t-price-sm shrink-0 ml-4">
+        {% if assignment.menu_item.is_on_sale and not assignment.override_price %}
+          <span class="text-gray-400 line-through text-xs">
+            {{ assignment.menu_item.price|currency }}
+          </span>
+          {{ assignment.menu_item.sale_price|currency }}
+        {% else %}
+          {{ assignment.display_price }}
+        {% endif %}
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+
+</div>

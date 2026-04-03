@@ -17,9 +17,9 @@
       color: var(--color-text-{{ section_bg }});
     ">
 
-    <h3 class="text-2xl font-bold text-center">
-      {{ category.grouper|upper}}
-    </h3>
+    <h2 class="text-center">
+      {{ category.grouper }}
+    </h2>
     <h6 class="text-center">
       {{ category.list.0.category.description }}
     </h6>
@@ -27,7 +27,7 @@
     {# Split items into those with and without a subcategory #}
     {% with subcat_items=category.list|with_subcategory plain_items=category.list|without_subcategory %}
 
-    <div class="grid md:grid-cols-2 gap-2 p-1">
+    <div class="grid md:grid-cols-4 gap-2 p-1">
 
       {# ── Plain items: one card each ── #}
       {% for item in plain_items %}
@@ -40,33 +40,40 @@
         x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
         data-item='{{ item|item_to_json }}'
       >
-        <div class="flex justify-between items-start mb-2">
+        <div class="flex flex-row-reverse gap-3">
 
-          <h4 class="font-semibold text-lg" style="color: var(--color-text-heading);">
-            {{ item.name }}
-            {% if item.is_seasonal %}
-              <div class="mt-1 text-xs inline-block px-1 py-1 rounded bg-theme-badge text-white">
-                Seasonal
-              </div>
-            {% endif %}
-          </h4>
+          {% get_primary_media item as primary_image %}
+          {% if primary_image %}
+          <div class="shrink-0 w-14 h-14 rounded overflow-hidden">
+            <img src="{{ primary_image.file.url }}" alt="{{ primary_image.alt_text|default:item.name }}"
+                 class="w-full h-full object-cover" loading="lazy">
+          </div>
+          {% endif %}
 
-          <span class="font-bold">
-            {% if item.is_on_sale %}
-              <span class="text-gray-400 line-through text-sm">{{ item.price|currency }}</span>
-              <span class="text-theme-accent font-bold">{{ item.sale_price|currency }}</span>
-            {% else %}
-              <span class="text-theme-accent font-bold">{{ item.display_price|currency }}</span>
-            {% endif %}
-          </span>
+          <div class="flex-1 min-w-0">
+            <div class="flex justify-between items-start mb-2">
+              <h4 class="font-semibold text-lg" style="color: var(--color-text-heading);">
+                {{ item.name }}
+                {% if item.is_seasonal %}
+                  <div class="mt-1 text-xs inline-block px-1 py-1 rounded bg-theme-badge text-white">Seasonal</div>
+                {% endif %}
+              </h4>
+              <span class="font-bold shrink-0 ml-2">
+                {% if item.is_on_sale %}
+                  <span class="text-gray-400 line-through text-sm">{{ item.price|currency }}</span>
+                  <span class="text-theme-accent font-bold">{{ item.sale_price|currency }}</span>
+                {% else %}
+                  <span class="text-theme-accent font-bold">{{ item.display_price|currency }}</span>
+                {% endif %}
+              </span>
+            </div>
+            <p class="text-sm opacity-80" style="color: inherit;">
+              {{ item.short_description }}
+            </p>
+          </div>
 
         </div>
-
-        <p class="text-sm opacity-80" style="color: inherit;">
-          {{ item.short_description }}
-        </p>
-
-      </div>
+      </div> 
       {% endfor %}
 
       {# ── Subcategory items: one card per subcategory ── #}

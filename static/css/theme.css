@@ -36,7 +36,7 @@
   --color-bg-secondary: #171717;             /* cards, panels, surfaces */
   --color-bg-tertiary:  #be141e;             
   --color-bg-accent:    #c9972a;             /* CTA buttons, badges */
-  --color-nav-bg:       rgba(10,10,10,0.95); /* sticky nav */
+  --color-nav-bg:       rgba(10,10,10,0.95); /* sticky nav */      
 
   /* --- Surface Colors ------------------------------------------------------ */
   /* Elevated surfaces (modals, drawers, popovers) that layer over bg-secondary */
@@ -51,6 +51,9 @@
   --color-gold-deep:   #a07820;   /* borders, subtle dividers */
   --color-gold-light:  #f4d98a;   /* tints */
 
+  /* Base colors */
+  --color-white:        #ffffff;
+  
   /* --- Grays --------------------------------------------------------------- */
   --color-dark-gray: #2c2c2c;   /* borders */
   --color-mid-gray:  #555555;   /* placeholder text */

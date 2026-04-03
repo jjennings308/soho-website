@@ -1,79 +1,216 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
+from django.http import Http404, JsonResponse
+from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Prefetch
+
 from apps.core.utils import get_active_template
-from django.shortcuts import get_object_or_404
-from .models import MenuItem, MenuItemVariation, MenuItemAddon, MenuPromotion, MenuPromotionItem
-def full(request):
-    menu_type = request.GET.get('type')  # ?type=Food or ?type=Drinks, absent = all
+from apps.events.models import EventDay
 
-    menu_items = MenuItem.objects.filter(is_available=True)
-    
-    if menu_type:
-        menu_items = menu_items.filter(category__menu_type__name=menu_type)
+from .models import (
+    Menu,
+    MenuCategoryAssignment,
+    MenuItemCategoryAssignment,
+    MenuItemVariation,
+    MenuItemAddon,
+    MenuItem,
+)
 
-    menu_items = menu_items.select_related(
-        'category', 'category__menu_type', 'subcategory',
-    ).prefetch_related(
-        Prefetch('variations',     queryset=MenuItemVariation.objects.filter(is_available=True).order_by('order', 'price')),
-        Prefetch('addons',         queryset=MenuItemAddon.objects.filter(is_available=True).order_by('order', 'price')),
-    ).order_by(
-        'category__menu_type__order', 'category__order', 'category__name',
-        'subcategory__order', 'subcategory__name', 'order', 'name',
+
+# =============================================================================
+# HELPERS
+# =============================================================================
+
+def _get_menu_mode():
+    """Returns 'limited' or 'full' based on EventDay calendar + SiteSettings."""
+    return EventDay.get_current_menu_mode()
+
+
+def _prefetch_category_assignments(menu_qs):
+    """
+    Applies consistent prefetch to a Menu queryset so category and item
+    assignments are fetched in as few queries as possible.
+    """
+    return menu_qs.prefetch_related(
+        Prefetch(
+            'menu_category_assignments',
+            queryset=MenuCategoryAssignment.objects.select_related(
+                'category'
+            ).order_by('display_order'),
+        ),
     )
 
-    titles = {'Food': ' - Food Menu', 'Drinks': ' - Drink Menu'}
+
+def _item_assignment_qs(limited_menu=False):
+    """
+    Returns a base MenuItemCategoryAssignment queryset with item data
+    fully prefetched. Used by views and template tags.
+    """
+    qs = MenuItemCategoryAssignment.objects.filter(
+        is_active=True,
+        menu_item__is_available=True,
+    ).select_related(
+        'menu_item',
+        'subcategory',
+        'category',
+    ).prefetch_related(
+        Prefetch(
+            'menu_item__variations',
+            queryset=MenuItemVariation.objects.filter(
+                is_available=True
+            ).order_by('order', 'price'),
+        ),
+        Prefetch(
+            'menu_item__addons',
+            queryset=MenuItemAddon.objects.filter(
+                is_available=True
+            ).order_by('order', 'price'),
+        ),
+        'menu_item__media',
+    ).order_by('subcategory__order', 'order')
+
+    if limited_menu:
+        qs = qs.filter(available_game_day=True)
+
+    return qs
+
+
+# =============================================================================
+# MENU VIEWS
+# =============================================================================
+
+def full(request):
+    """
+    Renders the default menu. Supports ?type=food or ?type=drinks to filter
+    to a single tab on a combined menu.
+    """
+    active_type = request.GET.get('type')  # 'food', 'drinks', or None
+
+    # Determine which default menu to load
+    if active_type == 'food':
+        menu_type = 'food'
+    elif active_type == 'drinks':
+        menu_type = 'drinks'
+    else:
+        menu_type = 'combined'
+
+    menu = Menu.objects.filter(
+        menu_type=menu_type,
+        is_default=True,
+        is_active=True,
+    ).prefetch_related(
+        Prefetch(
+            'menu_category_assignments',
+            queryset=MenuCategoryAssignment.objects.select_related(
+                'category'
+            ).order_by('display_order'),
+        ),
+    ).first()
+
+    # Fallback: if no combined menu, try food
+    if not menu:
+        menu = Menu.objects.filter(
+            is_default=True,
+            is_active=True,
+        ).prefetch_related(
+            Prefetch(
+                'menu_category_assignments',
+                queryset=MenuCategoryAssignment.objects.select_related(
+                    'category'
+                ).order_by('display_order'),
+            ),
+        ).first()
+
+    limited_menu = (_get_menu_mode() == 'limited')
+
+    titles = {
+        'food':     ' - Food Menu',
+        'drinks':   ' - Drink Menu',
+        'combined': ' - Menu',
+    }
+
     context = {
-        'menu_items': menu_items,
-        'title': titles.get(menu_type, ' - Full Menu'),
-        'active_type': menu_type,  # useful for highlighting active nav link
+        'menu':               menu,
+        'category_assignments': menu.menu_category_assignments.all() if menu else [],
+        'active_type':        active_type,
+        'limited_menu':       limited_menu,
+        'title':              titles.get(menu_type, ' - Menu'),
     }
     return render(request, get_active_template('menu'), context)
 
-def promotions(request):
-    """List all currently active promotions."""
-    active_promotions = MenuPromotion.objects.filter(is_active=True).prefetch_related(
-        Prefetch(
-            'promotion_items',
-            queryset=MenuPromotionItem.objects.select_related('menu_item').order_by('order'),
-        )
+
+def menu_detail(request, slug):
+    """
+    Detail view for any named Menu — default or promo.
+    Used for promo landing pages, happy hour page, etc.
+    """
+    menu = get_object_or_404(
+        Menu.objects.prefetch_related(
+            Prefetch(
+                'menu_category_assignments',
+                queryset=MenuCategoryAssignment.objects.select_related(
+                    'category'
+                ).order_by('display_order'),
+            ),
+        ),
+        slug=slug,
+        is_active=True,
     )
-    # Filter by date range in Python using the is_currently_active property
-    active_promotions = [p for p in active_promotions if p.is_currently_active]
+
+    if not menu.is_currently_active:
+        raise Http404
+
+    limited_menu = (_get_menu_mode() == 'limited')
+    colors = menu.resolve_colors()
 
     context = {
-        'promotions': active_promotions,
-        'title': ' - Promotions',
+        'menu':               menu,
+        'category_assignments': menu.menu_category_assignments.all(),
+        'colors':             colors,
+        'limited_menu':       limited_menu,
+        'title':              f' - {menu.title}',
+    }
+    return render(request, get_active_template('menu_detail'), context)
+
+
+def promotions(request):
+    """Lists all currently active promotional menus."""
+    limited_menu = (_get_menu_mode() == 'limited')
+
+    promo_menus = Menu.objects.filter(
+        menu_type='promo',
+        is_active=True,
+    ).prefetch_related(
+        Prefetch(
+            'menu_category_assignments',
+            queryset=MenuCategoryAssignment.objects.select_related(
+                'category'
+            ).order_by('display_order'),
+        ),
+    ).order_by('start_date', 'title')
+
+    active_promos = [m for m in promo_menus if m.is_currently_active]
+
+    context = {
+        'promo_menus':  active_promos,
+        'limited_menu': limited_menu,
+        'title':        ' - Promotions',
     }
     return render(request, get_active_template('promotions'), context)
 
 
-def promotion_detail(request, slug):
-    """Detail view for a single promotion."""
-    promotion = get_object_or_404(MenuPromotion, slug=slug, is_active=True)
-
-    if not promotion.is_currently_active:
-        from django.http import Http404
-        raise Http404
-
-    items = promotion.promotion_items.select_related('menu_item').order_by('order')
-    colors = promotion.resolve_colors()
-
-    context = {
-        'promotion': promotion,
-        'items': items,
-        'colors': colors,
-        'title': f' - {promotion.title}',
-    }
-    return render(request, get_active_template('promotion_detail'), context)
-
-from django.http import JsonResponse
-from django.contrib.admin.views.decorators import staff_member_required
+# =============================================================================
+# API ENDPOINT
+# =============================================================================
 
 @staff_member_required
 def menu_item_data(request, pk):
+    """
+    Returns basic item data as JSON for admin use
+    (e.g. auto-filling promo item fields).
+    """
     item = get_object_or_404(MenuItem, pk=pk)
     return JsonResponse({
-        'name': item.name,
-        'price': str(item.price) if item.price else '',
+        'name':        item.name,
+        'price':       str(item.price) if item.price else '',
         'description': item.description or '',
     })

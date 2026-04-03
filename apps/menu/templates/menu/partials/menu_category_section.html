@@ -1,0 +1,41 @@
+{# ============================================================ #}
+{# menu/partials/menu_category_section.html                     #}
+{#                                                              #}
+{# Expects:                                                     #}
+{#   category        — MenuCategory instance                    #}
+{#   assignments     — QuerySet of MenuItemCategoryAssignment   #}
+{#   forloop_counter — integer from parent loop (for bg cycle)  #}
+{#   limited_menu    — bool                                     #}
+{# ============================================================ #}
+
+{% load menu_tags menu_filters %}
+
+<section
+  class="menu-category-section py-6 px-12"
+  style="background-color: var(--color-bg-{% if forloop_counter|divisibleby:3 %}tertiary{% else %}{% if forloop_counter|divisibleby:2 %}secondary{% else %}primary{% endif %}{% endif %}); color: var(--color-text-{% if forloop_counter|divisibleby:3 %}tertiary{% else %}{% if forloop_counter|divisibleby:2 %}secondary{% else %}primary{% endif %}{% endif %});"
+  id="cat-{{ category.slug }}"
+>
+
+  <h2 class="text-center mb-1">{{ category.name }}</h2>
+  {% if category.description %}
+    <p class="text-center t-description mb-6 max-w-2xl mx-auto">
+      {{ category.description }}
+    </p>
+  {% endif %}
+
+  {% with plain=assignments|without_subcategory subcat_items=assignments|with_subcategory %}
+  <div class="grid md:grid-cols-4 gap-2 p-1">
+
+    {% for assignment in plain %}
+      {% include "menu/partials/menu_item_card.html" %}
+    {% endfor %}
+
+    {% regroup subcat_items by subcategory.name as subcategories %}
+    {% for subcat in subcategories %}
+      {% include "menu/partials/menu_subcat_group.html" %}
+    {% endfor %}
+
+  </div>
+  {% endwith %}
+
+</section>

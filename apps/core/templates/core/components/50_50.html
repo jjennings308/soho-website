@@ -4,18 +4,36 @@
 
         <!-- Left - bleeds to left edge, content aligned right -->
         {% if left.full_img %}
-            <div style="background-color: var(--color-{{left.full_img.bg_color |default:'bg-primary'}});">
+            <div style="background-color: var(--color-{{left.full_img.bg_color|default:'bg-primary'}});">
                 <div class="w-full h-full">
                     <img src={{left.full_img.img_src}} alt={{left.full_img.alt}} class="w-full h-full object-cover">
                 </div>
             </div>
+        {% elif left.map %}
+            <div class="relative w-full" style="min-height: 24rem; background-color: var(--color-{{left.map.bg_color|default:'bg-primary'}});">
+                <iframe
+                    src="{{ left.map.embed_url }}"
+                    class="absolute inset-0 w-full h-full border-0"
+                    allowfullscreen
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+                <a href="{{ left.map.directions_url }}"
+                   target="_blank"
+                   rel="noopener"
+                   class="absolute top-4 left-4 z-10 flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest"
+                   style="background-color: var(--color-bg-primary); color: var(--color-text-primary);">
+                    &#10148; Get Directions
+                </a>
+            </div>
         {% else %}
-            <div style="background-color: var(--color-{{left.bg_color |default:'bg-primary'}}); color: var(--color-{{left.text_color |default:'text-primary'}});" class="flex justify-end">
-                <div class="w-full max-w-[calc(theme(maxWidth.7xl)/2)] px-8 py-12">
+            <div style="background-color: var(--color-{{left.bg_color|default:'bg-primary'}}); color: var(--color-{{left.text_color|default:'text-primary'}}); display: flex;
+                min-height: 24rem; align-items: {{ left.vertical_align|default:'center' }}; justify-content: {{ left.horizontal_align|default:'flex-start' }};">
+                <div style="max-width: calc(theme(maxWidth.7xl) / 2); padding: 3rem 2rem; text-align: {{ left.text_align|default:'left' }};">
                     <h1 class="text-5xl font-bold mb-4">
                         {{ left.title }}
                     </h1>
-                    <p class="text-xl text-gray-600">
+                    <p class="text-xl text-gray-600 mb-6">
                         {{ left.content|safe }}
                     </p>
                     {% if left.button %}
@@ -27,18 +45,36 @@
 
         <!-- Right - bleeds to right edge, content aligned left -->
         {% if right.full_img %}
-            <div style="background-color: var(--color-{{right.full_img.bg_color |default:'bg-secondary'}});">
+            <div style="background-color: var(--color-{{right.full_img.bg_color|default:'bg-secondary'}});">
                 <div class="w-full h-full">
                     <img src={{right.full_img.img_src}} alt={{right.full_img.alt}} class="w-full h-full object-cover">
                 </div>
             </div>
+        {% elif right.map %}
+            <div class="relative w-full" style="min-height: 24rem; background-color: var(--color-{{right.map.bg_color|default:'bg-primary'}});">
+                <iframe
+                    src="{{ right.map.embed_url }}"
+                    class="absolute inset-0 w-full h-full border-0"
+                    allowfullscreen
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+                <a href="{{ right.map.directions_url }}"
+                   target="_blank"
+                   rel="noopener"
+                   class="absolute top-4 left-4 z-10 flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest"
+                   style="background-color: var(--color-bg-primary); color: var(--color-text-primary);">
+                    &#10148; Get Directions
+                </a>
+            </div>
         {% else %}
-            <div style="background-color: var(--color-{{right.bg_color |default:'bg-secondary'}}); color: var(--color-{{right.text_color |default:'text-secondary'}});" class="flex justify-end">
-                <div class="w-full max-w-[calc(theme(maxWidth.7xl)/2)] px-8 py-12">
+            <div style="background-color: var(--color-{{right.bg_color|default:'bg-secondary'}}); color: var(--color-{{right.text_color|default:'text-primary'}}); display: flex;
+                min-height: 24rem; align-items: {{ right.vertical_align|default:'center' }}; justify-content: {{ right.horizontal_align|default:'flex-start' }};">
+                <div style="max-width: calc(theme(maxWidth.7xl) / 2); padding: 3rem 2rem; text-align: {{ right.text_align|default:'left' }};">
                     <h1 class="text-5xl font-bold mb-4">
                         {{ right.title }}
                     </h1>
-                    <p class="text-xl text-gray-600">
+                    <p class="text-xl text-gray-600 mb-6">
                         {{ right.content|safe }}
                     </p>
                     {% if right.button %}

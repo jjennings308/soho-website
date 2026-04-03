@@ -1,37 +1,38 @@
 {# ============================================================ #}
-{# menu_item_card.html                                          #}
-{# Loop over your items and include this partial, e.g.:        #}
-{#   {% for item in items %}                                    #}
+{# menu/partials/menu_item_card.html                            #}
+{#                                                              #}
+{# Renders a single menu item card for a plain (non-subcategory)#}
+{# item. Expects an `assignment` context variable which is a    #}
+{# MenuItemCategoryAssignment instance.                         #}
+{#                                                              #}
+{# Usage:                                                       #}
+{#   {% for assignment in plain_assignments %}                   #}
 {#     {% include "menu/partials/menu_item_card.html" %}        #}
 {#   {% endfor %}                                               #}
 {# ============================================================ #}
 
-{% load menu_tags %}{# if you have a custom templatetag library #}
-{% load menu_filters %}
+{% load menu_tags menu_filters %}
 
-{# Build the JSON payload for this item once, up front.        #}
-{# item_json is a safe JSON string — see menu_view_snippet.py  #}
-{# for how to generate it in your view, OR use the             #}
-{# |item_to_json filter defined in menu_tags.py below.         #}
+{% get_primary_media assignment.menu_item as primary_image %}
 
 <article
   class="menu-item-card"
   x-data="{}"
   x-on:click="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
-  role="button"
-  tabindex="0"
   x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
   x-on:keydown.space.prevent="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
-  data-item='{{ item|item_to_json }}'
-  :aria-label="'View details for ' + JSON.parse($el.dataset.item).name"
+  role="button"
+  tabindex="0"
+  data-item='{{ assignment|item_to_json }}'
+  aria-label="View details for {{ assignment.menu_item.name }}"
 >
   <div class="flex gap-3 p-4">
 
-    {% if item.image %}
-    <div class="shrink-0 w-24 h-24 rounded overflow-hidden">
+    {% if primary_image %}
+    <div class="shrink-0 w-16 h-16 rounded overflow-hidden">
       <img
-        src="{{ item.image.url }}"
-        alt="{{ item.image_alt_text|default:item.name }}"
+        src="{{ primary_image.file.url }}"
+        alt="{{ primary_image.alt_text|default:assignment.menu_item.name }}"
         class="w-full h-full object-cover"
         loading="lazy"
       />
@@ -39,17 +40,44 @@
     {% endif %}
 
     <div class="flex-1 min-w-0">
+
       <div class="flex justify-between items-start gap-2 mb-1">
-        <h3 class="card__title">{{ item.name }}</h3>
-        <span class="menu-item__price">{{ item.display_price }}</span>
+        <h4 class="card__title">
+          {{ assignment.menu_item.name }}
+          {% if assignment.menu_item.is_chef_special %}
+            <span class="t-badge badge-chef ml-1">Chef's Special</span>
+          {% endif %}
+          {% if assignment.menu_item.is_new %}
+            <span class="t-badge badge-new ml-1">New</span>
+          {% endif %}
+          {% if assignment.menu_item.is_seasonal %}
+            <span class="t-badge badge-seasonal ml-1">Seasonal</span>
+          {% endif %}
+        </h4>
+        <span class="menu-item__price shrink-0">
+          {% if assignment.menu_item.is_on_sale and not assignment.override_price %}
+            <span class="text-gray-400 line-through text-sm">
+              {{ assignment.menu_item.price|currency }}
+            </span>
+            {{ assignment.menu_item.sale_price|currency }}
+          {% else %}
+            {{ assignment.display_price }}
+          {% endif %}
+        </span>
       </div>
 
-      {% if item.short_description %}
-      <p class="menu-item__desc t-description mt-1">{{ item.short_description|truncatechars:100 }}</p>
+      {% if assignment.note %}
+        <span class="t-badge badge-seasonal mb-1 inline-block">{{ assignment.note }}</span>
       {% endif %}
 
-      <span class="text-eyebrow mt-3 block">View Details →</span>
-    </div>
+      {% if assignment.menu_item.short_description %}
+        <p class="menu-item__desc t-description mt-1">
+          {{ assignment.menu_item.short_description|truncatechars:120 }}
+        </p>
+      {% endif %}
 
+      <span class="text-eyebrow mt-2 block">View Details →</span>
+
+    </div>
   </div>
 </article>

@@ -1,10 +1,12 @@
 {% extends "base.html" %}
+{% load menu_tags %}
 
 {% block title %}SoHo Pittsburgh{{ title }}{% endblock %}
+
 {% block content %}
 
-{% for promo in promotions %}
-  {% include "menu/partials/promo_card.html" with promo=promo %}
+{% for menu in promo_menus %}
+  {% include "menu/partials/promo_card.html" with menu=menu limited_menu=limited_menu %}
 {% empty %}
   <section class="py-12 px-12 text-center">
     <p class="opacity-60">No active promotions at this time. Check back soon!</p>
@@ -12,7 +14,5 @@
 {% endfor %}
 
 {% include "menu/partials/menu_item_modal.html" %}
-{% include "menu/partials/promo_item_modal.html" %}
-
 
 {% endblock %}

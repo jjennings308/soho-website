@@ -2,50 +2,51 @@
 {% load ui_tags %}
 {% load content_tags %}
 {% load menu_tags %}
+
 {% block title %}{{ site_settings.restaurant_name}} - {% get_active_block 'site_tagline' as b %}{{ b.body|striptags }}{% endblock %}
 
 {% block content %}
 
-{% include "core/components/banner_full.html" with banner=hero_banner %}
+{% include "core/components/db_banner_full.html" with banner=hero_banner %}
 
-{% include "core/components/banner_full.html" with banner=grubhub_banner %}
+{% include "core/components/db_banner_full.html" with banner=grubhub_banner %}
 
-{% include "core/components/50_50.html" with left=left_about right=right_about%}
+{% include "core/components/db_banner_full.html" with banner=opentable_banner %}
 
-{% include "core/components/50_50.html" with left=left_cater right=right_cater%}
+{% include "core/components/50_50.html" with left=left_about right=right_about %}
+
+{% include "core/components/50_50.html" with left=left_cater right=right_cater %}
 
 {% include "core/components/50_50.html" with right=right_gday left=left_gday %}
 
-
-<!-- ========================= -->
-<!-- 60 / 40 SPLIT SECTION -->
-<!-- ========================= -->
+{# ── Homepage promo blocks ── #}
+{% get_active_menus menu_type='promo' homepage_only=True as homepage_promos %}
+{% if homepage_promos %}
 <section class="w-full bg-white py-20">
-    <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-5 gap-12 items-center">
+  <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-5 gap-12 items-center">
 
-        <!-- 60% Column -->
-        <div class="md:col-span-3">
-            {% get_active_promotions homepage_only=True as promotions %}
-            {% for promo in promotions %}
-                {% include "menu/partials/promo_card.html" with promo=promo %}
-            {% endfor %}
-        </div>
-
-        <!-- 40% Column -->
-        <div class="md:col-span-2">
-            {% if promo_sidebar_image %}
-                <img src="{{ promo_sidebar_image.file.url }}"
-                    alt="{{ promo_sidebar_image.alt_text|default:'SoHo Pittsburgh' }}"
-                    class="rounded-2xl shadow-lg w-full">
-            {% else %}
-                <img src="https://via.placeholder.com/500x400"
-                    alt="Placeholder"
-                    class="rounded-2xl shadow-lg w-full">
-            {% endif %}
-        </div>
+    <div class="md:col-span-3">
+      {% for menu in homepage_promos %}
+        {% include "menu/partials/promo_card.html" with menu=menu limited_menu=limited_menu %}
+      {% endfor %}
     </div>
+
+    <div class="md:col-span-2">
+      {% if promo_sidebar_image %}
+        <img src="{{ promo_sidebar_image.file.url }}"
+             alt="{{ promo_sidebar_image.alt_text|default:'SoHo Pittsburgh' }}"
+             class="rounded-2xl shadow-lg w-full">
+      {% else %}
+        <img src="https://via.placeholder.com/500x400"
+             alt="Placeholder"
+             class="rounded-2xl shadow-lg w-full">
+      {% endif %}
+    </div>
+
+  </div>
 </section>
+{% endif %}
+
 {% include "menu/partials/menu_item_modal.html" %}
-{% include "menu/partials/promo_item_modal.html" %}
 
 {% endblock %}

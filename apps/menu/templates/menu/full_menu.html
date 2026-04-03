@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% load menu_tags menu_filters %}
+
+{% block title %}SoHo Pittsburgh{{ title }}{% endblock %}
+
+{% block content %}
+
+{# ── Active tab (food / drinks / all) passed from view ── #}
+{% if menu.menu_type == 'combined' %}
+<div class="menu-tab-bar flex justify-center gap-4 py-4 sticky top-0 z-10"
+     style="background-color: var(--color-bg-primary);">
+  <a
+    href="?type=food"
+    class="menu-tab {% if active_type == 'food' %}menu-tab--active{% endif %}"
+  >Food</a>
+  <a
+    href="?type=drinks"
+    class="menu-tab {% if active_type == 'drinks' %}menu-tab--active{% endif %}"
+  >Drinks</a>
+  <a
+    href="?"
+    class="menu-tab {% if not active_type %}menu-tab--active{% endif %}"
+  >Full Menu</a>
+</div>
+{% endif %}
+
+{# ── Game day notice ── #}
+{% if limited_menu %}
+<div class="menu-game-day-notice text-center py-3 px-6"
+     style="background-color: var(--color-bg-accent); color: var(--color-text-accent);">
+  <strong>Game Day Menu</strong> — We're serving a limited selection today.
+  Full menu returns after the event.
+</div>
+{% endif %}
+
+{# ── Category sections ── #}
+{% for cat_assignment in category_assignments %}
+  {% with category=cat_assignment.category %}
+    {% get_category_assignments category limited_menu=limited_menu as assignments %}
+    {% if assignments %}
+      {% include "menu/partials/menu_category_section.html" with category=category assignments=assignments forloop_counter=forloop.counter limited_menu=limited_menu %}
+    {% endif %}
+  {% endwith %}
+{% endfor %}
+
+{# ── Modals ── #}
+{% include "menu/partials/menu_item_modal.html" %}
+
+{% endblock %}

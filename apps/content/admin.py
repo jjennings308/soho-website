@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 from .models import ContentSlot, ContentBlock
 
 
@@ -21,8 +21,11 @@ class ContentSlotAdmin(admin.ModelAdmin):
     def active_block_label(self, obj):
         block = obj.get_active_block()
         if block:
-            return format_html('<span style="color: #2d7a2d;">&#10003; {}</span>', block.label or str(block.created_at.date()))
-        return format_html('<span style="color: #999;">— none active —</span>')
+            return format_html(
+                '<span style="color: #2d7a2d;">&#10003; {}</span>',
+                block.label or str(block.created_at.date())
+            )
+        return mark_safe('<span style="color: #999;">— none active —</span>')
     active_block_label.short_description = 'Active Block'
 
     def block_count(self, obj):

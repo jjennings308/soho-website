@@ -61,6 +61,13 @@ STANDARD_SLOTS = [
     # Footer
     # -------------------------------------------------------------------------
     ('footer_tagline',          'Footer — Tagline',             'Short tagline displayed in the footer'),
+
+    # -------------------------------------------------------------------------
+    # Banner
+    # -------------------------------------------------------------------------
+    ('banner_hero_seasonal',    'Hero Banner — Seasonal Content',       'Overlays the hero banner boilerplate when active. Deactivate to revert to default copy.'),
+    ('banner_grubhub_seasonal', 'Grubhub Banner — Seasonal Content',    'Overlays the Grubhub banner boilerplate when active.'),
+    ('gameday_body',            'Home — Game Day Body',                 'Copy for the game day 50/50 panel on the home page'),
 ]
 
 

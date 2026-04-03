@@ -44,8 +44,8 @@
   <link rel="stylesheet" href="{% static 'css/theme.css' %}">
 
   {# ── Tailwind compiled output ─────────────────────────────────────────── #}
-  <link rel="stylesheet" href="{% static 'dist/output.css' %}">
-
+  <link rel="stylesheet" href="{% static 'dist/output.css' %}?v={{ VERSION }}">
+  
   {# ── Dynamic CSS Variable Overrides ───────────────────────────────────── #}
   {# Injects the resolved base+overlay vars as a :root block.              #}
   {# theme_style_vars comes from the active_theme context processor.       #}

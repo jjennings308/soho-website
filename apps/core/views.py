@@ -3,7 +3,7 @@ from django.shortcuts import render
 from django.views.generic import TemplateView
 from .mixins import ThemedTemplateMixin
 from .models import SiteSettings
-from .utils import get_active_template, get_block_body
+from .utils import get_active_template, get_block_body, get_banner, get_panel_side
 from media_manager.models import Media
 
 
@@ -21,8 +21,71 @@ def get_site_image(theme, title):
         title=title,
     ).first()
 
-
 class HomeView(ThemedTemplateMixin, TemplateView):
+    page_type = 'home'
+    fallback_template = 'pages/home.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        settings = SiteSettings.load()
+        active_theme = settings.active_theme
+
+        # ── Hero images ───────────────────────────────────────────────────────
+        hero_images = []
+        if active_theme:
+            hero_images = list(
+                active_theme.media.filter(
+                    media_type='image',
+                    is_approved=True,
+                ).order_by('-is_featured', 'display_order')
+            )
+        context['hero_images'] = hero_images
+        context['hero_image'] = hero_images[0] if hero_images else None
+
+        # ── Site images from media manager ────────────────────────────────────
+        # Still needed for hero_images carousel and promo sidebar
+        promo_img = get_site_image(active_theme, 'promo-sidebar')
+
+        # ── Banners ───────────────────────────────────────────────────────────
+        context['hero_banner']      = get_banner('hero')
+        context['grubhub_banner']   = get_banner('grubhub')
+        context['opentable_banner'] = get_banner('opentable')
+
+        # ── About 50/50 ───────────────────────────────────────────────────────
+        context['left_about']  = get_panel_side('front-door-image')
+        context['right_about'] = get_panel_side('about-text')
+
+        # ── Catering 50/50 ────────────────────────────────────────────────────
+        context['left_cater']  = get_panel_side('catering-text')
+        context['right_cater'] = get_panel_side('catering-image')
+
+        # ── Game Day 50/50 ────────────────────────────────────────────────────
+        context['left_gday']  = get_panel_side('gameday-image')
+        context['right_gday'] = get_panel_side('gameday-text')
+
+        # ── Promo sidebar ─────────────────────────────────────────────────────
+        context['promo_sidebar_image'] = promo_img
+        
+        return context
+
+
+
+def about(request):
+    return render(request, get_active_template('about'))
+
+
+def contact(request):
+
+    context = {
+        'left_contact':  get_panel_side('contact-text'),
+        'right_contact': get_panel_side('contact-map'),
+    }
+    return render(request, get_active_template('contact'), context)
+
+def theme_test(request):
+    return render(request, 'core/theme_test.html')
+
+class OldHomeView(ThemedTemplateMixin, TemplateView):
     page_type = 'home'
     fallback_template = 'pages/home.html'
 
@@ -160,15 +223,3 @@ class HomeView(ThemedTemplateMixin, TemplateView):
         context['promo_sidebar_image'] = promo_img
 
         return context
-
-
-def about(request):
-    return render(request, get_active_template('about'))
-
-
-def contact(request):
-    return render(request, get_active_template('contact'))
-
-
-def theme_test(request):
-    return render(request, 'core/theme_test.html')

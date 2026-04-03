@@ -1,16 +1,17 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     const GOOGLE_FONTS_MAP = {
-        '"Playfair Display", serif':   'Playfair+Display:ital,wght@0,400;0,600',
-        '"Cormorant Garamond", serif': 'Cormorant+Garamond:ital,wght@0,300;0,400;0,600',
-        '"Libre Baskerville", serif':  'Libre+Baskerville:ital,wght@0,400;0,700',
-        '"Inter", sans-serif':         'Inter:wght@300;400;500;600',
-        '"Lato", sans-serif':          'Lato:wght@0,300;0,400;0,700',
-        '"Montserrat", sans-serif':    'Montserrat:wght@300;400;500;600',
-        '"Open Sans", sans-serif':     'Open+Sans:wght@0,300;0,400;0,600',
-        '"Cinzel", serif':             'Cinzel:wght@400;600',
-        '"Oswald", sans-serif':        'Oswald:wght@300;400;500',
-        '"Raleway", sans-serif':       'Raleway:wght@300;400;500;600',
+        '"Playfair Display", serif':        'Playfair+Display:ital,wght@0,400;0,600',
+        '"Cormorant Garamond", serif':      'Cormorant+Garamond:ital,wght@0,300;0,400;0,600',
+        '"Libre Baskerville", serif':       'Libre+Baskerville:ital,wght@0,400;0,700',
+        '"Inter", sans-serif':              'Inter:wght@300;400;500;600',
+        '"Lato", sans-serif':               'Lato:wght@0,300;0,400;0,700',
+        '"Montserrat", sans-serif':         'Montserrat:wght@300;400;500;600',
+        '"Open Sans", sans-serif':          'Open+Sans:wght@0,300;0,400;0,600',
+        '"Cinzel", serif':                  'Cinzel:wght@400;600',
+        '"Oswald", sans-serif':             'Oswald:wght@300;400;500',
+        '"Raleway", sans-serif':            'Raleway:wght@300;400;500;600',
+        '"Playwrite IE", sans-serif':  'Playwrite+IE:wght@100;200;300;400',
     };
 
     const loadedFonts = new Set();
@@ -33,6 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         ensureFontLoaded(val);
         preview.style.fontFamily = val;
+        preview.style.fontWeight = '400';  // add this line
         preview.textContent = 'The quick brown fox jumps over the lazy dog';
     }
 

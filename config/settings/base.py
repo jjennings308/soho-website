@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.core',
     'apps.menu',
     'apps.content',
+    'apps.events',
 ]
 
 MIDDLEWARE = [

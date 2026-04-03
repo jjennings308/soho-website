@@ -1892,8 +1892,24 @@ a:hover {
   color: var(--color-text-heading);
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 .visible {
   visibility: visible;
+}
+
+.invisible {
+  visibility: hidden;
 }
 
 .collapse {
@@ -1934,6 +1950,18 @@ a:hover {
 
 .right-0 {
   right: 0px;
+}
+
+.left-4 {
+  left: 1rem;
+}
+
+.top-4 {
+  top: 1rem;
+}
+
+.top-0 {
+  top: 0px;
 }
 
 .z-10 {
@@ -2014,6 +2042,18 @@ a:hover {
   margin-top: 2rem;
 }
 
+.mb-12 {
+  margin-bottom: 3rem;
+}
+
+.mb-24 {
+  margin-bottom: 6rem;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
 .block {
   display: block;
 }
@@ -2058,8 +2098,16 @@ a:hover {
   height: 100%;
 }
 
+.h-16 {
+  height: 4rem;
+}
+
 .min-h-\[60vh\] {
   min-height: 60vh;
+}
+
+.min-h-96 {
+  min-height: 24rem;
 }
 
 .w-14 {
@@ -2076,6 +2124,10 @@ a:hover {
 
 .w-full {
   width: 100%;
+}
+
+.w-16 {
+  width: 4rem;
 }
 
 .min-w-0 {
@@ -2158,6 +2210,10 @@ a:hover {
   align-items: center;
 }
 
+.justify-start {
+  justify-content: flex-start;
+}
+
 .justify-end {
   justify-content: flex-end;
 }
@@ -2224,6 +2280,10 @@ a:hover {
   border-width: 1px;
 }
 
+.border-0 {
+  border-width: 0px;
+}
+
 .bg-\[--color-bg-secondary\] {
   background-color: var(--color-bg-secondary);
 }
@@ -2262,6 +2322,10 @@ a:hover {
 .bg-yellow-500 {
   --tw-bg-opacity: 1;
   background-color: rgb(234 179 8 / var(--tw-bg-opacity, 1));
+}
+
+.bg-black\/5 {
+  background-color: rgb(0 0 0 / 0.05);
 }
 
 .object-cover {
@@ -2359,6 +2423,11 @@ a:hover {
 .py-6 {
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
+}
+
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 .pr-8 {
@@ -2643,6 +2712,15 @@ a:hover {
 
   .md\:grid-cols-5 {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .md\:px-12 {
+    padding-left: 3rem;
+    padding-right: 3rem;
   }
 
   .md\:text-6xl {
