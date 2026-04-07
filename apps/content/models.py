@@ -1,5 +1,6 @@
 from django.db import models
 from django_ckeditor_5.fields import CKEditor5Field
+from apps.core.models import ScheduledModel, RecurrenceMixin
 
 
 class ContentSlot(models.Model):
@@ -32,10 +33,13 @@ class ContentSlot(models.Model):
 
     def get_active_block(self):
         """Returns the single active ContentBlock for this slot, or None."""
-        return self.blocks.filter(is_active=True).first()
+        return next(
+            (block for block in self.blocks.active() if block.is_active_today()),
+            None
+        )
+    
 
-
-class ContentBlock(models.Model):
+class ContentBlock(RecurrenceMixin, ScheduledModel):
     """
     A versioned piece of content assigned to a slot.
     Multiple blocks can exist per slot; only one should be active at a time.
@@ -61,12 +65,6 @@ class ContentBlock(models.Model):
         null=True,
         help_text="Optional image. Leave blank if this block is text-only."
     )
-    is_active = models.BooleanField(
-        default=False,
-        help_text="Only one block per slot can be active. Activating this will deactivate others."
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-updated_at']

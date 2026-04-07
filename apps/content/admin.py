@@ -6,7 +6,7 @@ from .models import ContentSlot, ContentBlock
 class ContentBlockInline(admin.StackedInline):
     model = ContentBlock
     extra = 1
-    fields = ['label', 'body', 'image', 'is_active', 'updated_at']
+    fields = ['label', 'body', 'image', 'is_active']
     readonly_fields = ['updated_at']
     ordering = ['-updated_at']
 
@@ -50,4 +50,4 @@ class ContentBlockAdmin(admin.ModelAdmin):
     list_filter = ['slot', 'is_active']
     search_fields = ['label', 'slot__slug', 'slot__label']
     readonly_fields = ['created_at', 'updated_at']
-    fields = ['slot', 'label', 'body', 'image', 'is_active', 'created_at', 'updated_at']
+    fields = ['slot', 'label', 'body', 'image', 'is_active', 'created_at', 'updated_at', 'active_from', 'active_until', 'days_of_week']

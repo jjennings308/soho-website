@@ -396,7 +396,7 @@ class MenuAdmin(admin.ModelAdmin):
     list_display  = [
         'title', 'menu_type', 'is_default', 'is_active',
         'show_on_homepage', 'scheme_preview',
-        'start_date', 'end_date',
+        'active_from', 'active_until',
     ]
     list_editable = ['is_active', 'show_on_homepage', 'is_default']
     list_filter   = ['menu_type', 'is_active', 'show_on_homepage', 'is_default']
@@ -428,12 +428,12 @@ class MenuAdmin(admin.ModelAdmin):
             ),
         }),
         ('Schedule', {
-            'fields': ('start_date', 'end_date'),
+            'fields': ('is_active', 'active_from', 'active_until', 'days_of_week'),
             'classes': ('collapse',),
-            'description': 'Leave both blank for a permanently active menu.',
+            'description': 'Leave active_from and active_until blank for a permanently active menu.',
         }),
         ('Display', {
-            'fields': ('is_active', 'show_on_homepage'),
+            'fields': ('show_on_homepage',),
         }),
     )
 

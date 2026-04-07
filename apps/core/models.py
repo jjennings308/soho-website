@@ -1,6 +1,141 @@
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 from django.core.validators import RegexValidator
 from django.contrib.contenttypes.fields import GenericRelation
+
+
+# =============================================================================
+# BASE MODELS
+# =============================================================================
+
+class ScheduledQuerySet(models.QuerySet):
+    def active(self):
+        now = timezone.now()
+        return self.filter(
+            is_active=True,
+        ).filter(
+            Q(active_from__isnull=True) | Q(active_from__lte=now),
+            Q(active_until__isnull=True) | Q(active_until__gte=now),
+        )
+
+
+class ScheduledManager(models.Manager):
+    def get_queryset(self):
+        return ScheduledQuerySet(self.model, using=self._db)
+
+    def active(self):
+        return self.get_queryset().active()
+
+
+class TimeStampedModel(models.Model):
+    """
+    Abstract base providing created_at and updated_at timestamps.
+    Inherit this for any model that needs audit trail fields but
+    does not require scheduling or active/inactive control.
+    """
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class ScheduledModel(TimeStampedModel):
+    """
+    Abstract base extending TimeStampedModel with scheduling fields.
+
+    is_active    — manual editorial override; master switch regardless of dates.
+    active_from  — date/time this record becomes visible (null = immediately).
+    active_until — date/time this record expires (null = never).
+
+    is_currently_active — property combining all three checks.
+    objects.active()    — queryset filtering at the DB level.
+
+    Inherit this for any model that needs date-range scheduling:
+        Menu, ContentBlock, and any future scheduled model.
+    """
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Master switch. Uncheck to hide regardless of scheduled dates."
+    )
+    active_from = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date and time this becomes visible. Leave blank for immediate."
+    )
+    active_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date and time this expires. Leave blank for no expiry."
+    )
+
+    objects = ScheduledManager()
+
+    class Meta:
+        abstract = True
+
+    @property
+    def is_currently_active(self):
+        """
+        True if the manual switch is on and now falls within the date range.
+        is_active=False always wins regardless of dates.
+        """
+        if not self.is_active:
+            return False
+        now = timezone.now()
+        if self.active_from and now < self.active_from:
+            return False
+        if self.active_until and now > self.active_until:
+            return False
+        return True
+
+
+class RecurrenceMixin(models.Model):
+    """
+    Abstract mixin adding day-of-week recurrence to a scheduled model.
+    days_of_week stores a list of integers matching Python's weekday():
+        0=Monday, 1=Tuesday, ... 6=Sunday.
+    An empty list means no restriction — active every day.
+
+    Use alongside ScheduledModel:
+        class Menu(RecurrenceMixin, ScheduledModel): ...
+    """
+    DAYS_OF_WEEK = [
+        (0, 'Monday'),
+        (1, 'Tuesday'),
+        (2, 'Wednesday'),
+        (3, 'Thursday'),
+        (4, 'Friday'),
+        (5, 'Saturday'),
+        (6, 'Sunday'),
+    ]
+
+    days_of_week = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=(
+            "Days this is active. Leave empty for every day. "
+            "Uses Python weekday integers: 0=Monday … 6=Sunday."
+        )
+    )
+
+    class Meta:
+        abstract = True
+
+    def is_active_today(self):
+        """
+        True if today's weekday is in days_of_week, or if no days are set.
+        Call this alongside is_currently_active — they are separate checks.
+        """
+        if not self.days_of_week:
+            return True
+        return timezone.now().weekday() in self.days_of_week
+
+    def get_active_days_display(self):
+        """Returns a human-readable list of active days, e.g. ['Monday', 'Tuesday']."""
+        day_map = dict(self.DAYS_OF_WEEK)
+        return [day_map[d] for d in self.days_of_week if d in day_map]
 
 
 GOOGLE_FONTS_MAP = {
@@ -255,7 +390,7 @@ BANNER_COLOR_CHOICES = [
 ]
 
 
-class Banner(models.Model):
+class Banner(TimeStampedModel):
     slug = models.SlugField(
         max_length=100,
         unique=True,
@@ -298,6 +433,7 @@ class Banner(models.Model):
         default=False,
         help_text="When checked, all text and buttons are hidden — image background only."
     )
+
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -329,7 +465,7 @@ class Banner(models.Model):
         }
 
 
-class BannerButton(models.Model):
+class BannerButton(TimeStampedModel):
     banner = models.ForeignKey(
         Banner,
         on_delete=models.CASCADE,
@@ -347,9 +483,10 @@ class BannerButton(models.Model):
         choices=BANNER_COLOR_CHOICES,
         default='text-primary',
     )
-    order = models.PositiveSmallIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
 
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveSmallIntegerField(default=0)
+ 
     class Meta:
         ordering = ['order']
         verbose_name = 'Button'
@@ -375,7 +512,7 @@ PANEL_MODE_CHOICES = [
 ]
 
 
-class PanelSide(models.Model):
+class PanelSide(TimeStampedModel):
     """
     One side of a 50/50 split section. Two PanelSide records are paired
     in the view as left= and right= when including 50_50.html.

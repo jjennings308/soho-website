@@ -4,13 +4,14 @@ from django.utils import timezone
 from decimal import Decimal
 from django_ckeditor_5.fields import CKEditor5Field
 from django.contrib.contenttypes.fields import GenericRelation
+from apps.core.models import TimeStampedModel, ScheduledModel, RecurrenceMixin
 
 
 # =============================================================================
 # MENU CATEGORY
 # =============================================================================
 
-class MenuCategory(models.Model):
+class MenuCategory(TimeStampedModel):
     """
     A named grouping of menu items — e.g. Starters, Burgers, Desserts,
     Signature Cocktails, Beer, Sweet Street, Happy Hour Food.
@@ -55,8 +56,6 @@ class MenuCategory(models.Model):
         help_text="Show the menu footer disclaimer at the bottom of this category section."
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     media = GenericRelation(
         'media_manager.Media',
         related_query_name='menu_category',
@@ -75,7 +74,7 @@ class MenuCategory(models.Model):
 # MENU SUB-CATEGORY
 # =============================================================================
 
-class MenuSubCategory(models.Model):
+class MenuSubCategory(TimeStampedModel):
     """
     Optional sub-grouping within a category.
     Example: Category=Beer → SubCategories: On Tap, IPA & Craft, Bottles & Cans.
@@ -95,8 +94,6 @@ class MenuSubCategory(models.Model):
         help_text="Order within the parent category (lower numbers first)."
     )
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['category__order', 'order', 'name']
@@ -111,7 +108,7 @@ class MenuSubCategory(models.Model):
 # MENU ITEM  (item library — no inherent menu home)
 # =============================================================================
 
-class MenuItem(models.Model):
+class MenuItem(TimeStampedModel):
     """
     A single item in the item library. Not bound to any specific menu.
 
@@ -236,8 +233,6 @@ class MenuItem(models.Model):
     available_from = models.TimeField(blank=True, null=True)
     available_until = models.TimeField(blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     media = GenericRelation(
         'media_manager.Media',
         related_query_name='menu_item',
@@ -302,7 +297,7 @@ class MenuItem(models.Model):
 # MENU ITEM VARIATION & ADDON
 # =============================================================================
 
-class MenuItemVariation(models.Model):
+class MenuItemVariation(TimeStampedModel):
     """Size/quantity variants of a MenuItem (e.g. 12oz / 16oz draft pours)."""
     menu_item = models.ForeignKey(
         MenuItem,
@@ -321,8 +316,6 @@ class MenuItemVariation(models.Model):
     order = models.PositiveIntegerField(default=0)
     is_default = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['order', 'price']
@@ -334,7 +327,7 @@ class MenuItemVariation(models.Model):
         return f"{self.menu_item.name} — {self.name} (${self.price})"
 
 
-class MenuItemAddon(models.Model):
+class MenuItemAddon(TimeStampedModel):
     """Optional add-ons for a MenuItem (e.g. Bacon +2, Guacamole +2)."""
     menu_item = models.ForeignKey(
         MenuItem,
@@ -351,8 +344,6 @@ class MenuItemAddon(models.Model):
     order = models.PositiveIntegerField(default=0)
     is_default = models.BooleanField(default=False)
     is_available = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['order', 'price']
@@ -368,7 +359,7 @@ class MenuItemAddon(models.Model):
 # COLOR SCHEME  (unchanged — applies to any Menu)
 # =============================================================================
 
-class PromoColorScheme(models.Model):
+class PromoColorScheme(TimeStampedModel):
     """
     A named, reusable color palette assignable to any Menu.
     One scheme may be flagged as the default fallback.
@@ -403,8 +394,6 @@ class PromoColorScheme(models.Model):
             "Saving a new default clears the flag on the previous one."
         )
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-is_default', 'name']
@@ -463,7 +452,7 @@ class PromoSettings(models.Model):
 # MENU  (unified — replaces MenuPromotion; default menu IS the regular menu)
 # =============================================================================
 
-class Menu(models.Model):
+class Menu(RecurrenceMixin, ScheduledModel):
     """
     A named collection of menu items, unified across regular menus and
     promotional menus.
@@ -531,20 +520,6 @@ class Menu(models.Model):
         help_text="Color scheme for this menu. Leave blank to use the default scheme."
     )
 
-    # ── Scheduling ────────────────────────────────────────────────────────────
-    start_date = models.DateField(
-        blank=True, null=True,
-        help_text="Date this menu becomes visible (leave blank for immediate)."
-    )
-    end_date = models.DateField(
-        blank=True, null=True,
-        help_text="Date this menu expires (leave blank for no expiry)."
-    )
-    is_active = models.BooleanField(
-        default=True,
-        help_text="Master switch — uncheck to hide regardless of dates."
-    )
-
     # ── Homepage display ──────────────────────────────────────────────────────
     show_on_homepage = models.BooleanField(
         default=False,
@@ -562,8 +537,6 @@ class Menu(models.Model):
         blank=True,
     )
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     media = GenericRelation(
         'media_manager.Media',
         related_query_name='menu',
@@ -579,18 +552,6 @@ class Menu(models.Model):
         return f"{self.title}{marker}"
 
     # ── Properties ────────────────────────────────────────────────────────────
-
-    @property
-    def is_currently_active(self):
-        """True if active flag is set and today falls within any date range."""
-        if not self.is_active:
-            return False
-        today = timezone.now().date()
-        if self.start_date and today < self.start_date:
-            return False
-        if self.end_date and today > self.end_date:
-            return False
-        return True
 
     def resolve_colors(self):
         """
