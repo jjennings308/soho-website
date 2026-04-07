@@ -179,10 +179,16 @@ class MenuItemCategoryAssignmentInline(admin.TabularInline):
     verbose_name = 'Category Placement'
     verbose_name_plural = 'Category Placements'
 
+class MenuItemAdminForm(forms.ModelForm):
+    days_of_week = DaysOfWeekField(required=False)
 
+    class Meta:
+        model = MenuItem
+        fields = '__all__'
 
 @admin.register(MenuItem)
 class MenuItemAdmin(admin.ModelAdmin):
+    form = MenuItemAdminForm
     list_display  = [
         'name', 'display_price', 'is_available', 'is_featured',
         'is_chef_special', 'placement_summary',
@@ -229,7 +235,7 @@ class MenuItemAdmin(admin.ModelAdmin):
             'fields': ('is_featured', 'is_chef_special', 'is_new', 'is_seasonal'),
         }),
         ('Availability', {
-            'fields': ('is_available', 'available_from', 'available_until'),
+            'fields': ('is_available', 'available_from', 'available_until', 'days_of_week'),
         }),
     )
 

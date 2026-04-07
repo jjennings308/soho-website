@@ -108,7 +108,7 @@ class MenuSubCategory(TimeStampedModel):
 # MENU ITEM  (item library — no inherent menu home)
 # =============================================================================
 
-class MenuItem(TimeStampedModel):
+class MenuItem(TimeStampedModel, RecurrenceMixin):
     """
     A single item in the item library. Not bound to any specific menu.
 
@@ -230,9 +230,17 @@ class MenuItem(TimeStampedModel):
         default=True,
         help_text="Global availability switch. Overrides all menu placements."
     )
-    available_from = models.TimeField(blank=True, null=True)
-    available_until = models.TimeField(blank=True, null=True)
-
+    available_from = models.TimeField(
+        blank=True,
+        null=True,
+        help_text="Time of day this item becomes available (e.g. 11:00 for 11am). Leave blank for no restriction."
+    )
+    available_until = models.TimeField(
+        blank=True,
+        null=True,
+        help_text="Time of day this item stops being available (e.g. 16:00 for 4pm). Leave blank for no restriction."
+    )
+    
     media = GenericRelation(
         'media_manager.Media',
         related_query_name='menu_item',
@@ -292,6 +300,23 @@ class MenuItem(TimeStampedModel):
             labels.append('Nut Free')
         return labels
 
+@property
+def is_available_now(self):
+    """
+    True if the item is available right now based on all three checks:
+    global switch, day of week, and time of day window.
+    """
+    if not self.is_available:
+        return False
+    if not self.is_active_today():
+        return False
+    if self.available_from or self.available_until:
+        now = timezone.now().time()
+        if self.available_from and now < self.available_from:
+            return False
+        if self.available_until and now > self.available_until:
+            return False
+    return True
 
 # =============================================================================
 # MENU ITEM VARIATION & ADDON
