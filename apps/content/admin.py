@@ -1,9 +1,19 @@
 from django.contrib import admin
 from django.utils.html import format_html, mark_safe
 from .models import ContentSlot, ContentBlock
+from apps.core.forms import DaysOfWeekField
+from django import forms
+
+class ContentBlockInlineForm(forms.ModelForm):
+    days_of_week = DaysOfWeekField(required=False)
+
+    class Meta:
+        model = ContentBlock
+        fields = '__all__'
 
 
 class ContentBlockInline(admin.StackedInline):
+    form = ContentBlockInlineForm
     model = ContentBlock
     extra = 1
     fields = ['label', 'body', 'image', 'is_active']
@@ -39,13 +49,20 @@ class ContentSlotAdmin(admin.ModelAdmin):
             return self.readonly_fields
         return []
 
+class ContentBlockAdminForm(forms.ModelForm):
+    days_of_week = DaysOfWeekField(required=False)
 
+    class Meta:
+        model = ContentBlock
+        fields = '__all__'
+        
 @admin.register(ContentBlock)
 class ContentBlockAdmin(admin.ModelAdmin):
     """
     Standalone view for browsing all blocks across slots.
     Primary editing is done via ContentSlotAdmin inlines.
     """
+    form = ContentBlockAdminForm
     list_display = ['__str__', 'slot', 'is_active', 'updated_at']
     list_filter = ['slot', 'is_active']
     search_fields = ['label', 'slot__slug', 'slot__label']

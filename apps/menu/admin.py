@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.utils.html import format_html, mark_safe
 from media_manager.models import Media
-
+from apps.core.forms import DaysOfWeekField
+from django import forms
 from .models import (
     MenuCategory, MenuSubCategory,
     MenuItem, MenuItemVariation, MenuItemAddon,
@@ -387,12 +388,20 @@ class MenuItemCategoryAssignmentAdmin(admin.ModelAdmin):
         return obj.display_price
 
 
+class MenuAdminForm(forms.ModelForm):
+    days_of_week = DaysOfWeekField(required=False)
+
+    class Meta:
+        model = Menu
+        fields = '__all__'
+
 # =============================================================================
 # MENU
 # =============================================================================
 
 @admin.register(Menu)
 class MenuAdmin(admin.ModelAdmin):
+    form = MenuAdminForm
     list_display  = [
         'title', 'menu_type', 'is_default', 'is_active',
         'show_on_homepage', 'scheme_preview',
