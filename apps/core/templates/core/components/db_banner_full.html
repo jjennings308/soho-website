@@ -3,11 +3,11 @@
     style="background-color: var(--color-{{ banner.bg_color|default:'bg-primary' }});">
 
     {% if banner.image %}
-    <div class="absolute inset-0">
+    <div class="absolute inset-0 overflow-hidden">
         <img src="{{ banner.image.file.url }}"
-             alt="{{ banner.image.alt_text|default:'' }}"
-             class="w-full h-full object-cover"
-             style="opacity: {{ banner.image_opacity|default:'0.4' }};">
+            alt="{{ banner.image.alt_text|default:'' }}"
+            class="w-full h-full object-cover transition-transform duration-700 ease-in-out hover:scale-110"
+            style="opacity: {{ banner.image_opacity|default:'0.4' }};">
     </div>
     {% endif %}
 

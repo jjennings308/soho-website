@@ -4,6 +4,7 @@ from django.views.generic import TemplateView
 from .mixins import ThemedTemplateMixin
 from .models import SiteSettings
 from .utils import get_active_template, get_block_body, get_banner, get_panel_side
+from apps.content.models import ContentGroup
 from media_manager.models import Media
 
 
@@ -20,6 +21,23 @@ def get_site_image(theme, title):
         category__name='Site Images',
         title=title,
     ).first()
+
+
+def get_content_group(slug):
+    """
+    Fetch a ContentGroup with all slots and blocks prefetched.
+    Returns None if the group does not exist.
+    Mirrors the template tag but for use in views.
+    """
+    try:
+        return (
+            ContentGroup.objects
+            .prefetch_related('slots', 'slots__blocks')
+            .get(slug=slug)
+        )
+    except ContentGroup.DoesNotExist:
+        return None
+
 
 class HomeView(ThemedTemplateMixin, TemplateView):
     page_type = 'home'
@@ -43,7 +61,6 @@ class HomeView(ThemedTemplateMixin, TemplateView):
         context['hero_image'] = hero_images[0] if hero_images else None
 
         # ── Site images from media manager ────────────────────────────────────
-        # Still needed for hero_images carousel and promo sidebar
         promo_img = get_site_image(active_theme, 'promo-sidebar')
 
         # ── Banners ───────────────────────────────────────────────────────────
@@ -65,25 +82,36 @@ class HomeView(ThemedTemplateMixin, TemplateView):
 
         # ── Promo sidebar ─────────────────────────────────────────────────────
         context['promo_sidebar_image'] = promo_img
-        
+
         return context
 
 
-
 def about(request):
-    return render(request, get_active_template('about'))
+    context = {
+        # Each section is its own group — clean title/body pairs per section
+        'about_banner':  get_content_group('about_page_banner'),
+        'about_mission': get_content_group('about_page_mission'),
+        'about_vision':  get_content_group('about_page_vision'),
+        'about_values':  get_content_group('about_page_values'),
+        'about_info':    get_content_group('about_page_info'),
+        # Map panel stays PanelSide-driven — pulls from SiteSettings address fields
+        'left_contact':  get_panel_side('contact-text'),
+        'right_contact': get_panel_side('contact-map'),
+    }
+    return render(request, get_active_template('about'), context)
 
 
 def contact(request):
-
     context = {
         'left_contact':  get_panel_side('contact-text'),
         'right_contact': get_panel_side('contact-map'),
     }
     return render(request, get_active_template('contact'), context)
 
+
 def theme_test(request):
     return render(request, 'core/theme_test.html')
+
 
 class OldHomeView(ThemedTemplateMixin, TemplateView):
     page_type = 'home'

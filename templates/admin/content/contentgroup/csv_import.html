@@ -1,0 +1,81 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}Import Content Groups (CSV){% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:content_contentgroup_changelist' %}">Content Groups</a>
+    &rsaquo; Import CSV
+</div>
+{% endblock %}
+
+{% block content %}
+<p>
+    Upload a CSV file to create content groups and their slots.
+    Existing records are matched by <strong>slug</strong> and will not be overwritten.
+    Safe to re-run with the same file.
+</p>
+
+<h2 style="margin-top: 1.5em;">CSV Format</h2>
+<p>Required columns: <code>type</code>, <code>slug</code>, <code>label</code><br>
+Optional columns: <code>description</code>, <code>component_type</code>, <code>order</code></p>
+
+<p>
+    Rows with <code>type="group"</code> define a content group.
+    Rows with <code>type="slot"</code> define a slot belonging to the most recent group row above them.
+</p>
+
+<table style="border-collapse: collapse; margin: 1em 0; font-size: 0.9em;">
+    <thead>
+        <tr style="background: #f8f8f8;">
+            <th style="padding: 6px 12px; border: 1px solid #ddd; text-align: left;">type</th>
+            <th style="padding: 6px 12px; border: 1px solid #ddd; text-align: left;">slug</th>
+            <th style="padding: 6px 12px; border: 1px solid #ddd; text-align: left;">label</th>
+            <th style="padding: 6px 12px; border: 1px solid #ddd; text-align: left;">description</th>
+            <th style="padding: 6px 12px; border: 1px solid #ddd; text-align: left;">component_type</th>
+            <th style="padding: 6px 12px; border: 1px solid #ddd; text-align: left;">order</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"><code>group</code></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"><code>hero_banner</code></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;">Hero Banner</td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;">Homepage hero panel</td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"></td>
+        </tr>
+        <tr style="background: #f8f8f8;">
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"><code>slot</code></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"><code>hero_banner_title</code></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;">Hero Title</td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"><code>title</code></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;">1</td>
+        </tr>
+        <tr>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"><code>slot</code></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"><code>hero_banner_body</code></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;">Hero Body</td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;"><code>body</code></td>
+            <td style="padding: 6px 12px; border: 1px solid #ddd;">2</td>
+        </tr>
+    </tbody>
+</table>
+
+<p>Valid <code>component_type</code> values: <code>title</code>, <code>subtitle</code>, <code>body</code>, <code>footer</code>, <code>image</code>, <code>button</code></p>
+
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div>
+        {{ form.as_p }}
+    </div>
+    <div style="margin-top: 1em;">
+        <input type="submit" value="Import" class="default">
+        <a href="{% url 'admin:content_contentgroup_changelist' %}" style="margin-left: 1em;">Cancel</a>
+    </div>
+</form>
+{% endblock %}

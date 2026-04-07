@@ -1,0 +1,23 @@
+type,slug,label,description,component_type,order
+group,hero_banner,Hero Banner,Main homepage hero panel,,
+slot,hero_banner_title,Hero Title,,title,1
+slot,hero_banner_subtitle,Hero Subtitle,,subtitle,2
+slot,hero_banner_body,Hero Body,,body,3
+slot,hero_banner_cta,Hero Button,,button,4
+group,about_panel,About Panel,The about section 50/50 panel,,
+slot,about_panel_title,About Title,,title,1
+slot,about_panel_body,About Body,,body,2
+slot,about_panel_body_alt,About Body Alt,,body,3
+slot,about_panel_cta,About Button,,button,4
+group,catering_panel,Catering Panel,Catering section 50/50 panel,,
+slot,catering_panel_title,Catering Title,,title,1
+slot,catering_panel_body,Catering Body,,body,2
+slot,catering_panel_cta,Catering Button,,button,3
+group,grubhub_banner,Grubhub Banner,Grubhub delivery promotional banner,,
+slot,grubhub_banner_title,Grubhub Title,,title,1
+slot,grubhub_banner_body,Grubhub Body,,body,2
+slot,grubhub_banner_cta,Grubhub Button,,button,3
+group,contact_panel,Contact Panel,Contact page left/right panel pair,,
+slot,contact_panel_title,Contact Title,,title,1
+slot,contact_panel_body,Contact Body,,body,2
+slot,contact_panel_footer,Contact Footer,,footer,3
