@@ -1,7 +1,8 @@
 # apps/menu/templatetags/menu_tags.py
 import json
-from django import template
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django import template
 from django.db.models import Prefetch
 
 register = template.Library()
@@ -135,7 +136,10 @@ def item_to_json(assignment):
         data-item='{{ assignment|item_to_json }}'
     """
     data = _assignment_to_json_data(assignment)
-    return mark_safe(json.dumps(data, ensure_ascii=False))
+    json_str = json.dumps(data, ensure_ascii=False)
+    # Escape single quotes so they don't break data-item='...'
+    json_str = json_str.replace("'", "&#39;")
+    return mark_safe(json_str)
 
 
 # =============================================================================
