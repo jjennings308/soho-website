@@ -186,7 +186,7 @@ def promotions(request):
                 'category'
             ).order_by('display_order'),
         ),
-    ).order_by('start_date', 'title')
+    ).order_by('active_from', 'title')
 
     active_promos = [m for m in promo_menus if m.is_currently_active]
 
