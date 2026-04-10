@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% load menu_tags menu_filters %}
+{% load content_tags %}
+
 
 {% block title %}SoHo Pittsburgh{{ title }}{% endblock %}
 
@@ -106,6 +108,12 @@
           {% endwith %}
         </div>
 
+      {% endif %}
+      {% if category.show_disclaimer %}
+        <div class="menu-category-disclaimer mt-4 text-center">
+          {% get_active_block 'menu_footer' as disclaimer %}
+          {% if disclaimer %}{{ disclaimer.body|safe }}{% endif %}
+        </div>
       {% endif %}
     {% endwith %}
   {% endfor %}
