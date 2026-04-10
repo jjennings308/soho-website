@@ -16,6 +16,7 @@
 {# ============================================================ #}
 
 {% load menu_tags menu_filters %}
+{% load content_tags %}
 
 {% with colors=menu.resolve_colors %}
 <div
@@ -145,14 +146,13 @@
         </div>
 
       {% endif %}
+      {% if category.show_disclaimer %}
+        <div class="menu-category-disclaimer mt-4 text-center">
+          {% get_active_block 'menu_footer' as disclaimer %}
+          {% if disclaimer %}{{ disclaimer.body|safe }}{% endif %}
+        </div>
+      {% endif %}
     {% endwith %}
-    {% if category.show_disclaimer %}
-      <div class="menu-category-disclaimer mt-4 text-center">
-        {% get_active_block 'menu_footer' as disclaimer %}
-        {% if disclaimer %}{{ disclaimer.body|safe }}{% endif %}
-      </div>
-    {% endif %}
-
   {% endfor %}
 
   {# ── Link to full promo page ── #}
