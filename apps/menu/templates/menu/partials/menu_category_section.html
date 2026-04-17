@@ -11,9 +11,11 @@
 {% load menu_tags menu_filters %}
 {% load content_tags %}
 
+{% with color_key=section_index|section_color_key %}
+
 <section
   class="menu-category-section py-6 px-12"
-  style="background-color: var(--color-bg-{% if forloop_counter|divisibleby:3 %}tertiary{% else %}{% if forloop_counter|divisibleby:2 %}secondary{% else %}primary{% endif %}{% endif %}); color: var(--color-text-{% if forloop_counter|divisibleby:3 %}tertiary{% else %}{% if forloop_counter|divisibleby:2 %}secondary{% else %}primary{% endif %}{% endif %});"
+  style="background-color: var(--color-bg-{{ color_key }}); color: var(--color-text-{{ color_key }});"
   id="cat-{{ category.slug }}"
 >
 
@@ -25,7 +27,7 @@
   {% endif %}
 
   {% with plain=assignments|without_subcategory subcat_items=assignments|with_subcategory %}
-  <div class="grid md:grid-cols-4 gap-2 p-1">
+  <div class="grid md:grid-cols-3 gap-2 p-1">
 
     {% for assignment in plain %}
       {% include "menu/partials/menu_item_card.html" %}
@@ -38,10 +40,14 @@
 
   </div>
   {% endwith %}
+
   {% if category.show_disclaimer %}
     <div class="menu-category-disclaimer mt-4 text-center">
       {% get_active_block 'menu_footer' as disclaimer %}
       {% if disclaimer %}{{ disclaimer.body|safe }}{% endif %}
     </div>
   {% endif %}
+
 </section>
+
+{% endwith %}

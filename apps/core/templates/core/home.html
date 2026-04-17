@@ -1,71 +1,178 @@
 {% extends "base.html" %}
-{% block title %}{{ site_settings.restaurant_name|default:"SoHo Pittsburgh" }} - {{ site_settings.tagline|default:"The Original North Shore Restaurant" }}{% endblock %}
+{% load ui_tags %}
+{% load content_tags %}
+{% load menu_tags %}
+{% load menu_filters %}
+
+{% block title %}{{ site_settings.restaurant_name }} - {% get_active_block 'site_tagline' as b %}{{ b.body|striptags }}{% endblock %}
+
 {% block content %}
 
-{% include "core/components/banner_full.html" with title=hero_banner.title content=hero_banner.content bg_color=hero_banner.bg_color %}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# HERO SECTION — single background, 3 columns                              #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+<section class="relative w-full">
 
+  {# ── Single hero background image ── #}
+  {% if hero_banner and hero_banner.image %}
+    <div class="absolute inset-0 bg-cover bg-center"
+         style="background-image: url('{{ hero_banner.image.file.url }}');
+                opacity: {{ hero_banner.image_opacity }};"></div>
+  {% endif %}
 
-<!-- ========================= -->
-<!-- FULL WIDTH BANNER 2 -->
-<!-- ========================= -->
-<section class="w-full bg-white py-24">
-    <div class="max-w-7xl mx-auto px-6 text-center">
-        <h2 class="text-4xl font-bold mb-4">Banner Two Title</h2>
-        <p class="text-lg text-gray-600">
-            Secondary full-width banner section. 
+  <div class="relative z-10 grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr]">
 
+    {# ── Slot 1 (left) ── #}
+    <div class="flex items-center justify-center min-h-[300px] md:min-h-[400px] p-6">
+      {% if promo_slot_1 %}
+        {% include "menu/partials/homepage_promo_card.html" with menu=promo_slot_1 assignment=promo_slot_1_item anchor="promo1" %}
+      {% else %}
+        <p class="text-sm opacity-50">No promo assigned to slot 1.</p>
+      {% endif %}
+    </div>
+
+    {# ── Hero Banner (center) ── #}
+    <div class="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] p-6 text-center">
+      {% if hero_banner.title %}
+        <h1 class="text-4xl font-bold mb-4 text-[var(--color-text-primary)]">
+          {{ hero_banner.title }}
+        </h1>
+      {% endif %}
+      {% if hero_banner.content %}
+        <p class="mb-6 text-[var(--color-text-primary)] opacity-90">
+          {{ hero_banner.content }}
         </p>
+      {% endif %}
+   </div>
+
+    {# ── Slot 2 (right) ── #}
+    <div class="flex items-center justify-center min-h-[300px] md:min-h-[400px] p-6">
+      {% if promo_slot_2 %}
+        {% include "menu/partials/homepage_promo_card.html" with menu=promo_slot_2 assignment=promo_slot_2_item anchor="promo2" %}
+      {% else %}
+        <p class="text-sm opacity-50">No promo assigned to slot 2.</p>
+      {% endif %}
     </div>
+
+  </div>
 </section>
 
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# RESERVATIONS BAR                                                          #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{% if site_settings.reservations_url %}
+<div class="w-full py-3 flex items-center justify-center
+            bg-[var(--color-bg-secondary)]">
+  <a href="{{ site_settings.reservations_url }}"
+    target="_blank"
+    rel="noopener noreferrer"
+    class="btn btn-primary btn-delivery">
+    Make a Reservation
+  </a>
+</div>
+{% endif %}
 
-<!-- ========================= -->
-<!-- 50 / 50 SPLIT SECTION -->
-<!-- ========================= -->
-<section class="w-full bg-gray-50 py-20">
-    <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# CATERING & EVENTS BANNER                                                  #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{% include "core/components/db_banner_full.html" with banner=catering_banner %}
 
-        <!-- Left -->
-        <div>
-            <h2 class="text-4xl font-bold mb-6">50 / 50 Left</h2>
-            <p class="text-gray-600 mb-4">
-                Content for the left half of the section.
-            </p>
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# PROMO SLOT 1 — 3×3 GRID                                                  #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{% if promo_slot_1 and promo_slot_1_grid %}
+  {% with colors=promo_slot_1.resolve_colors %}
+  <section id="promo1" class="py-12 px-4"
+           style="
+             --color-promo-primary: {{ colors.primary }};
+             --color-promo-accent:  {{ colors.accent }};
+             --color-promo-text:    {{ colors.text }};
+             --color-promo-bg:      {{ colors.bg }};
+             background-color: var(--color-promo-bg);
+             color: var(--color-promo-text);
+           ">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-2xl font-bold mb-2" style="color: var(--color-promo-primary);">
+        {{ promo_slot_1.title }}
+      </h2>
+      {% if promo_slot_1.description %}
+        <p class="mb-6 opacity-80">{{ promo_slot_1.description }}</p>
+      {% endif %}
+
+      {% for group in promo_slot_1_grid %}
+        <h3 class="text-sm font-semibold uppercase tracking-widest mt-6 mb-3"
+            style="color: var(--color-promo-accent);">
+          {{ group.category.name }}
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {% for assignment in group.assignments %}
+            {% include "menu/partials/homepage_item_card.html" with assignment=assignment %}
+          {% endfor %}
         </div>
+      {% endfor %}
 
-        <!-- Right -->
-        <div>
-            <img src="https://via.placeholder.com/600x400"
-                 alt="Placeholder"
-                 class="rounded-2xl shadow-lg w-full">
-        </div>
-
+      <div class="mt-8">
+        <a href="{% url 'menu:menu_detail' promo_slot_1.slug %}"
+           class="inline-block px-6 py-2 rounded font-semibold
+                  hover:opacity-90 transition-opacity"
+           style="background-color: var(--color-promo-primary);
+                  color: var(--color-promo-bg);">
+          View Full Menu
+        </a>
+      </div>
     </div>
-</section>
+  </section>
+  {% endwith %}
+{% endif %}
 
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{# PROMO SLOT 2 — 3×3 GRID                                                  #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{% if promo_slot_2 and promo_slot_2_grid %}
+  {% with colors=promo_slot_2.resolve_colors %}
+  <section id="promo2" class="py-12 px-4"
+           style="
+             --color-promo-primary: {{ colors.primary }};
+             --color-promo-accent:  {{ colors.accent }};
+             --color-promo-text:    {{ colors.text }};
+             --color-promo-bg:      {{ colors.bg }};
+             background-color: var(--color-promo-bg);
+             color: var(--color-promo-text);
+           ">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-2xl font-bold mb-2" style="color: var(--color-promo-primary);">
+        {{ promo_slot_2.title }}
+      </h2>
+      {% if promo_slot_2.description %}
+        <p class="mb-6 opacity-80">{{ promo_slot_2.description }}</p>
+      {% endif %}
 
-<!-- ========================= -->
-<!-- 60 / 40 SPLIT SECTION -->
-<!-- ========================= -->
-<section class="w-full bg-white py-20">
-    <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-5 gap-12 items-center">
-
-        <!-- 60% Column -->
-        <div class="md:col-span-3">
-            <h2 class="text-4xl font-bold mb-6">60% Content Area</h2>
-            <p class="text-gray-600 mb-4">
-                Larger content area. Perfect for text-heavy sections.
-            </p>
+      {% for group in promo_slot_2_grid %}
+        <h3 class="text-sm font-semibold uppercase tracking-widest mt-6 mb-3"
+            style="color: var(--color-promo-accent);">
+          {{ group.category.name }}
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {% for assignment in group.assignments %}
+            {% include "menu/partials/homepage_item_card.html" with assignment=assignment %}
+          {% endfor %}
         </div>
+      {% endfor %}
 
-        <!-- 40% Column -->
-        <div class="md:col-span-2">
-            <img src="https://via.placeholder.com/500x400"
-                 alt="Placeholder"
-                 class="rounded-2xl shadow-lg w-full">
-        </div>
-
+      <div class="mt-8">
+        <a href="{% url 'menu:menu_detail' promo_slot_2.slug %}"
+           class="inline-block px-6 py-2 rounded font-semibold
+                  hover:opacity-90 transition-opacity"
+           style="background-color: var(--color-promo-primary);
+                  color: var(--color-promo-bg);">
+          View Full Menu
+        </a>
+      </div>
     </div>
-</section>
+  </section>
+  {% endwith %}
+{% endif %}
+
+{% include "menu/partials/menu_item_modal.html" %}
 
 {% endblock %}

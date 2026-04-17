@@ -300,23 +300,23 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
             labels.append('Nut Free')
         return labels
 
-@property
-def is_available_now(self):
-    """
-    True if the item is available right now based on all three checks:
-    global switch, day of week, and time of day window.
-    """
-    if not self.is_available:
-        return False
-    if not self.is_active_today():
-        return False
-    if self.available_from or self.available_until:
-        now = timezone.now().time()
-        if self.available_from and now < self.available_from:
+    @property
+    def is_available_now(self):
+        """
+        True if the item is available right now based on all three checks:
+        global switch, day of week, and time of day window.
+        """
+        if not self.is_available:
             return False
-        if self.available_until and now > self.available_until:
+        if not self.is_active_today():
             return False
-    return True
+        if self.available_from or self.available_until:
+            now = timezone.now().time()
+            if self.available_from and now < self.available_from:
+                return False
+            if self.available_until and now > self.available_until:
+                return False
+        return True
 
 # =============================================================================
 # MENU ITEM VARIATION & ADDON
@@ -500,7 +500,6 @@ class Menu(RecurrenceMixin, ScheduledModel):
         1. This menu's assigned color_scheme FK
         2. PromoColorScheme flagged is_default
         3. PromoSettings singleton (legacy fallback)
-        4. Empty string → theme.css :root defaults
     """
 
     MENU_TYPE_CHOICES = [
@@ -545,15 +544,24 @@ class Menu(RecurrenceMixin, ScheduledModel):
         help_text="Color scheme for this menu. Leave blank to use the default scheme."
     )
 
-    # ── Homepage display ──────────────────────────────────────────────────────
-    show_on_homepage = models.BooleanField(
-        default=False,
+# ── Homepage display ──────────────────────────────────────────────────────────
+    HOMEPAGE_SLOT_CHOICES = [
+        ('none',   'None'),
+        ('slot_1', 'Homepage Slot 1 (left)'),
+        ('slot_2', 'Homepage Slot 2 (right)'),
+    ]
+
+    homepage_slot = models.CharField(
+        max_length=10,
+        choices=HOMEPAGE_SLOT_CHOICES,
+        default='none',
         help_text=(
-            "Show this menu as a block on the home page. "
-            "Typically used for promotions and featured specials."
+            "Assign this promo menu to a homepage display slot. "
+            "Slot 1 appears left of the hero banner, Slot 2 appears right. "
+            "Only one menu should occupy each slot at a time."
         )
     )
-
+    
     # ── Categories (declared via through table) ───────────────────────────────
     categories = models.ManyToManyField(
         MenuCategory,
@@ -586,7 +594,6 @@ class Menu(RecurrenceMixin, ScheduledModel):
             1. This menu's assigned color_scheme FK
             2. PromoColorScheme flagged is_default
             3. PromoSettings singleton (legacy fallback)
-            4. Empty string → theme.css :root takes over
         """
         scheme = self.color_scheme
         if scheme is None:

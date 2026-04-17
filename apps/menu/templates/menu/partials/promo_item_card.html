@@ -1,0 +1,53 @@
+{# ============================================================ #}
+{# menu/partials/promo_item_card.html                           #}
+{#                                                              #}
+{# Renders a single promotional item card.                      #}
+{# Expects:                                                     #}
+{#   assignment — MenuItemCategoryAssignment instance           #}
+{#                                                              #}
+{# Assumes --color-promo-* custom properties are set on a       #}
+{# ancestor element (e.g. .menu-promo-block).                   #}
+{# ============================================================ #}
+
+{% load menu_tags menu_filters %}
+
+<div
+  class="promo-item-card bg-black/5 rounded-lg shadow p-5 hover:shadow-lg transition cursor-pointer"
+  x-data="{}"
+  x-on:click="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+  x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+  x-on:keydown.space.prevent="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+  role="button"
+  tabindex="0"
+  data-item='{{ assignment|item_to_json }}'
+  aria-label="View details for {{ assignment.menu_item.name }}"
+>
+  <div class="flex justify-between items-start mb-2">
+    <h4 class="font-semibold text-lg" style="color: var(--color-promo-text);">
+      {{ assignment.menu_item.name }}
+      {% if assignment.note %}
+        <span class="ml-2 t-badge badge-seasonal">{{ assignment.note }}</span>
+      {% endif %}
+    </h4>
+    <span class="font-bold shrink-0 ml-2" style="color: var(--color-promo-accent);">
+      {% if assignment.menu_item.is_on_sale and not assignment.override_price %}
+        <span class="line-through text-sm opacity-60">
+          {{ assignment.menu_item.price|currency }}
+        </span>
+        {{ assignment.menu_item.sale_price|currency }}
+      {% else %}
+        {{ assignment.display_price }}
+      {% endif %}
+    </span>
+  </div>
+
+  {% if assignment.menu_item.short_description %}
+    <p class="text-sm opacity-80">
+      {{ assignment.menu_item.short_description|truncatechars:120 }}
+    </p>
+  {% endif %}
+
+  <span class="mt-3 block text-eyebrow" style="color: var(--color-promo-accent);">
+    View Details →
+  </span>
+</div>

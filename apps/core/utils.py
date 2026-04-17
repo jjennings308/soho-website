@@ -8,25 +8,6 @@ def get_block_body(slug):
     except ContentSlot.DoesNotExist:
         return None
 
-def get_active_template(page):
-    """
-    Returns a list of template path strings in priority order.
-
-    Django will try each path and use the first one that exists:
-        1. themes/{theme_directory}/pages/{page}.html  (theme-specific)
-        2. pages/{page}.html                           (default fallback)
-
-    CBVs:  return this list directly from get_template_names()
-    """
-    from apps.core.models import SiteSettings
-    theme = SiteSettings.load().active_theme
-    if theme and theme.theme_directory:
-        return [
-            f"themes/{theme.theme_directory}/pages/{page}.html",
-            f"pages/{page}.html",
-        ]
-    return [f"pages/{page}.html"]
-
 def get_banner(slug):
     """
     Fetch an active Banner by slug and return its context dict,

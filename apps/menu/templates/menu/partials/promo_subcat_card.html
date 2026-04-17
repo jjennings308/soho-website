@@ -1,0 +1,36 @@
+{# ============================================================ #}
+{# menu/partials/promo_subcat_card.html                         #}
+{#                                                              #}
+{# Renders a single subcategory block for a promo grid.         #}
+{# Expects:                                                     #}
+{#   subcat — a regroup result (subcat.grouper, subcat.list)    #}
+{#                                                              #}
+{# Assumes --color-promo-* custom properties are set on an      #}
+{# ancestor element (e.g. .menu-promo-block).                   #}
+{# Must be called inside a {% regroup %} loop.                  #}
+{# ============================================================ #}
+
+<div class="promo-subcat-card rounded-lg shadow p-5 bg-black/5">
+  <h4 class="font-semibold text-lg mb-3" style="color: var(--color-promo-accent);">
+    {{ subcat.grouper }}
+  </h4>
+  <ul class="space-y-1">
+    {% for assignment in subcat.list %}
+      <li
+        class="flex justify-between items-center text-sm cursor-pointer rounded px-2 py-1 -mx-2 hover:bg-white/10 transition"
+        x-data="{}"
+        x-on:click="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+        x-on:keydown.enter="$dispatch('open-menu-modal', JSON.parse($el.dataset.item))"
+        role="button"
+        tabindex="0"
+        data-item='{{ assignment|item_to_json }}'
+        aria-label="View details for {{ assignment.menu_item.name }}"
+      >
+        <span style="color: var(--color-promo-text);">{{ assignment.menu_item.name }}</span>
+        <span class="font-semibold ml-4 shrink-0" style="color: var(--color-promo-accent);">
+          {{ assignment.display_price }}
+        </span>
+      </li>
+    {% endfor %}
+  </ul>
+</div>

@@ -85,34 +85,14 @@
 <link rel="apple-touch-icon" sizes="152x152" href="{% static 'img/apple-touch-icon.png' %}">
 <link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}">
 
-  {# ── Google Fonts — built dynamically from active theme's font choices ── #}
-  {# Loaded only if the theme actually uses web fonts (system fonts skipped) #}
-  {% if google_fonts_url %}
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="{{ google_fonts_url }}" rel="stylesheet">
-  {% endif %}
-
-  {# ── Base Theme CSS ───────────────────────────────────────────────────── #}
+    {# ── Base Theme CSS ───────────────────────────────────────────────────── #}
   {# Contains all :root defaults. Dynamic vars below override as needed.    #}
   <link rel="stylesheet" href="{% static 'css/theme.css' %}">
 
   {# ── Tailwind compiled output ─────────────────────────────────────────── #}
   <link rel="stylesheet" href="{% static 'dist/output.css' %}?v={{ VERSION }}">
   
-  {# ── Dynamic CSS Variable Overrides ───────────────────────────────────── #}
-  {# Injects the resolved base+overlay vars as a :root block.              #}
-  {# theme_style_vars comes from the active_theme context processor.       #}
-  {% if theme_style_vars %}
-  <style>
-    :root {
-      {% for var, val in theme_style_vars.items %}
-      --{{ var }}: {{ val|safe }};
-      {% endfor %}
-    }
-  </style>
-  {% endif %}
-
+  {% block extra_css %}{% endblock %}
   {% block extra_head %}{% endblock %}
 
   <!-- Umami Analytics -->

@@ -2,8 +2,6 @@ from django.shortcuts import render, get_object_or_404
 from django.http import Http404, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Prefetch
-
-from apps.core.utils import get_active_template
 from apps.events.models import EventDay
 
 from .models import (
@@ -135,7 +133,7 @@ def full(request):
         'limited_menu':       limited_menu,
         'title':              titles.get(menu_type, ' - Menu'),
     }
-    return render(request, get_active_template('menu'), context)
+    return render(request,'menu/menu.html', context)
 
 
 def menu_detail(request, slug):
@@ -169,7 +167,7 @@ def menu_detail(request, slug):
         'limited_menu':       limited_menu,
         'title':              f' - {menu.title}',
     }
-    return render(request, get_active_template('menu_detail'), context)
+    return render(request, 'menu/menu_detail.html', context)
 
 
 def promotions(request):
@@ -195,7 +193,7 @@ def promotions(request):
         'limited_menu': limited_menu,
         'title':        ' - Promotions',
     }
-    return render(request, get_active_template('promotions'), context)
+    return render(request, 'menu/promotions.html', context)
 
 
 # =============================================================================

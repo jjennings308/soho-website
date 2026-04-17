@@ -1,4 +1,5 @@
-from .models import SiteSettings, Theme
+from .models import SiteSettings
+from django.conf import settings
 
 
 def site_settings(request):
@@ -27,53 +28,6 @@ def site_settings(request):
     }
 
 
-def active_theme(request):
-    """
-    Resolves the current site theme (SiteSettings.active_theme) into CSS variables
-    and a Google Fonts URL. Everything needed to render the <head> of base.html.
-
-    Available in templates as:
-        {{ active_theme }}            — Theme object (or None)
-        {{ theme_directory }}         — e.g. 'classic', used in template paths
-        {{ theme_style_vars }}        — dict of CSS var name → value
-        {{ google_fonts_url }}        — single combined Google Fonts <link> URL (or None)
-
-    Usage in base.html:
-
-        {% if google_fonts_url %}
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="{{ google_fonts_url }}" rel="stylesheet">
-        {% endif %}
-
-        <style>
-          :root {
-            {% for var, val in theme_style_vars.items %}
-            --{{ var }}: {{ val }};
-            {% endfor %}
-          }
-        </style>
-    """
-    theme = SiteSettings.load().active_theme
-
-    if theme:
-        style_vars = theme.resolve_style_vars()
-        google_fonts_url = theme.get_google_fonts_url()
-        theme_directory = theme.theme_directory
-    else:
-        style_vars = {}
-        google_fonts_url = None
-        theme_directory = 'default'
-
-    return {
-        'active_theme': theme,
-        'theme_directory': theme_directory,
-        'theme_style_vars': style_vars,
-        'google_fonts_url': google_fonts_url,
-    }
-
-
-from django.conf import settings
 
 def site_version(request):
     return {'VERSION': getattr(settings, 'VERSION', '')}

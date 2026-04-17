@@ -239,7 +239,7 @@
 
   .card__title {
     font-family: var(--font-primary);
-    color: var(--color-text-heading);
+    color: inherit;
     @apply text-xl mb-3 leading-snug;
   }
 
@@ -282,9 +282,36 @@
   /* ── Navigation ─────────────────────────────────────────────────────────── */
   .site-nav {
     background-color: var(--color-nav-bg);
-    border-bottom: var(--gold-rule);
-    @apply sticky top-0 z-50 flex items-center justify-between
-           px-8 py-4 backdrop-blur-md;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    padding: 0 1.5rem;
+    height: 64px;
+    z-index: 100;
+  }
+
+  .site-nav__hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .site-nav__center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .btn-delivery {
+    border-radius: 9999px;
   }
 
   .site-nav__logo {
@@ -504,7 +531,9 @@
     @apply not-sr-only;
   }
 }
+
 @layer components {
+
   /* Use when container height is explicitly set (e.g., h-64, h-screen) */
   .full-img {
     width: 100%;

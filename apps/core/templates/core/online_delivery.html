@@ -1,0 +1,245 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Order Online | SoHo Pittsburgh{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Ordering Hero ── */
+  .ordering-hero {
+    background: var(--color-bg-tertiary);
+    border-bottom: 1px solid var(--color-gold-deep);
+    padding-top: calc(64px + 1.5rem);
+    padding-bottom: 1.5rem;
+    padding-left: var(--container-px);
+    padding-right: var(--container-px);
+    text-align: center;
+  }
+
+  .ordering-hero__inner {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .ordering-hero__eyebrow {
+    font-family: var(--font-accent);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-text-accent);
+    margin: 0 0 0.6rem;
+  }
+
+  /* Explicitly override Tailwind @layer base h1 { text-4xl md:text-6xl } */
+  .ordering-hero .ordering-hero__heading {
+    font-family: var(--font-primary);
+    font-size: 1.875rem !important;
+    font-weight: 700;
+    color: var(--color-text-tertiary);
+    margin: 0 0 0.6rem;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  .ordering-hero__sub {
+    font-family: var(--font-secondary);
+    font-size: 0.9rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Cards Section ── */
+  .ordering-cards {
+    background: var(--color-bg-primary);
+    padding: 2rem var(--container-px) 4rem;
+  }
+
+  .ordering-cards__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── Individual Card ── */
+  .delivery-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    border: 1px solid var(--color-gold-deep);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+    overflow: hidden;
+    transition: transform var(--transition-normal), border-color var(--transition-normal), box-shadow var(--transition-normal);
+  }
+
+  .delivery-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-gold);
+    border-color: var(--color-bg-accent);
+    color: inherit;
+  }
+
+  /* Top accent stripe */
+  .delivery-card__accent-bar {
+    height: 3px;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .delivery-card--doordash .delivery-card__accent-bar { background: linear-gradient(90deg, #FF3008, var(--color-bg-accent)); }
+  .delivery-card--grubhub  .delivery-card__accent-bar { background: linear-gradient(90deg, #F63440, var(--color-bg-accent)); }
+  .delivery-card--ubereats .delivery-card__accent-bar { background: linear-gradient(90deg, #06C167, var(--color-bg-accent)); }
+
+  .delivery-card__body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    flex: 1;
+  }
+
+  .delivery-card__logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .delivery-card__logo-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: var(--radius-lg);
+    object-fit: cover;
+  }
+
+  .delivery-card__service-name {
+    font-family: var(--font-primary) !important;
+    font-size: 1.1rem !important;
+    font-weight: 700;
+    color: var(--color-text-tertiary);
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .delivery-card__tagline {
+    font-family: var(--font-secondary);
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .delivery-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: auto;
+    font-family: var(--font-accent);
+    font-size: 0.65rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--color-text-accent);
+    transition: gap var(--transition-fast);
+  }
+
+  .delivery-card:hover .delivery-card__cta { gap: 0.55rem; color: var(--color-text-accent); }
+
+  .delivery-card__arrow {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    transition: transform var(--transition-fast);
+  }
+
+  .delivery-card:hover .delivery-card__arrow { transform: translateX(3px); }
+
+  /* ── Responsive ── */
+  @media (max-width: 700px) {
+    .ordering-cards__grid { grid-template-columns: 1fr; }
+    .ordering-hero .ordering-hero__heading { font-size: 1.5rem !important; }
+    .ordering-hero { padding-top: calc(64px + 1rem); }
+  }
+
+  @media (min-width: 701px) and (max-width: 860px) {
+    .ordering-cards__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="ordering-hero">
+  <div class="ordering-hero__inner">
+    <p class="ordering-hero__eyebrow">North Shore's Finest</p>
+    <h1 class="ordering-hero__heading">Enjoy Your Favorite Items at Home</h1>
+    <p class="ordering-hero__sub">Fresh from our kitchen, delivered to your door.</p>
+  </div>
+</section>
+
+<section class="ordering-cards">
+  <div class="ordering-cards__grid">
+
+    {# ── DoorDash ── #}
+    <a href="https://www.doordash.com/store/soho-pittsburgh-38211695/87648147/"
+       class="delivery-card delivery-card--doordash" target="_blank" rel="noopener noreferrer">
+      <div class="delivery-card__accent-bar"></div>
+      <div class="delivery-card__body">
+        <div class="delivery-card__logo-wrap">
+          <img class="delivery-card__logo-icon" src="{% static 'img/doordash_logo.jpg' %}" alt="DoorDash"/>
+          <span class="delivery-card__service-name">DoorDash</span>
+        </div>
+        <p class="delivery-card__tagline">Fast delivery, tracked in real time</p>
+        <span class="delivery-card__cta">
+          Order Now
+          <svg class="delivery-card__arrow" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </div>
+    </a>
+
+    {# ── Grubhub ── #}
+    <a href="http://menus.fyi/11489616"
+       class="delivery-card delivery-card--grubhub" target="_blank" rel="noopener noreferrer">
+      <div class="delivery-card__accent-bar"></div>
+      <div class="delivery-card__body">
+        <div class="delivery-card__logo-wrap">
+          <img class="delivery-card__logo-icon" src="{% static 'img/grubhub_logo.jpg' %}" alt="Grubhub"/>
+          <span class="delivery-card__service-name">Grubhub</span>
+        </div>
+        <p class="delivery-card__tagline">Schedule ahead or order now</p>
+        <span class="delivery-card__cta">
+          Order Now
+          <svg class="delivery-card__arrow" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </div>
+    </a>
+
+    {# ── Uber Eats ── #}
+    <a href="https://www.ubereats.com/store/soho/sBB2OJEbWkC6wDcThtwD5Q"
+       class="delivery-card delivery-card--ubereats" target="_blank" rel="noopener noreferrer">
+      <div class="delivery-card__accent-bar"></div>
+      <div class="delivery-card__body">
+        <div class="delivery-card__logo-wrap">
+          <img class="delivery-card__logo-icon" src="{% static 'img/ubereats_logo.jpg' %}" alt="Uber Eats"/>
+          <span class="delivery-card__service-name">Uber Eats</span>
+        </div>
+        <p class="delivery-card__tagline">Track your order every step of the way</p>
+        <span class="delivery-card__cta">
+          Order Now
+          <svg class="delivery-card__arrow" viewBox="0 0 16 16" fill="none">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </div>
+    </a>
+
+  </div>
+</section>
+{% endblock %}

@@ -2,6 +2,7 @@
 {# SoHo Pittsburgh — Main Navigation #}
 
 <nav class="site-nav" x-data="{ mobileOpen: false, menuOpen: false }">
+
   {# Logo #}
   <a href="{% url 'core:home' %}" class="site-nav__logo">
     {% if site_settings.logo %}
@@ -11,10 +12,16 @@
     {% endif %}
   </a>
 
+  {# Center — Online Delivery #}
+  <div class="site-nav__center" style="display:none;" id="desktop-nav-center">
+    <a href="{% url 'core:online_delivery' %}" class="btn btn-primary btn-delivery">
+      Online Delivery
+    </a>
+  </div>
+
   {# Desktop Links #}
   <ul class="site-nav__links" style="display:none;" id="desktop-nav">
-    <li><a href="{% url 'core:home' %}" class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">Home</a></li>
-    <li><a href="{% url 'core:about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">About</a></li>
+    <li><a href="{% url 'core:about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">About Us</a></li>
 
     {# ── Menu Dropdown ── #}
     <li
@@ -23,8 +30,8 @@
       @mouseenter="open = true"
       @mouseleave="open = false"
     >
-      <a
-        href="{% url 'menu:full' %}"
+      
+      <a  href="{% url 'menu:full' %}"
         class="{% if 'menu' in request.resolver_match.url_name %}active{% endif %}"
         style="display:flex;align-items:center;gap:0.35rem;"
         @click.prevent="open = !open"
@@ -75,24 +82,20 @@
       </div>
     </li>
 
-    <li><a href="{% url 'core:contact' %}" class="{% if request.resolver_match.url_name == 'contact' %}active{% endif %}">Contact</a></li>
-    <li>
-      <a href="tel:{{ site_settings.phone|default:'4123217646' }}" class="btn btn-secondary" style="padding: 0.6rem 1.5rem;">
-        Reserve
-      </a>
-    </li>
+    <li><a href="{% url 'core:gallery' %}" class="{% if request.resolver_match.url_name == 'gallery' %}active{% endif %}">Gallery</a></li>
+
   </ul>
 
   {# Mobile Hamburger #}
   <button
+    x-cloak
     @click="mobileOpen = !mobileOpen"
     class="site-nav__hamburger"
     aria-label="Toggle menu"
-    style="display:flex;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px;"
   >
-    <span style="display:block;width:24px;height:1px;background:var(--color-gold-primary);transition:all 0.25s;" :style="mobileOpen ? 'transform:rotate(45deg) translate(4px,4px)' : ''"></span>
-    <span style="display:block;width:24px;height:1px;background:var(--color-gold-primary);transition:all 0.25s;" :style="mobileOpen ? 'opacity:0' : ''"></span>
-    <span style="display:block;width:24px;height:1px;background:var(--color-gold-primary);transition:all 0.25s;" :style="mobileOpen ? 'transform:rotate(-45deg) translate(4px,-4px)' : ''"></span>
+    <span :style="'display:block;width:24px;height:1px;background:var(--color-gold-deep);transition:all 0.25s;' + (mobileOpen ? 'transform:rotate(45deg) translate(4px,4px);' : '')"></span>
+    <span :style="'display:block;width:24px;height:1px;background:var(--color-gold-deep);transition:all 0.25s;' + (mobileOpen ? 'opacity:0;' : '')"></span>
+    <span :style="'display:block;width:24px;height:1px;background:var(--color-gold-deep);transition:all 0.25s;' + (mobileOpen ? 'transform:rotate(-45deg) translate(4px,-4px);' : '')"></span>
   </button>
 
   {# Mobile Dropdown #}
@@ -102,38 +105,34 @@
     x-transition:enter-start="opacity-0 -translate-y-2"
     x-transition:enter-end="opacity-100 translate-y-0"
     style="
-      display:none;
       position:absolute;
       top:100%;
       left:0;
       right:0;
-      background:rgba(10,10,10,0.98);
+      background:rgba(200,200,200,0.98);
       border-top: 1px solid var(--color-gold-deep);
       padding: 1.5rem 2rem;
+      z-index:99;
     "
   >
     <ul style="list-style:none;display:flex;flex-direction:column;gap:1.25rem;">
-      <li><a href="{% url 'core:home' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Home</a></li>
-      <li><a href="{% url 'core:about' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">About</a></li>
+      <li><a href="{% url 'core:about' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">About Us</a></li>
 
       {# Mobile Menu sub-links #}
       <li>
-        <span style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Menu</span>
+        <span style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">Menu</span>
         <ul style="list-style:none;display:flex;flex-direction:column;gap:0.75rem;margin-top:0.75rem;padding-left:1rem;border-left:1px solid var(--color-gold-deep);">
-          <li>
-            <a href="{% url 'menu:full' %}?type=food" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-primary);">Food</a>
-          </li>
-          <li>
-            <a href="{% url 'menu:full' %}?type=drinks" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-primary);">Drinks</a>
-          </li>
+          <li><a href="{% url 'menu:full' %}?type=food" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Food</a></li>
+          <li><a href="{% url 'menu:full' %}?type=drinks" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Drinks</a></li>
         </ul>
       </li>
 
-      <li><a href="{% url 'core:contact' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-primary);">Contact</a></li>
+      <li><a href="{% url 'core:gallery' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">Gallery</a></li>
+      <li><a href="{% url 'core:online_delivery' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">Online Delivery</a></li>
     </ul>
     <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-dark-gray);">
       <a href="tel:{{ site_settings.phone|default:'4123217646' }}" class="btn btn-primary" style="width:100%;justify-content:center;">
-        {{ site_settings.phone|default:"(412) 321-7646" }}
+        Call Us!
       </a>
     </div>
   </div>
@@ -141,8 +140,11 @@
 
 {# Inject desktop nav via media query logic (Tailwind md: breakpoint) #}
 <style>
+  [x-cloak] { display: none !important; }
+
   @media (min-width: 768px) {
     #desktop-nav { display: flex !important; }
+    #desktop-nav-center { display: flex !important; }
     .site-nav__hamburger { display: none !important; }
   }
 </style>

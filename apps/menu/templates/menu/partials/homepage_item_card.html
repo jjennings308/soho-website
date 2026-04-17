@@ -1,0 +1,57 @@
+{# ============================================================ #}
+{# menu/partials/homepage_item_card.html                        #}
+{#                                                              #}
+{# Single item card for the homepage 3x3 promo grids.           #}
+{# Display only — no modal trigger.                             #}
+{#                                                              #}
+{# Expects:                                                     #}
+{#   assignment — MenuItemCategoryAssignment instance           #}
+{# ============================================================ #}
+
+{% load menu_filters %}
+
+{% with item=assignment.menu_item %}
+<div class="rounded-lg shadow p-4 flex flex-col gap-2"
+     style="background-color: var(--color-promo-bg); filter: brightness(1.1);">
+
+  {# ── Item image ── #}
+  {% with img=item.media.all|first %}
+    {% if img %}
+      <img
+        src="{{ img.file.url }}"
+        alt="{{ img.alt_text|default:item.name }}"
+        class="w-full h-36 object-cover rounded"
+      >
+    {% endif %}
+  {% endwith %}
+
+  {# ── Name + price ── #}
+  <div class="flex justify-between items-start gap-2">
+    <h4 class="font-semibold text-base leading-tight"
+        style="color: var(--color-promo-text);">
+      {{ item.name }}
+      {% if assignment.note %}
+        <span class="ml-1 t-badge badge-seasonal">{{ assignment.note }}</span>
+      {% endif %}
+    </h4>
+    <span class="font-bold shrink-0 text-sm"
+          style="color: var(--color-promo-accent);">
+      {% if item.is_on_sale and not assignment.override_price %}
+        <span class="line-through text-xs opacity-60">{{ item.price|currency }}</span>
+        {{ item.sale_price|currency }}
+      {% else %}
+        {{ assignment.display_price }}
+      {% endif %}
+    </span>
+  </div>
+
+  {# ── Short description ── #}
+  {% if item.short_description %}
+    <p class="text-sm leading-snug opacity-80"
+       style="color: var(--color-promo-text);">
+      {{ item.short_description|truncatechars:100 }}
+    </p>
+  {% endif %}
+
+</div>
+{% endwith %}

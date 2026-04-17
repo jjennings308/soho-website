@@ -23,20 +23,20 @@
 
   /* --- Text Colors --------------------------------------------------------- */
   /* Overridden by ThemeStyle.*_text_color                                    */
-  --color-text-primary:   #171717;   /* warm off-white — main body text */
-  --color-text-secondary: #fafafa;   /* muted/supporting text */
-  --color-text-tertiary:  #eccb9c;   /* muted/supporting text */
+  --color-text-primary:   #bdbdbd;   /* silver — main body text */
+  --color-text-secondary: #8a8a8a;   /* muted silver — supporting text */
+  --color-text-tertiary:  #2c2c2c;   /* dark charcoal — used on light bg sections */
   --color-text-accent:    #b8920f;   /* gold — prices, highlights, links */
   --color-text-heading:   #ffffff;   /* h1-h6 */
   --color-text-nav:       #eccb9c;   /* always light regardless of page theme */
 
   /* --- Background Colors --------------------------------------------------- */
   /* Overridden by ThemeStyle.*_bg_color                                      */
-  --color-bg-primary:   #eccb9c;             /* page background */
-  --color-bg-secondary: #171717;             /* cards, panels, surfaces */
-  --color-bg-tertiary:  #be141e;             
+  --color-bg-primary:   #fafaf8;             /* page background — almost white */
+  --color-bg-secondary: #faf6ef;             /* cards, panels, surfaces — light cream */
+  --color-bg-tertiary:  #f2ebe0;             /* section backgrounds — light linen/beige */
   --color-bg-accent:    #c9972a;             /* CTA buttons, badges */
-  --color-nav-bg:       rgba(10,10,10,0.95); /* sticky nav */      
+  --color-nav-bg:       rgba(255, 255, 255, 0.80); /* sticky nav */
 
   /* --- Surface Colors ------------------------------------------------------ */
   /* Elevated surfaces (modals, drawers, popovers) that layer over bg-secondary */
@@ -53,22 +53,22 @@
 
   /* Base colors */
   --color-white:        #ffffff;
-  
+
   /* --- Grays --------------------------------------------------------------- */
   --color-dark-gray: #2c2c2c;   /* borders */
   --color-mid-gray:  #555555;   /* placeholder text */
 
   /* --- Steelers ------------------------------------------------------------ */
-  --color-steeler-gold: #ffb612;   /* borders */
-  --color-steeler-black:  #101820;   /* placeholder text */
+  --color-steeler-gold:  #ffb612;
+  --color-steeler-black: #101820;
 
   /* --- Pirates ------------------------------------------------------------- */
-  --color-pirate-gold: #fdb827;   /* borders */
-  --color-priate-black:  #27251f;   /* placeholder text */
+  --color-pirate-gold:  #fdb827;
+  --color-priate-black: #27251f;
 
   /* --- Pitt ---------------------------------------------------------------- */
-  --color-pitt-gold: #ffb81c;   /* borders */
-  --color-pitt-blue:  #003594;   /* placeholder text */
+  --color-pitt-gold: #ffb81c;
+  --color-pitt-blue: #003594;
 
   /* --- Spacing Scale ------------------------------------------------------- */
   --space-1:  0.25rem;

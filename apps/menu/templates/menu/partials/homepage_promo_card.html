@@ -1,0 +1,79 @@
+{# ============================================================ #}
+{# menu/partials/homepage_promo_card.html                       #}
+{#                                                              #}
+{# Single random item card for the hero flanking columns.       #}
+{#                                                              #}
+{# Expects:                                                     #}
+{#   menu       — Menu instance                                 #}
+{#   assignment — MenuItemCategoryAssignment (random item)      #}
+{# ============================================================ #}
+
+{% load menu_filters %}
+
+{% with colors=menu.resolve_colors %}
+<div
+  class="flex flex-col items-center gap-3 w-full rounded-lg p-4"
+  style="
+    --color-promo-primary: {{ colors.primary }};
+    --color-promo-accent:  {{ colors.accent }};
+    --color-promo-text:    {{ colors.text }};
+    --color-promo-bg:      {{ colors.bg }};
+    background-color: color-mix(in srgb, var(--color-bg-secondary) 90%, transparent);
+    color: var(--color-text-secondary); "
+  >
+
+  {# ── Menu title ── #}
+  <p class="text-xs font-semibold uppercase tracking-widest opacity-75"
+     style="color: var(--color-text-accent);">
+    {{ menu.title }}
+  </p>
+
+  {% if assignment %}
+    {% with item=assignment.menu_item %}
+
+      {# ── Item image ── #}
+      {% with img=item.media.filter|first %}
+        {% if img %}
+          <img
+            src="{{ img.file.url }}"
+            alt="{{ img.alt_text|default:item.name }}"
+            class="w-32 h-32 object-cover rounded-full shadow-md"
+          >
+        {% else %}
+          <div class="w-32 h-32 rounded-full shadow-md flex items-center justify-center
+                      bg-black/20 text-3xl">
+            🍽
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {# ── Item name ── #}
+      <h3 class="text-lg font-bold leading-tight"
+          style="color: var(--color-steeler-black);">
+        {{ item.name }}
+      </h3>
+
+      {# ── Price ── #}
+      <p class="font-semibold text-sm"
+         style="color: var(--color-text-accent);">
+        {{ assignment.display_price }}
+      </p>
+
+      {# ── Short description ── #}
+      {% if item.short_description %}
+        <p class="text-sm opacity-80 leading-snug max-w-[180px]">
+          {{ item.short_description|truncatechars:100 }}
+        </p>
+      {% endif %}
+
+    {% endwith %}
+  {% endif %}
+
+  {# ── Link to promo on homepage or promo if not declared ── #}
+  <a href="{% if anchor %}#{{ anchor }}{% else %}{% url 'menu:menu_detail' menu.slug %}{% endif %}"
+    class="mt-1 text-xs font-semibold uppercase tracking-wide hover:underline"
+    style="color: var(--color-steeler-black);">
+    View Menu →
+  </a>
+</div>
+{% endwith %}

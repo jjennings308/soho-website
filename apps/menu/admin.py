@@ -410,11 +410,11 @@ class MenuAdmin(admin.ModelAdmin):
     form = MenuAdminForm
     list_display  = [
         'title', 'menu_type', 'is_default', 'is_active',
-        'show_on_homepage', 'scheme_preview',
+        'homepage_slot', 'scheme_preview',
         'active_from', 'active_until',
     ]
-    list_editable = ['is_active', 'show_on_homepage', 'is_default']
-    list_filter   = ['menu_type', 'is_active', 'show_on_homepage', 'is_default']
+    list_editable = ['is_active', 'is_default']
+    list_filter   = ['menu_type', 'is_active', 'homepage_slot', 'is_default']
     search_fields = ['title']
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ['resolved_palette_preview']
@@ -448,10 +448,15 @@ class MenuAdmin(admin.ModelAdmin):
             'description': 'Leave active_from and active_until blank for a permanently active menu.',
         }),
         ('Display', {
-            'fields': ('show_on_homepage',),
+            'fields': ('homepage_slot',),
+            'description': (
+                'Assign this menu to a homepage slot. '
+                'Slot 1 appears left of the hero banner, Slot 2 appears right. '
+                'Only one menu should occupy each slot at a time.'
+            ),
         }),
     )
-
+        
     @admin.display(description='Scheme')
     def scheme_preview(self, obj):
         scheme = obj.color_scheme

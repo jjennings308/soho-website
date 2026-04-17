@@ -76,7 +76,6 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.media',
                 'apps.core.context_processors.site_settings',
-                'apps.core.context_processors.active_theme',
                 'apps.core.context_processors.site_version',
             ],
         },

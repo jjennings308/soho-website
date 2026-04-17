@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load menu_tags menu_filters %}
+{% load content_tags %}
+
+
+{% block title %}SoHo Pittsburgh{{ title }}{% endblock %}
+
+{% block content %}
+
+{# ── Game day notice ── #}
+{% if limited_menu %}
+<div class="menu-game-day-notice text-center py-3 px-6" style="background-color: var(--color-bg-accent); color: var(--color-text-accent);">
+  <strong>Game Day Menu</strong> — We're serving a limited selection today. Full menu returns after the event.
+</div>
+{% endif %}
+
+{# ── Menu detail — renders like a promo card but full-page ── #}
+<div
+  class="menu-promo-block py-8 px-6 md:px-12"
+  style="--color-promo-primary: {{ colors.primary }}; --color-promo-accent: {{ colors.accent }}; --color-promo-text: {{ colors.text }}; --color-promo-bg: {{ colors.bg }}; background-color: var(--color-promo-bg); color: var(--color-promo-text);"
+>
+
+  <h1 class="text-center mb-1" style="color: var(--color-promo-primary);">
+    {{ menu.title }}
+  </h1>
+
+  {% if menu.description %}
+    <p class="text-center opacity-80 max-w-2xl mx-auto mb-8 ck-content">
+      {{ menu.description|safe }}
+    </p>
+  {% endif %}
+
+  {# ── Categories ── #}
+  {% for cat_assignment in category_assignments %}
+    {% with category=cat_assignment.category %}
+      {% get_category_assignments category limited_menu=limited_menu as assignments %}
+      {% if assignments %}
+
+        {# Per-category heading when there are multiple categories #}
+        {% if category_assignments|length > 1 %}
+          <h2 class="text-center mt-8 mb-2" style="color: var(--color-promo-accent);">
+            {{ category.name }}
+          </h2>
+        {% endif %}
+
+        <div class="grid md:grid-cols-3 gap-2 p-1">
+          {% with plain=assignments|without_subcategory subcat_items=assignments|with_subcategory %}
+
+          {% for assignment in plain %}
+            {% include "menu/partials/promo_item_card.html" %}
+          {% endfor %}
+
+          {% regroup subcat_items by subcategory.name as subcategory %}
+          {% for subcat in subcategories %}
+            {% include "menu/partials/promo_subcat_card.html" %}
+          {% endfor %}
+
+          {% endwith %}
+        </div>
+
+      {% endif %}
+      {% if category.show_disclaimer %}
+        <div class="menu-category-disclaimer mt-4 text-center">
+          {% get_active_block 'menu_footer' as disclaimer %}
+          {% if disclaimer %}{{ disclaimer.body|safe }}{% endif %}
+        </div>
+      {% endif %}
+    {% endwith %}
+  {% endfor %}
+
+  <div class="text-center mt-8">
+    <a href="{% url 'menu:promotions' %}" class="text-eyebrow hover:underline" style="color: var(--color-promo-primary);">
+      ← All Promotions
+    </a>
+  </div>
+
+</div>
+
+{% include "menu/partials/menu_item_modal.html" %}
+
+{% endblock %}

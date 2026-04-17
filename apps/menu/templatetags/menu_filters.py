@@ -45,3 +45,11 @@ def without_subcategory(assignments):
         {% with plain_items=assignments|without_subcategory %}
     """
     return [a for a in assignments if not a.subcategory_id]
+
+@register.filter
+def section_color_key(counter):
+    if counter % 3 == 0:
+        return "tertiary"
+    if counter % 2 == 0:
+        return "secondary"
+    return "primary"
