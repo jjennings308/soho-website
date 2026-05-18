@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Events — {{ restaurant_name }}{% endblock %}
+{% block meta_description %}Upcoming events at {{ restaurant_name }} — game days, live music, private parties, and more.{% endblock %}
+
+{% block content %}
+<section style="max-width:960px;margin:0 auto;padding:4rem 1.5rem 5rem;">
+
+  {# ── Page Header ──────────────────────────────────────────────────────── #}
+  <div style="text-align:center;margin-bottom:2.5rem;">
+    <h1 style="font-family:var(--font-primary);color:var(--color-text-heading);font-size:clamp(2rem,5vw,3rem);letter-spacing:0.02em;margin-bottom:0.5rem;">
+      Events
+    </h1>
+    <p style="font-family:var(--font-secondary);color:var(--color-text-secondary);font-size:1rem;">
+      Game days, live music, private events &amp; more at SOHO Pittsburgh
+    </p>
+  </div>
+
+  {# ── Calendar Component ────────────────────────────────────────────────── #}
+  <div x-data="{ view: 'calendar' }">
+
+    {# ── Controls: Month Nav + View Toggle ─────────────────────────────── #}
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.25rem;">
+
+      {# Month Navigation #}
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <a href="?month={{ prev_month|date:'Y-m' }}"
+           style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid var(--color-gold-deep);color:var(--color-gold-deep);border-radius:2px;text-decoration:none;font-size:1.2rem;line-height:1;transition:all 0.15s;"
+           onmouseover="this.style.background='var(--color-bg-accent)';this.style.color='#fff';this.style.borderColor='var(--color-bg-accent)'"
+           onmouseout="this.style.background='';this.style.color='var(--color-gold-deep)';this.style.borderColor='var(--color-gold-deep)'"
+           aria-label="Previous month"
+        >&#8249;</a>
+
+        <h2 style="font-family:var(--font-primary);color:var(--color-text-tertiary);font-size:1.25rem;min-width:155px;text-align:center;margin:0;">
+          {{ current_month|date:"F Y" }}
+        </h2>
+
+        <a href="?month={{ next_month|date:'Y-m' }}"
+           style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid var(--color-gold-deep);color:var(--color-gold-deep);border-radius:2px;text-decoration:none;font-size:1.2rem;line-height:1;transition:all 0.15s;"
+           onmouseover="this.style.background='var(--color-bg-accent)';this.style.color='#fff';this.style.borderColor='var(--color-bg-accent)'"
+           onmouseout="this.style.background='';this.style.color='var(--color-gold-deep)';this.style.borderColor='var(--color-gold-deep)'"
+           aria-label="Next month"
+        >&#8250;</a>
+      </div>
+
+      {# View Toggle #}
+      <div style="display:flex;border:1px solid var(--color-gold-deep);border-radius:3px;overflow:hidden;">
+        <button
+          @click="view = 'calendar'"
+          :style="view === 'calendar'
+            ? 'background:var(--color-bg-accent);color:#fff;border-right:1px solid var(--color-bg-accent);'
+            : 'background:transparent;color:var(--color-gold-deep);border-right:1px solid var(--color-gold-deep);'"
+          style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;font-family:var(--font-secondary);font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;border:none;cursor:pointer;transition:all 0.15s;"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Calendar
+        </button>
+        <button
+          @click="view = 'agenda'"
+          :style="view === 'agenda'
+            ? 'background:var(--color-bg-accent);color:#fff;'
+            : 'background:transparent;color:var(--color-gold-deep);'"
+          style="display:flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;font-family:var(--font-secondary);font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;border:none;cursor:pointer;transition:all 0.15s;"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+          Agenda
+        </button>
+      </div>
+    </div>
+
+    {# ════════════════════════════════════════════════════════════════════ #}
+    {#  CALENDAR GRID VIEW                                                  #}
+    {# ════════════════════════════════════════════════════════════════════ #}
+    <div x-show="view === 'calendar'" style="border:1px solid var(--color-bg-tertiary);border-radius:4px;overflow:hidden;background:var(--color-bg-secondary);">
+
+      {# Day-of-week headers #}
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--color-bg-tertiary);border-bottom:1px solid var(--color-bg-tertiary);">
+        {% for hdr in week_headers %}
+        <div style="text-align:center;padding:0.55rem 0.25rem;font-family:var(--font-secondary);font-size:0.68rem;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--color-text-tertiary);">
+          {{ hdr }}
+        </div>
+        {% endfor %}
+      </div>
+
+      {# Week rows #}
+      {% for week in weeks %}
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--color-bg-tertiary);">
+        {% for day in week %}
+        <div style="
+          min-height:88px;
+          padding:0.45rem 0.4rem;
+          {% if not day.in_month %}
+            background:var(--color-bg-primary);
+          {% else %}
+            background:var(--color-bg-secondary);
+          {% endif %}
+          {% if not forloop.last %}border-right:1px solid var(--color-bg-tertiary);{% endif %}
+          overflow:hidden;
+        ">
+
+          {# Date number #}
+          {% if day.is_today %}
+          <div style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--color-bg-accent);color:#fff;border-radius:50%;font-family:var(--font-secondary);font-size:0.78rem;font-weight:700;margin-bottom:0.3rem;">
+            {{ day.date.day }}
+          </div>
+          {% else %}
+          <div style="font-family:var(--font-secondary);font-size:0.78rem;color:{% if day.in_month %}var(--color-text-tertiary){% else %}var(--color-bg-tertiary){% endif %};margin-bottom:0.3rem;">
+            {{ day.date.day }}
+          </div>
+          {% endif %}
+
+          {# Event chips #}
+          {% for event in day.events %}
+          <div
+            title="{{ event.display_label }}{% if event.game_time %} at {{ event.game_time|time:'g:i A' }}{% endif %}"
+            style="
+              margin-bottom:0.2rem;
+              padding:0.15rem 0.3rem;
+              border-left:2px solid {{ event.color }};
+              background:{{ event.color }}18;
+              border-radius:2px;
+              font-family:var(--font-secondary);
+              font-size:0.62rem;
+              color:var(--color-text-tertiary);
+              white-space:nowrap;
+              overflow:hidden;
+              text-overflow:ellipsis;
+              max-width:100%;
+              line-height:1.3;
+            "
+          >{{ event.display_label }}</div>
+          {% endfor %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {# ════════════════════════════════════════════════════════════════════ #}
+    {#  AGENDA VIEW                                                         #}
+    {# ════════════════════════════════════════════════════════════════════ #}
+    <div x-show="view === 'agenda'">
+
+      {% if agenda_groups %}
+        {% for group in agenda_groups %}
+        <div style="
+          display:flex;
+          gap:1.25rem;
+          padding:1.25rem 0;
+          border-bottom:1px solid var(--color-bg-tertiary);
+          align-items:flex-start;
+        ">
+
+          {# Date badge #}
+          <div style="
+            flex-shrink:0;
+            width:66px;
+            text-align:center;
+            padding:0.5rem 0.4rem;
+            background:var(--color-bg-secondary);
+            border-radius:3px;
+            border:{% if group.is_today %}2px solid var(--color-bg-accent){% else %}1px solid var(--color-bg-tertiary){% endif %};
+          ">
+            <div style="font-family:var(--font-secondary);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--color-text-secondary);">
+              {{ group.date|date:"D" }}
+            </div>
+            <div style="font-family:var(--font-primary);font-size:1.9rem;line-height:1;color:{% if group.is_today %}var(--color-bg-accent){% else %}var(--color-text-tertiary){% endif %};margin:0.1rem 0;">
+              {{ group.date|date:"j" }}
+            </div>
+            <div style="font-family:var(--font-secondary);font-size:0.6rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-text-secondary);">
+              {{ group.date|date:"M Y" }}
+            </div>
+          </div>
+
+          {# Events list for this date #}
+          <div style="flex:1;display:flex;flex-direction:column;gap:0.9rem;padding-top:0.2rem;">
+            {% for event in group.events %}
+            <div>
+              <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.3rem;">
+                <span style="
+                  display:inline-block;
+                  padding:0.18rem 0.55rem;
+                  background:{{ event.color }}20;
+                  border:1px solid {{ event.color }};
+                  border-radius:2px;
+                  font-family:var(--font-secondary);
+                  font-size:0.62rem;
+                  font-weight:600;
+                  text-transform:uppercase;
+                  letter-spacing:0.08em;
+                  color:{{ event.color }};
+                  white-space:nowrap;
+                ">{{ event.get_event_type_display }}</span>
+
+                {% if event.game_time %}
+                <span style="font-family:var(--font-secondary);font-size:0.75rem;color:var(--color-text-secondary);">
+                  {{ event.game_time|time:"g:i A" }}
+                </span>
+                {% endif %}
+
+                {% if event.limited_menu %}
+                <span style="font-family:var(--font-secondary);font-size:0.72rem;color:var(--color-bg-accent);font-weight:500;">
+                  Game Day Menu{% if not event.game_time %} All Day{% endif %}
+                </span>
+                {% endif %}
+              </div>
+
+              <div style="font-family:var(--font-secondary);font-size:0.95rem;color:var(--color-text-tertiary);font-weight:500;">
+                {{ event.display_label }}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+
+        </div>
+        {% endfor %}
+
+      {% else %}
+        <div style="text-align:center;padding:4rem 1rem;">
+          <p style="font-family:var(--font-secondary);color:var(--color-text-secondary);font-size:0.95rem;">
+            No upcoming events scheduled for {{ current_month|date:"F Y" }}.
+          </p>
+          {% if current_month.month == today.month and current_month.year == today.year %}
+          <p style="font-family:var(--font-secondary);color:var(--color-text-secondary);font-size:0.85rem;margin-top:0.5rem;">
+            Check the calendar view to see all events this month.
+          </p>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+
+    {# ── Event Type Legend ─────────────────────────────────────────────── #}
+    {% if all_month_events %}
+    <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--color-bg-tertiary);display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+      <span style="font-family:var(--font-secondary);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--color-text-secondary);margin-right:0.25rem;">Legend:</span>
+      {% for event in all_month_events %}
+      {% ifchanged event.event_type %}
+      <span style="display:flex;align-items:center;gap:0.35rem;font-family:var(--font-secondary);font-size:0.72rem;color:var(--color-text-secondary);">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ event.color }};flex-shrink:0;"></span>
+        {{ event.get_event_type_display }}
+      </span>
+      {% endifchanged %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+  </div>{# end x-data #}
+</section>
+{% endblock %}

@@ -24,6 +24,8 @@ urlpatterns = [
     path('ckeditor5/', include('django_ckeditor_5.urls')), 
     path('', include('apps.core.urls')),
     path('menu/', include('apps.menu.urls')),
+    path('events/', include('apps.events.urls')),
+    path('gallery/', include('apps.gallery.urls')),
 ]
 
 if settings.DEBUG:

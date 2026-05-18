@@ -1,0 +1,57 @@
+{% load static %}
+{% if item.media_type == 'image' and item.image %}
+<a
+  href="{{ item.image.url }}"
+  class="glightbox group"
+  data-gallery="soho-gallery"
+  data-description="{{ item.caption }}"
+  style="display:block;overflow:hidden;border-radius:3px;background:var(--color-bg-tertiary);aspect-ratio:1/1;position:relative;"
+>
+  <img
+    src="{{ item.image.url }}"
+    alt="{{ item.caption|default:'Gallery photo' }}"
+    loading="lazy"
+    style="width:100%;height:100%;object-fit:cover;transition:transform 0.4s ease;"
+    onmouseover="this.style.transform='scale(1.08)'"
+    onmouseout="this.style.transform='scale(1)'"
+  >
+  {% if item.caption %}
+  <div style="
+    position:absolute;bottom:0;left:0;right:0;
+    background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 100%);
+    padding:1.5rem 0.75rem 0.6rem;
+    opacity:0;
+    transition:opacity 0.3s ease;
+  " class="gallery-caption">
+    <p style="font-family:var(--font-secondary);font-size:0.78rem;color:#fff;margin:0;line-height:1.3;">
+      {{ item.caption }}
+    </p>
+  </div>
+  {% endif %}
+</a>
+
+{% elif item.media_type == 'video' and item.video_url %}
+<a
+  href="{{ item.video_url }}"
+  class="glightbox group"
+  data-gallery="soho-gallery"
+  data-description="{{ item.caption }}"
+  style="display:block;overflow:hidden;border-radius:3px;background:var(--color-bg-surface);aspect-ratio:1/1;position:relative;"
+>
+  <div style="
+    width:100%;height:100%;
+    display:flex;align-items:center;justify-content:center;
+    background:var(--color-bg-surface);
+  ">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="var(--color-bg-accent)" style="opacity:0.8;">
+      <circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.4)"/>
+      <polygon points="10 8 16 12 10 16 10 8" fill="var(--color-bg-accent)"/>
+    </svg>
+  </div>
+  {% if item.caption %}
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:0.5rem 0.75rem;background:rgba(0,0,0,0.5);">
+    <p style="font-family:var(--font-secondary);font-size:0.78rem;color:#fff;margin:0;">{{ item.caption }}</p>
+  </div>
+  {% endif %}
+</a>
+{% endif %}

@@ -155,6 +155,18 @@ class EventDay(models.Model):
         activation_dt = timezone.make_aware(activation_dt)
         return now >= activation_dt
 
+    TYPE_COLORS = {
+        'game':          '#c9972a',
+        'private_party': '#7c3aed',
+        'live_music':    '#0d9488',
+        'holiday':       '#dc2626',
+        'other':         '#6b7280',
+    }
+
+    @property
+    def color(self):
+        return self.TYPE_COLORS.get(self.event_type, '#6b7280')
+
     # ── Class methods ─────────────────────────────────────────────────────────
 
     @classmethod
