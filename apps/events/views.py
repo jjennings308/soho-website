@@ -73,6 +73,14 @@ def events_calendar(request):
         for d, evts in agenda_by_date.items()
     ]
 
+    seen_legend = set()
+    legend_items = []
+    for event in events_qs:
+        key = (event.event_type, event.home_away)
+        if key not in seen_legend:
+            seen_legend.add(key)
+            legend_items.append({'label': event.type_label, 'color': event.color})
+
     context = {
         'current_month': current_month,
         'prev_month': prev_month,
@@ -82,6 +90,7 @@ def events_calendar(request):
         'agenda_groups': agenda_groups,
         'agenda_events': agenda_events,
         'all_month_events': events_qs,
+        'legend_items': legend_items,
         'week_headers': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     }
     return render(request, 'events/calendar.html', context)

@@ -14,7 +14,7 @@
 
   <h2>Required columns</h2>
   <ul>
-    <li><code>date</code> — format: <code>YYYY-MM-DD</code></li>
+    <li><code>date</code> — format: <code>YYYY-MM-DD</code> or <code>M/D/YYYY</code></li>
     <li><code>event_type</code> — one of: <code>game</code>, <code>private_party</code>, <code>live_music</code>, <code>holiday</code>, <code>other</code></li>
   </ul>
 
@@ -22,16 +22,17 @@
   <ul>
     <li><code>label</code> — display label, e.g. <em>Pirates vs. Cubs</em></li>
     <li><code>team</code> — one of: <code>pirates</code>, <code>steelers</code>, <code>penguins</code>, <code>other</code></li>
-    <li><code>game_time</code> — format: <code>HH:MM</code> (24-hour)</li>
+    <li><code>home_away</code> — <code>home</code> or <code>away</code>; away games always use full menu</li>
+    <li><code>game_time</code> — format: <code>HH:MM</code> (24-hour) or <code>H:MM AM/PM</code></li>
     <li><code>limited_menu</code> — <code>true</code> or <code>false</code> (default: <code>true</code>)</li>
     <li><code>limited_menu_lead_hours</code> — integer, default <code>2</code></li>
   </ul>
 
   <h2>Example CSV</h2>
-  <pre style="background:#f8f8f8;padding:12px;border:1px solid #ddd;border-radius:4px;">date,event_type,label,team,game_time,limited_menu,limited_menu_lead_hours
-2025-04-07,game,Pirates vs. Cubs,pirates,18:40,true,2
-2025-04-08,game,Pirates vs. Cubs,pirates,12:35,true,2
-2025-09-07,game,Steelers vs. Patriots,steelers,13:00,true,3
+  <pre style="background:#f8f8f8;padding:12px;border:1px solid #ddd;border-radius:4px;">date,event_type,label,team,game_time,limited_menu,limited_menu_lead_hours,home_away
+2025-04-07,game,Pirates vs. Cubs,pirates,18:40,true,2,away
+2025-04-08,game,Pirates vs. Cubs,pirates,12:35,true,2,home
+2025-09-07,game,Steelers vs. Patriots,steelers,13:00,true,3,home
 2025-12-25,holiday,Christmas,,,,false,</pre>
 
   <form method="post" enctype="multipart/form-data">

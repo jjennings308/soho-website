@@ -194,7 +194,7 @@
                   letter-spacing:0.08em;
                   color:{{ event.color }};
                   white-space:nowrap;
-                ">{{ event.get_event_type_display }}</span>
+                ">{{ event.type_label }}</span>
 
                 {% if event.game_time %}
                 <span style="font-family:var(--font-secondary);font-size:0.75rem;color:var(--color-text-secondary);">
@@ -202,7 +202,7 @@
                 </span>
                 {% endif %}
 
-                {% if event.limited_menu %}
+                {% if event.limited_menu and event.home_away != 'away' %}
                 <span style="font-family:var(--font-secondary);font-size:0.72rem;color:var(--color-bg-accent);font-weight:500;">
                   Game Day Menu{% if not event.game_time %} All Day{% endif %}
                 </span>
@@ -234,16 +234,14 @@
     </div>
 
     {# ── Event Type Legend ─────────────────────────────────────────────── #}
-    {% if all_month_events %}
+    {% if legend_items %}
     <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--color-bg-tertiary);display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
       <span style="font-family:var(--font-secondary);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--color-text-secondary);margin-right:0.25rem;">Legend:</span>
-      {% for event in all_month_events %}
-      {% ifchanged event.event_type %}
+      {% for item in legend_items %}
       <span style="display:flex;align-items:center;gap:0.35rem;font-family:var(--font-secondary);font-size:0.72rem;color:var(--color-text-secondary);">
-        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ event.color }};flex-shrink:0;"></span>
-        {{ event.get_event_type_display }}
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:{{ item.color }};flex-shrink:0;"></span>
+        {{ item.label }}
       </span>
-      {% endifchanged %}
       {% endfor %}
     </div>
     {% endif %}

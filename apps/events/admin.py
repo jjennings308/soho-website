@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils import timezone
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 from django.contrib import messages
 import csv
 import io
@@ -15,8 +15,8 @@ class CSVImportForm(forms.Form):
         label='CSV File',
         help_text=(
             'Required columns: date (YYYY-MM-DD), event_type. '
-            'Optional columns: label, team, game_time (HH:MM), '
-            'limited_menu (true/false), limited_menu_lead_hours.'
+            'Optional columns: label, team, home_away (home/away), '
+            'game_time (HH:MM), limited_menu (true/false), limited_menu_lead_hours.'
         )
     )
 
@@ -28,6 +28,7 @@ class EventDayAdmin(admin.ModelAdmin):
         'event_type_badge',
         'display_label',
         'team',
+        'home_away',
         'game_time',
         'limited_menu',
         'is_active',
@@ -35,6 +36,7 @@ class EventDayAdmin(admin.ModelAdmin):
     ]
     list_filter = [
         'event_type',
+        'home_away',
         'team',
         'limited_menu',
         'is_active',
@@ -52,7 +54,7 @@ class EventDayAdmin(admin.ModelAdmin):
             'fields': ('date', 'event_type', 'label', 'is_active'),
         }),
         ('Game Details', {
-            'fields': ('team', 'game_time', 'limited_menu_lead_hours'),
+            'fields': ('team', 'home_away', 'game_time', 'limited_menu_lead_hours'),
             'description': (
                 'Complete these fields for game day events. '
                 'game_time is used to calculate when limited menu activates.'
@@ -93,12 +95,8 @@ class EventDayAdmin(admin.ModelAdmin):
         if obj.date != today:
             return '—'
         if obj.is_limited_menu_active:
-            return format_html(
-                '<span style="color:#b91c1c;font-weight:500;">⚠ Limited</span>'
-            )
-        return format_html(
-            '<span style="color:#166534;">✓ Full</span>'
-        )
+            return mark_safe('<span style="color:#b91c1c;font-weight:500;">⚠ Limited</span>')
+        return mark_safe('<span style="color:#166534;">✓ Full</span>')
 
     # ── Bulk actions ──────────────────────────────────────────────────────────
 
@@ -160,9 +158,10 @@ class EventDayAdmin(admin.ModelAdmin):
         return render(request, 'admin/events/eventday/csv_import.html', context)
 
     def _process_csv(self, csv_file):
+        from datetime import date, time, datetime
         created = skipped = errors = 0
         try:
-            decoded = csv_file.read().decode('utf-8')
+            decoded = csv_file.read().decode('utf-8-sig')
             reader = csv.DictReader(io.StringIO(decoded))
             for row in reader:
                 try:
@@ -171,15 +170,31 @@ class EventDayAdmin(admin.ModelAdmin):
                     if not date_str:
                         errors += 1
                         continue
-                    from datetime import date
-                    event_date = date.fromisoformat(date_str)
 
-                    # Parse optional fields
+                    # Accept YYYY-MM-DD or M/D/YYYY
+                    for fmt in ('%Y-%m-%d', '%m/%d/%Y'):
+                        try:
+                            event_date = datetime.strptime(date_str, fmt).date()
+                            break
+                        except ValueError:
+                            pass
+                    else:
+                        errors += 1
+                        continue
+
+                    # Accept HH:MM (24-hour) or H:MM AM/PM
                     game_time = None
-                    if row.get('game_time', '').strip():
-                        from datetime import time
-                        h, m = row['game_time'].strip().split(':')
-                        game_time = time(int(h), int(m))
+                    time_str = row.get('game_time', '').strip()
+                    if time_str:
+                        for fmt in ('%H:%M', '%I:%M %p', '%I:%M%p'):
+                            try:
+                                game_time = datetime.strptime(time_str.upper(), fmt).time()
+                                break
+                            except ValueError:
+                                pass
+                        else:
+                            errors += 1
+                            continue
 
                     limited_menu_str = row.get('limited_menu', 'true').strip().lower()
                     limited_menu = limited_menu_str not in ('false', '0', 'no')
@@ -192,6 +207,7 @@ class EventDayAdmin(admin.ModelAdmin):
                         defaults={
                             'label':                   row.get('label', '').strip(),
                             'team':                    row.get('team', '').strip(),
+                            'home_away':               row.get('home_away', '').strip().lower(),
                             'game_time':               game_time,
                             'limited_menu':            limited_menu,
                             'limited_menu_lead_hours': lead_hours,

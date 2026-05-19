@@ -36,8 +36,14 @@ class EventDay(models.Model):
     TEAM_CHOICES = [
         ('pirates',  'Pittsburgh Pirates'),
         ('steelers', 'Pittsburgh Steelers'),
+        ('pitt',     'Pittsburgh Panthers'),        
         ('penguins', 'Pittsburgh Penguins'),
         ('other',    'Other'),
+    ]
+
+    HOME_AWAY_CHOICES = [
+        ('home', 'Home'),
+        ('away', 'Away'),
     ]
 
     # ── Core fields ───────────────────────────────────────────────────────────
@@ -66,6 +72,12 @@ class EventDay(models.Model):
         choices=TEAM_CHOICES,
         blank=True,
         help_text="Relevant for game day events only."
+    )
+    home_away = models.CharField(
+        max_length=4,
+        choices=HOME_AWAY_CHOICES,
+        blank=True,
+        help_text="Home or away game. Away games use full menu.",
     )
     game_time = models.TimeField(
         blank=True,
@@ -120,6 +132,13 @@ class EventDay(models.Model):
     # ── Properties ────────────────────────────────────────────────────────────
 
     @property
+    def type_label(self):
+        """'Away Game' for away games, otherwise the standard event type display name."""
+        if self.event_type == 'game' and self.home_away == 'away':
+            return 'Away Game'
+        return self.get_event_type_display()
+
+    @property
     def display_label(self):
         """
         Returns the label if set, otherwise falls back to the event type
@@ -142,6 +161,8 @@ class EventDay(models.Model):
         """
         if not self.is_active or not self.limited_menu:
             return False
+        if self.home_away == 'away':
+            return False
         if self.game_time is None:
             return True
         now = timezone.localtime(timezone.now())
@@ -157,6 +178,7 @@ class EventDay(models.Model):
 
     TYPE_COLORS = {
         'game':          '#c9972a',
+        'game_away':     '#5b8db8',
         'private_party': '#7c3aed',
         'live_music':    '#0d9488',
         'holiday':       '#dc2626',
@@ -165,7 +187,8 @@ class EventDay(models.Model):
 
     @property
     def color(self):
-        return self.TYPE_COLORS.get(self.event_type, '#6b7280')
+        key = 'game_away' if (self.event_type == 'game' and self.home_away == 'away') else self.event_type
+        return self.TYPE_COLORS.get(key, '#6b7280')
 
     # ── Class methods ─────────────────────────────────────────────────────────
 
