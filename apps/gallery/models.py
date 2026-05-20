@@ -38,6 +38,14 @@ class GalleryItem(TimeStampedModel):
         blank=True,
         related_name='items',
     )
+    menu_item = models.ForeignKey(
+        'menu.MenuItem',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='gallery_items',
+        help_text="Link to a menu item to show this photo on the menu card and modal.",
+    )
     media_type = models.CharField(max_length=10, choices=MEDIA_CHOICES, default='image')
     image = models.ImageField(upload_to='gallery/', blank=True)
     video_url = models.URLField(blank=True)
@@ -49,6 +57,10 @@ class GalleryItem(TimeStampedModel):
         ordering = ['category__display_order', 'display_order']
         verbose_name = 'Gallery Item'
         verbose_name_plural = 'Gallery Items'
+
+    @property
+    def effective_caption(self):
+        return self.caption or (self.menu_item.name if self.menu_item_id else '')
 
     def __str__(self):
         return self.caption or f"Gallery Item {self.pk}"

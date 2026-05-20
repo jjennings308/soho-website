@@ -8,6 +8,19 @@ from django.db.models import Prefetch
 register = template.Library()
 
 
+class _GalleryImageAdapter:
+    """
+    Wraps a GalleryItem so it satisfies the same interface as a media_manager
+    Media object: .file.url and .alt_text — used by get_primary_media and the
+    menu item card template.
+    """
+    def __init__(self, gallery_item):
+        self.file = gallery_item.image
+        self.alt_text = gallery_item.caption or (
+            gallery_item.menu_item.name if gallery_item.menu_item_id else ''
+        )
+
+
 # =============================================================================
 # INTERNAL HELPERS
 # =============================================================================
@@ -37,15 +50,21 @@ def _assignment_to_json_data(assignment):
     """
     item = assignment.menu_item
 
-    # Gallery images
+    # Gallery images — media_manager first, then linked gallery items
     gallery = [
         {'url': m.file.url, 'alt': m.alt_text or ''}
         for m in item.media.filter(
             media_type='image', is_approved=True
         ).order_by('display_order')
     ]
+    gallery += [
+        {'url': gi.image.url, 'alt': gi.caption or item.name}
+        for gi in item.gallery_items.filter(
+            is_published=True, media_type='image'
+        ).exclude(image='').order_by('display_order')
+    ]
 
-    # Primary image
+    # Primary image — media_manager first, then first linked gallery item
     primary = item.media.filter(
         media_type='image', is_approved=True
     ).order_by('-is_featured', 'display_order').first()
@@ -88,9 +107,9 @@ def _assignment_to_json_data(assignment):
         'description':       item.description or '',
         'short_description': item.short_description or '',
 
-        # Images
-        'primary_image':     primary.file.url if primary else None,
-        'has_image':         primary is not None,
+        # Images — media_manager primary, then first gallery item as fallback
+        'primary_image':     primary.file.url if primary else (gallery[0]['url'] if gallery else None),
+        'has_image':         primary is not None or bool(gallery),
         'gallery':           gallery,
 
         # Pricing — uses assignment override if set
@@ -149,8 +168,9 @@ def item_to_json(assignment):
 @register.simple_tag
 def get_primary_media(obj):
     """
-    Returns the first approved image attached to any media-manager object
-    (MenuItem, MenuCategory, etc.).
+    Returns the first approved image for a MenuItem. Checks media_manager
+    first, then falls back to a linked GalleryItem. Returns an object with
+    .file.url and .alt_text so the template works identically either way.
 
     Usage:
         {% get_primary_media assignment.menu_item as primary_image %}
@@ -158,10 +178,16 @@ def get_primary_media(obj):
             <img src="{{ primary_image.file.url }}" alt="{{ primary_image.alt_text }}">
         {% endif %}
     """
-    return obj.media.filter(
+    media = obj.media.filter(
         media_type='image',
         is_approved=True,
     ).order_by('display_order').first()
+    if media:
+        return media
+    gi = obj.gallery_items.filter(
+        is_published=True, media_type='image'
+    ).exclude(image='').order_by('display_order').first()
+    return _GalleryImageAdapter(gi) if gi else None
 
 
 @register.simple_tag

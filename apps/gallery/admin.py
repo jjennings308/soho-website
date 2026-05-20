@@ -18,12 +18,13 @@ class GalleryCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(GalleryItem)
 class GalleryItemAdmin(admin.ModelAdmin):
-    list_display = ['thumbnail_preview', 'caption', 'category', 'media_type', 'display_order', 'is_published']
+    list_display = ['thumbnail_preview', 'caption', 'category', 'menu_item', 'media_type', 'display_order', 'is_published']
     list_editable = ['display_order', 'is_published']
     list_filter = ['category', 'media_type', 'is_published']
-    search_fields = ['caption']
+    search_fields = ['caption', 'menu_item__name']
     readonly_fields = ['thumbnail_preview']
     ordering = ['category__display_order', 'display_order']
+    autocomplete_fields = ['menu_item']
 
     def thumbnail_preview(self, obj):
         if obj.image:

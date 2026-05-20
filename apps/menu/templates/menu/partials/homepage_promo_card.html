@@ -8,7 +8,7 @@
 {#   assignment — MenuItemCategoryAssignment (random item)      #}
 {# ============================================================ #}
 
-{% load menu_filters %}
+{% load menu_filters menu_tags %}
 
 {% with colors=menu.resolve_colors %}
 <div
@@ -32,20 +32,19 @@
     {% with item=assignment.menu_item %}
 
       {# ── Item image ── #}
-      {% with img=item.media.filter|first %}
-        {% if img %}
-          <img
-            src="{{ img.file.url }}"
-            alt="{{ img.alt_text|default:item.name }}"
-            class="w-32 h-32 object-cover rounded-full shadow-md"
-          >
-        {% else %}
-          <div class="w-32 h-32 rounded-full shadow-md flex items-center justify-center
-                      bg-black/20 text-3xl">
-            🍽
-          </div>
-        {% endif %}
-      {% endwith %}
+      {% get_primary_media item as primary_image %}
+      {% if primary_image %}
+        <img
+          src="{{ primary_image.file.url }}"
+          alt="{{ primary_image.alt_text|default:item.name }}"
+          class="w-32 h-32 object-cover rounded-full shadow-md"
+        >
+      {% else %}
+        <div class="w-32 h-32 rounded-full shadow-md flex items-center justify-center
+                    bg-black/20 text-3xl">
+          🍽
+        </div>
+      {% endif %}
 
       {# ── Item name ── #}
       <h3 class="text-lg font-bold leading-tight"
@@ -66,7 +65,7 @@
         </p>
       {% endif %}
 
-    {% endwith %}
+    {% endwith %}{# item #}
   {% endif %}
 
   {# ── Link to promo on homepage or promo if not declared ── #}

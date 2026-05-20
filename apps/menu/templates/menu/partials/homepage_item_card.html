@@ -8,22 +8,21 @@
 {#   assignment — MenuItemCategoryAssignment instance           #}
 {# ============================================================ #}
 
-{% load menu_filters %}
+{% load menu_filters menu_tags %}
 
 {% with item=assignment.menu_item %}
 <div class="rounded-lg shadow p-4 flex flex-col gap-2"
      style="background-color: var(--color-promo-bg); filter: brightness(1.1);">
 
   {# ── Item image ── #}
-  {% with img=item.media.all|first %}
-    {% if img %}
-      <img
-        src="{{ img.file.url }}"
-        alt="{{ img.alt_text|default:item.name }}"
-        class="w-full h-36 object-cover rounded"
-      >
-    {% endif %}
-  {% endwith %}
+  {% get_primary_media item as primary_image %}
+  {% if primary_image %}
+    <img
+      src="{{ primary_image.file.url }}"
+      alt="{{ primary_image.alt_text|default:item.name }}"
+      class="w-full h-36 object-cover rounded"
+    >
+  {% endif %}
 
   {# ── Name + price ── #}
   <div class="flex justify-between items-start gap-2">
