@@ -1,0 +1,53 @@
+{% if success %}
+  <div class="text-center py-6">
+    <p class="text-lg font-semibold text-brand-primary">Almost there!</p>
+    <p class="mt-2 text-text-secondary">Check your email and click the confirmation link to complete your subscription.</p>
+  </div>
+
+{% elif already_subscribed %}
+  <div class="text-center py-6">
+    <p class="text-text-secondary">You're already subscribed. Thanks for being part of the SoHo family!</p>
+  </div>
+
+{% else %}
+  <form method="post" action="{% url 'members:subscribe' %}"
+        x-data="{ loading: false }"
+        @submit.prevent="
+          loading = true;
+          fetch($el.action, { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }, body: new FormData($el) })
+            .then(r => r.text())
+            .then(html => { $el.closest('[data-subscribe-widget]').innerHTML = html; })
+            .finally(() => { loading = false; });
+        ">
+    {% csrf_token %}
+
+    {% if error %}
+      <p class="mb-3 text-sm text-red-600">{{ error }}</p>
+    {% endif %}
+
+    <div class="flex flex-col sm:flex-row gap-3">
+      <input
+        type="text"
+        name="first_name"
+        placeholder="First name"
+        required
+        class="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary text-text-primary bg-white"
+      >
+      <input
+        type="email"
+        name="email"
+        placeholder="Email address"
+        required
+        class="flex-1 px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-brand-primary text-text-primary bg-white"
+      >
+      <button
+        type="submit"
+        :disabled="loading"
+        class="px-6 py-2 bg-brand-primary text-white font-semibold rounded hover:opacity-90 transition disabled:opacity-60"
+      >
+        <span x-show="!loading">Subscribe</span>
+        <span x-show="loading">Sending&hellip;</span>
+      </button>
+    </div>
+  </form>
+{% endif %}

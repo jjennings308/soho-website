@@ -48,7 +48,11 @@ INSTALLED_APPS = [
     'apps.content',
     'apps.events',
     'apps.gallery',
+    'apps.members',
 ]
+
+DEFAULT_FROM_EMAIL = 'SoHo Pittsburgh <noreply@sohopittsburgh.com>'
+EMAIL_SUBJECT_PREFIX = ''
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

@@ -50,6 +50,16 @@ Copy `.env.example` to `.env`. Required variables:
 
 Both dev and prod use PostgreSQL. SQLite config is commented out in the settings files.
 
+### direnv (dev machine)
+
+This project uses `direnv` to auto-set `DJANGO_SETTINGS_MODULE` when entering the project directory. A `.envrc` file at the project root contains:
+
+```bash
+export DJANGO_SETTINGS_MODULE=config.settings.development
+```
+
+If `.envrc` is blocked, run `direnv allow` from the project root. With direnv active, all `manage.py` commands work without passing `--settings` explicitly. The PostgreSQL service for this project runs on port **5433**.
+
 ## Architecture
 
 ### Settings split
@@ -64,6 +74,7 @@ Both dev and prod use PostgreSQL. SQLite config is commented out in the settings
 | `apps.content` | Content slot/block CMS system for editable copy |
 | `apps.events` | Event calendar driving limited-menu mode (game days, etc.) |
 | `apps.gallery` | Photo/video gallery with category filtering and lightbox |
+| `apps.members` | Mailing list, member accounts, future photo submissions |
 
 Third-party app `media_manager` is loaded from a private GitHub package (`jjennings308/django-media-manager`).
 
@@ -171,9 +182,9 @@ Inherits `TimeStampedModel`.
 
 Default ordering: `['category__display_order', 'display_order']`
 
-**Phase 2 fields to add when customer submissions open:**
+**Phase 2 fields to add when customer submissions open (see members app):**
 ```python
-submitted_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
+submitted_by = models.ForeignKey('members.SoHoMember', null=True, blank=True, on_delete=models.SET_NULL)
 is_approved = models.BooleanField(default=False)
 is_flagged = models.BooleanField(default=False)
 flagged_reason = models.TextField(blank=True)
@@ -237,7 +248,7 @@ Creates the 7 seeded categories if they don't already exist. Safe to re-run (use
 
 ### Upload workflow (initial photo migration)
 
-20 photos downloaded from the existing GoDaddy site into `soho_gallery_originals/` on the dev machine. All are JPGs (iPhone VSCO-processed). To load them into the new gallery:
+21 photos downloaded from the existing GoDaddy site into `soho_gallery_originals/` on the dev machine. All are JPGs (iPhone VSCO-processed). To load them into the new gallery:
 
 1. Upload files to the VPS media directory: `scp soho_gallery_originals/* user@209.46.125.163:/var/www/soho/media/gallery/`
 2. Use Django admin to create `GalleryItem` records and assign categories, OR write a one-off management command to bulk-create them.
@@ -256,3 +267,159 @@ AWS_DEFAULT_ACL = 'public-read'
 ```
 
 No model changes required — `ImageField` uses `DEFAULT_FILE_STORAGE` automatically.
+
+---
+
+## Members app (`apps/members/`)
+
+### Decision log
+
+- Named `members` not `newsletter` or `maillist` — the app will grow to cover member accounts and photo submissions; the name reflects the full scope not just Phase 1.
+- **Phase 1:** Mailing list only. `SoHoMember` is not linked to a Django `User` yet.
+- **Phase 2:** Account activation — Django `User` linked optionally to `SoHoMember` via `OneToOneField(null=True)`. Members who only want emails never need a login.
+- **Phase 3:** Customer photo submissions — `GallerySubmission` model, moderation queue in admin.
+- Email sending uses Django's standard `send_mail()` and `EmailMessage` throughout — never SMTP-specific code. This keeps the backend swappable: currently Option A (own mail server via `EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'`); future Option C (Brevo/Mailgun via `django-anymail`) is a settings-only change, no code changes required.
+- All outbound site email (verification, notifications, newsletters, password resets) routes through `EMAIL_BACKEND` — one setting controls everything.
+
+### Email verification — double opt-in
+
+Signup flow:
+1. Customer submits email via subscribe form → `SoHoMember` created with `is_active=False`
+2. Verification email sent immediately: *"It looks like you signed up for our email list — please confirm."* Contains a confirm link only (no reject link — anyone who didn't sign up simply ignores the email; a reject link would be a harassment vector).
+3. Customer clicks confirm → `is_active=True`, `confirmed_at` set
+4. Unconfirmed records older than 7 days are excluded from all sends; a management command can purge them periodically.
+
+### Models
+
+#### `SoHoMember`
+Inherits `TimeStampedModel`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `email` | EmailField(unique=True) | Primary identifier |
+| `first_name` | CharField(100) | Required at signup |
+| `last_name` | CharField(100, blank=True) | Optional |
+| `is_email_subscribed` | BooleanField(default=True) | False after unsubscribe |
+| `is_active` | BooleanField(default=False) | True after email confirmation |
+| `confirmation_token` | UUIDField(default=uuid.uuid4, unique=True) | Used in confirm URL |
+| `unsubscribe_token` | UUIDField(default=uuid.uuid4, unique=True) | Used in unsubscribe URL; separate from confirm token |
+| `confirmed_at` | DateTimeField(null=True, blank=True) | Set on confirmation |
+| `user` | OneToOneField(User, null=True, blank=True) | Phase 2 — linked Django auth user; add then, not now |
+
+#### `Newsletter`
+Inherits `TimeStampedModel`. Used to compose and track email sends.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `subject` | CharField(200) | Email subject line |
+| `body` | CKEditor5Field | Rich text body; composed in Django admin |
+| `sent_at` | DateTimeField(null=True, blank=True) | Null = draft; set when send is triggered |
+| `recipient_count` | PositiveIntegerField(default=0) | Recorded at send time |
+| `sent_by` | FK → User(null=True) | Staff user who triggered the send |
+
+### Admin (`apps/members/admin.py`)
+
+#### `SoHoMemberAdmin`
+- `list_display`: email, first_name, last_name, is_active, is_email_subscribed, confirmed_at, created_at
+- `list_filter`: is_active, is_email_subscribed
+- `search_fields`: email, first_name, last_name
+- `readonly_fields`: confirmation_token, unsubscribe_token, confirmed_at
+- Bulk actions: `mark_active`, `mark_inactive`, `unsubscribe_selected`
+- Export action: CSV export of active subscribers (for backup / future Mailchimp migration)
+
+#### `NewsletterAdmin`
+- `list_display`: subject, sent_at, recipient_count, sent_by, created_at
+- `readonly_fields`: sent_at, recipient_count, sent_by
+- Custom admin action: **"Send to all active subscribers"** — only available on draft newsletters (sent_at is null). Sends via Django's `send_mail()`, records sent_at, recipient_count, sent_by. Filters on `is_active=True` and `is_email_subscribed=True`. Does NOT use a task queue in Phase 1 — acceptable for small lists. Add Celery if list exceeds ~500 and send times become a problem.
+
+### URLs / views
+
+| URL | View | Name | Notes |
+|-----|------|------|-------|
+| `/subscribe/` | `SubscribeView` | `members:subscribe` | POST only; renders inline success/error |
+| `/subscribe/confirm/<uuid:token>/` | `ConfirmView` | `members:confirm` | GET; activates member |
+| `/unsubscribe/<uuid:token>/` | `UnsubscribeView` | `members:unsubscribe` | GET; sets is_email_subscribed=False |
+
+Subscribe form is embedded in other pages (footer, dedicated section) — not a standalone page. `SubscribeView` returns a partial HTML response suitable for Alpine.js or simple JS form submission.
+
+### Template structure
+
+```
+apps/members/templates/members/
+    emails/
+        confirm_subscription.html   # verification email (HTML)
+        confirm_subscription.txt    # verification email (plain text)
+        newsletter.html             # newsletter send wrapper
+    partials/
+        subscribe_form.html         # embeddable signup widget
+    confirm_success.html            # shown after clicking confirm link
+    unsubscribe_success.html        # shown after unsubscribing
+```
+
+### Email settings
+
+Add to `base.py`:
+```python
+DEFAULT_FROM_EMAIL = 'SoHo Pittsburgh <noreply@sohopittsburgh.com>'
+EMAIL_SUBJECT_PREFIX = ''
+```
+
+Add to `development.py`:
+```python
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# prints emails to terminal — no real sends in dev
+```
+
+Add to `production.py` (Option A — own mail server):
+```python
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = env('EMAIL_HOST')
+EMAIL_PORT = env.int('EMAIL_PORT', default=587)
+EMAIL_HOST_USER = env('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
+EMAIL_USE_TLS = True
+```
+
+Add to `.env.example`:
+```
+EMAIL_HOST=
+EMAIL_PORT=587
+EMAIL_HOST_USER=
+EMAIL_PASSWORD=
+```
+
+**Future Option C (Brevo via django-anymail) — settings-only swap, no code changes:**
+```python
+# pip install django-anymail[brevo]
+EMAIL_BACKEND = 'anymail.backends.brevo.EmailBackend'
+ANYMAIL = {'BREVO_API_KEY': env('BREVO_API_KEY')}
+```
+
+### Phase 2 — Account activation (future, do not build yet)
+
+When photo submissions open, members can activate a login:
+- Member visits `/members/activate/` and enters their email
+- If a `SoHoMember` exists: send a set-password link; on completion create Django `User` and link via `SoHoMember.user`
+- If no record exists: create `SoHoMember` + offer email subscription opt-in during activation
+- Members who only want emails are never prompted to activate
+
+### Phase 3 — Customer photo submissions (future, do not build yet)
+
+`GallerySubmission` model (location TBD — `apps.members` or `apps.gallery`):
+
+```python
+class GallerySubmission(TimeStampedModel):
+    member = models.ForeignKey('members.SoHoMember', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to='submissions/')
+    caption = models.CharField(max_length=255, blank=True)
+    status = models.CharField(choices=['pending','approved','rejected'], default='pending')
+    reviewed_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True)
+```
+
+Admin "Approve" action promotes the submission to a `GalleryItem` and notifies the member by email via `send_mail()`.
+
+Pre-screening plan:
+- Phase 3 launch: file type + size validation only
+- If abuse occurs: add AWS Rekognition or Google Vision API for automated content moderation
