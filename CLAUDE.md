@@ -75,6 +75,7 @@ If `.envrc` is blocked, run `direnv allow` from the project root. With direnv ac
 | `apps.events` | Event calendar driving limited-menu mode (game days, etc.) |
 | `apps.gallery` | Photo/video gallery with category filtering and lightbox |
 | `apps.members` | Mailing list, member accounts, future photo submissions |
+| `apps.staff` | Purpose-built staff portal — no Django admin required for day-to-day ops |
 
 Third-party app `media_manager` is loaded from a private GitHub package (`jjennings308/django-media-manager`).
 
@@ -340,7 +341,7 @@ Inherits `TimeStampedModel`. Used to compose and track email sends.
 | `/subscribe/confirm/<uuid:token>/` | `ConfirmView` | `members:confirm` | GET; activates member |
 | `/unsubscribe/<uuid:token>/` | `UnsubscribeView` | `members:unsubscribe` | GET; sets is_email_subscribed=False |
 
-Subscribe form is embedded in other pages (footer, dedicated section) — not a standalone page. `SubscribeView` returns a partial HTML response suitable for Alpine.js or simple JS form submission.
+Subscribe form is embedded in other pages — not a standalone page. `SubscribeView` returns a partial HTML response for Alpine.js swap. Currently embedded in `templates/partials/_footer.html` inside `<div data-subscribe-widget>`. To embed elsewhere: `{% include 'members/partials/subscribe_form.html' %}` inside a `<div data-subscribe-widget>` container.
 
 ### Template structure
 
@@ -356,37 +357,33 @@ apps/members/templates/members/
     unsubscribe_success.html        # shown after unsubscribing
 ```
 
-### Email settings
+### Email settings — current state (as implemented)
 
-Add to `base.py`:
+`base.py` sets:
 ```python
 DEFAULT_FROM_EMAIL = 'SoHo Pittsburgh <noreply@sohopittsburgh.com>'
 EMAIL_SUBJECT_PREFIX = ''
 ```
 
-Add to `development.py`:
+`development.py` sets:
 ```python
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # prints emails to terminal — no real sends in dev
 ```
 
-Add to `production.py` (Option A — own mail server):
+`production.py` hardcodes the SMTP backend and overrides `DEFAULT_FROM_EMAIL` to match the authenticated SMTP user (mail servers reject sends where From ≠ authenticated account):
 ```python
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = env('EMAIL_HOST')
-EMAIL_PORT = env.int('EMAIL_PORT', default=587)
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_PASSWORD')
-EMAIL_USE_TLS = True
+DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER')  # must match SMTP auth user
+EMAIL_HOST = config('EMAIL_HOST')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 ```
 
-Add to `.env.example`:
-```
-EMAIL_HOST=
-EMAIL_PORT=587
-EMAIL_HOST_USER=
-EMAIL_PASSWORD=
-```
+`.env` on the VPS holds `EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, etc. Do NOT set `EMAIL_BACKEND` in `.env` — production.py hardcodes smtp; development.py hardcodes console.
 
 **Future Option C (Brevo via django-anymail) — settings-only swap, no code changes:**
 ```python
@@ -423,3 +420,52 @@ Admin "Approve" action promotes the submission to a `GalleryItem` and notifies t
 Pre-screening plan:
 - Phase 3 launch: file type + size validation only
 - If abuse occurs: add AWS Rekognition or Google Vision API for automated content moderation
+
+---
+
+## Staff portal (`apps/staff/`)
+
+Purpose-built dashboard for customer's staff. Intentionally simpler than Django admin — only exposes day-to-day operations.
+
+### Access
+
+- URL: `/staff/` — **not linked anywhere in the public site**. Staff navigate there directly.
+- Login: `/staff/login/` — uses Django's built-in auth. Requires `is_staff=True` on the user account.
+- `StaffRequiredMixin` enforces `is_staff` on every view; non-staff authenticated users get 403.
+
+### Sections
+
+| URL | What it does |
+|-----|-------------|
+| `/staff/` | Dashboard — menu mode status, subscriber count, draft newsletters, unpublished photos, today's and upcoming events |
+| `/staff/menu-mode/` | Toggle menu mode: Automatic / Force Full / Force Game Day. POSTs to `SiteSettings` |
+| `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
+| `/staff/gallery/` | Thumbnail table; publish/hide toggle; photo upload |
+| `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
+
+### Design decisions
+
+- No models — no migrations needed for this app.
+- All styles are inline CSS using brand CSS custom properties (`--color-gold-primary`, etc.) — no dependency on Tailwind compilation order when adding new templates.
+- Alpine.js hamburger for mobile sidebar (uses the vendored `static/js/alpine.min.js`).
+- Newsletter body is a plain `<textarea>` in the staff portal (the `Newsletter` model stores it as `CKEditor5Field`, but staff don't need rich text for basic sends). Django admin still available for rich-text composition if needed.
+- Sidebar links: Operations (Menu Mode, Events), Content (Gallery, Newsletter), Tools (Analytics ↗, View Site ↗).
+
+### Deployment
+
+VPS: `209.46.125.163`, app root `/var/www/soho/`, runs as `www-data`.
+
+Standard deploy after pushing to `main`:
+```bash
+sudo chown -R www-data:www-data .git/   # only needed if git permissions get mixed
+sudo -u www-data git pull
+sudo -u www-data /var/www/soho/.venv/bin/python manage.py migrate   # if there are migrations
+sudo systemctl restart gunicorn
+```
+
+Media directory must be owned by `www-data` for uploads to work:
+```bash
+sudo chown -R www-data:www-data /var/www/soho/media/
+```
+
+`main` branch = what's deployed. Work on `dev`, merge to `main` before deploying. Do not set `EMAIL_BACKEND` in the VPS `.env` — `production.py` hardcodes smtp.
