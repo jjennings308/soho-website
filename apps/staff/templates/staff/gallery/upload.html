@@ -32,6 +32,16 @@
         </select>
       </div>
 
+      <div class="sp-field">
+        <label class="sp-label">Menu Item <span style="color:#888;font-weight:400;">(optional — links photo to a menu item)</span></label>
+        <select class="sp-select" name="menu_item">
+          <option value="">— None —</option>
+          {% for item in form.fields.menu_item.queryset %}
+            <option value="{{ item.pk }}" {% if form.menu_item.value == item.pk %}selected{% endif %}>{{ item.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
       <div class="sp-field" style="max-width:140px;">
         <label class="sp-label">Display Order</label>
         <input class="sp-input" type="number" name="display_order" value="{{ form.display_order.value|default:'0' }}" min="0">

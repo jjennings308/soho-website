@@ -22,7 +22,7 @@ class EventForm(forms.ModelForm):
 class GalleryUploadForm(forms.ModelForm):
     class Meta:
         model = GalleryItem
-        fields = ['image', 'caption', 'category', 'display_order']
+        fields = ['image', 'caption', 'category', 'menu_item', 'display_order']
 
 
 class NewsletterForm(forms.ModelForm):
