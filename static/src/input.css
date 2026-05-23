@@ -475,7 +475,7 @@
     background-color: #060606;
     border-top: var(--gold-rule-thick);
     color: var(--color-text-secondary);
-    @apply pt-16 pb-8;
+    @apply pt-6 pb-8;
   }
 
   .site-footer__logo {
