@@ -1,0 +1,40 @@
+{% extends "staff/base.html" %}
+{% block title %}{{ newsletter.subject }}{% endblock %}
+{% block page_title %}{{ newsletter.subject }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:newsletter' %}" class="sp-btn sp-btn--outline">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;">
+
+  <div class="sp-card" style="margin-bottom:1.25rem;">
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      {% if newsletter.is_draft %}
+        <span class="sp-pill sp-pill--gray">Draft</span>
+        <span style="font-size:0.875rem;color:#888;">{{ subscriber_count }} subscriber{{ subscriber_count|pluralize }} will receive this.</span>
+        <form method="post" action="{% url 'staff:newsletter_send' newsletter.pk %}" style="margin-left:auto;"
+              onsubmit="return confirm('Send this newsletter to {{ subscriber_count }} subscriber{{ subscriber_count|pluralize }}?')">
+          {% csrf_token %}
+          <button type="submit" class="sp-btn sp-btn--gold">&#9654; Send Now</button>
+        </form>
+      {% else %}
+        <span class="sp-pill sp-pill--green">Sent</span>
+        <span style="font-size:0.875rem;color:#888;">
+          Sent {{ newsletter.sent_at|date:"M j, Y g:i A" }} to {{ newsletter.recipient_count }} subscriber{{ newsletter.recipient_count|pluralize }}
+          {% if newsletter.sent_by %}by {{ newsletter.sent_by.get_full_name|default:newsletter.sent_by.username }}{% endif %}.
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="sp-card">
+    <div style="font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:0.5rem;">Subject</div>
+    <div style="font-size:1.1rem;font-weight:600;margin-bottom:1.5rem;">{{ newsletter.subject }}</div>
+
+    <div style="font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:0.5rem;">Body</div>
+    <div style="font-size:0.9rem;line-height:1.7;white-space:pre-wrap;color:#333;">{{ newsletter.body }}</div>
+  </div>
+
+</div>
+{% endblock %}

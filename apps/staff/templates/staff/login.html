@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Login — SoHo Pittsburgh</title>
+  <link rel="stylesheet" href="{% static 'dist/output.css' %}">
+  <style>
+    body { background:#1a1a1a; display:flex; align-items:center; justify-content:center; min-height:100vh; font-family:sans-serif; }
+    .login-box { background:#fff; border-radius:8px; padding:2.5rem 2rem; width:100%; max-width:360px; }
+    .login-logo { font-size:0.65rem; letter-spacing:0.15em; text-transform:uppercase; color:#c9972a; margin-bottom:0.3rem; }
+    .login-title { font-size:1.4rem; font-weight:700; color:#1a1a1a; margin-bottom:2rem; }
+    .login-label { display:block; font-size:0.8rem; font-weight:500; color:#444; margin-bottom:0.35rem; }
+    .login-input { width:100%; padding:0.55rem 0.75rem; border:1px solid #d1cfc9; border-radius:4px; font-size:0.9rem; margin-bottom:1rem; }
+    .login-input:focus { outline:none; border-color:#c9972a; }
+    .login-btn { width:100%; padding:0.65rem; background:#1a1a1a; color:#fff; border:none; border-radius:4px; font-size:0.95rem; font-weight:600; cursor:pointer; margin-top:0.5rem; }
+    .login-btn:hover { background:#333; }
+    .login-error { background:#fee2e2; color:#991b1b; padding:0.6rem 0.75rem; border-radius:4px; font-size:0.8rem; margin-bottom:1rem; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="login-logo">SoHo Pittsburgh</div>
+    <div class="login-title">Staff Portal</div>
+
+    {% if form.errors %}
+      <div class="login-error">Invalid username or password.</div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <label class="login-label" for="id_username">Username</label>
+      <input class="login-input" type="text" id="id_username" name="username" autofocus autocomplete="username">
+      <label class="login-label" for="id_password">Password</label>
+      <input class="login-input" type="password" id="id_password" name="password" autocomplete="current-password">
+      <button type="submit" class="login-btn">Sign In</button>
+    </form>
+  </div>
+</body>
+</html>

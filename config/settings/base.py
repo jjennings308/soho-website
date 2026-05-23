@@ -49,7 +49,10 @@ INSTALLED_APPS = [
     'apps.events',
     'apps.gallery',
     'apps.members',
+    'apps.staff',
 ]
+
+LOGIN_URL = '/staff/login/'
 
 DEFAULT_FROM_EMAIL = 'SoHo Pittsburgh <noreply@sohopittsburgh.com>'
 EMAIL_SUBJECT_PREFIX = ''

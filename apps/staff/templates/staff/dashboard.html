@@ -1,0 +1,91 @@
+{% extends "staff/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="sp-stat-grid">
+  <div class="sp-card">
+    <div class="sp-card__label">Menu Mode</div>
+    <div style="margin-top:0.25rem;">
+      {% if menu_mode == 'limited' %}
+        <span class="sp-pill sp-pill--gold">Game Day</span>
+      {% else %}
+        <span class="sp-pill sp-pill--green">Full Menu</span>
+      {% endif %}
+    </div>
+    <div class="sp-card__sub" style="margin-top:0.5rem;">
+      <a href="{% url 'staff:menu_mode' %}" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">Change &rarr;</a>
+    </div>
+  </div>
+
+  <div class="sp-card">
+    <div class="sp-card__label">Subscribers</div>
+    <div class="sp-card__value">{{ subscriber_count }}</div>
+    <div class="sp-card__sub">active &amp; confirmed</div>
+  </div>
+
+  <div class="sp-card">
+    <div class="sp-card__label">Draft Newsletters</div>
+    <div class="sp-card__value">{{ draft_count }}</div>
+    <div class="sp-card__sub">
+      <a href="{% url 'staff:newsletter' %}" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">View &rarr;</a>
+    </div>
+  </div>
+
+  <div class="sp-card">
+    <div class="sp-card__label">Unpublished Photos</div>
+    <div class="sp-card__value">{{ unpublished_count }}</div>
+    <div class="sp-card__sub">
+      <a href="{% url 'staff:gallery' %}" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">View &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+  <!-- Today's Events -->
+  <div class="sp-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h2 style="font-size:0.9rem;font-weight:600;">Today's Events</h2>
+      <a href="{% url 'staff:events' %}" style="font-size:0.8rem;color:#c9972a;text-decoration:none;">All events &rarr;</a>
+    </div>
+    {% if today_events %}
+      {% for event in today_events %}
+        <div style="padding:0.6rem 0;border-bottom:1px solid #f0ede8;">
+          <div style="font-size:0.875rem;font-weight:500;">{{ event.display_label }}</div>
+          <div style="font-size:0.78rem;color:#888;">
+            {{ event.get_event_type_display }}
+            {% if event.game_time %} · {{ event.game_time|time:"g:i A" }}{% endif %}
+            {% if event.limited_menu %}<span style="margin-left:0.5rem;" class="sp-pill sp-pill--gold">Limited Menu</span>{% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p style="font-size:0.875rem;color:#888;">No events today.</p>
+    {% endif %}
+  </div>
+
+  <!-- Upcoming Events -->
+  <div class="sp-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h2 style="font-size:0.9rem;font-weight:600;">Upcoming Events</h2>
+      <a href="{% url 'staff:event_add' %}" style="font-size:0.8rem;color:#c9972a;text-decoration:none;">+ Add event</a>
+    </div>
+    {% if upcoming %}
+      {% for event in upcoming %}
+        <div style="padding:0.6rem 0;border-bottom:1px solid #f0ede8;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.875rem;font-weight:500;">{{ event.display_label }}</div>
+            <div style="font-size:0.78rem;color:#888;">{{ event.date|date:"M j" }}{% if event.game_time %} · {{ event.game_time|time:"g:i A" }}{% endif %}</div>
+          </div>
+          {% if not event.is_active %}<span class="sp-pill sp-pill--gray">Off</span>{% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p style="font-size:0.875rem;color:#888;">No upcoming events.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

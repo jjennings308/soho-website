@@ -1,0 +1,34 @@
+{% extends "staff/base.html" %}
+{% block title %}Compose Newsletter{% endblock %}
+{% block page_title %}Compose Newsletter{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:newsletter' %}" class="sp-btn sp-btn--outline">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;">
+  <div class="sp-card">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="sp-field">
+        <label class="sp-label">Subject Line</label>
+        <input class="sp-input" type="text" name="subject" value="{{ form.subject.value|default:'' }}" placeholder="What's this email about?" required>
+        {% if form.subject.errors %}<div class="sp-field-error">{{ form.subject.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Body</label>
+        <textarea class="sp-textarea" name="body" rows="16" placeholder="Write your newsletter here…" required>{{ form.body.value|default:'' }}</textarea>
+        {% if form.body.errors %}<div class="sp-field-error">{{ form.body.errors.0 }}</div>{% endif %}
+        <div style="font-size:0.75rem;color:#888;margin-top:0.4rem;">Plain text is fine. Line breaks are preserved in the email.</div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button type="submit" class="sp-btn sp-btn--primary">Save Draft</button>
+        <a href="{% url 'staff:newsletter' %}" class="sp-btn sp-btn--outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

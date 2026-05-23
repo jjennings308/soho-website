@@ -1,0 +1,96 @@
+{% extends "staff/base.html" %}
+{% block title %}Events{% endblock %}
+{% block page_title %}Events{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:event_add' %}" class="sp-btn sp-btn--primary">+ Add Event</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="sp-card" style="margin-bottom:1.5rem;">
+  <h2 style="font-size:0.85rem;font-weight:600;letter-spacing:0.05em;margin-bottom:1rem;color:#888;text-transform:uppercase;">Upcoming</h2>
+  {% if upcoming %}
+    <table class="sp-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Event</th>
+          <th>Type</th>
+          <th>Time</th>
+          <th>Menu</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for event in upcoming %}
+        <tr>
+          <td style="white-space:nowrap;">{{ event.date|date:"M j, Y" }}</td>
+          <td style="font-weight:500;">{{ event.display_label }}</td>
+          <td>{{ event.type_label }}</td>
+          <td>{% if event.game_time %}{{ event.game_time|time:"g:i A" }}{% else %}&mdash;{% endif %}</td>
+          <td>
+            {% if event.limited_menu and event.home_away != 'away' %}
+              <span class="sp-pill sp-pill--gold">Limited</span>
+            {% else %}
+              <span class="sp-pill sp-pill--green">Full</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if event.is_active %}
+              <span class="sp-pill sp-pill--green">Active</span>
+            {% else %}
+              <span class="sp-pill sp-pill--gray">Off</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'staff:event_edit' event.pk %}" class="sp-btn sp-btn--outline sp-btn--sm">Edit</a>
+            <form method="post" action="{% url 'staff:event_toggle' event.pk %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="sp-btn sp-btn--outline sp-btn--sm">
+                {% if event.is_active %}Deactivate{% else %}Activate{% endif %}
+              </button>
+            </form>
+            <form method="post" action="{% url 'staff:event_delete' event.pk %}" style="display:inline;"
+                  onsubmit="return confirm('Delete this event?')">
+              {% csrf_token %}
+              <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:#888;font-size:0.875rem;">No upcoming events. <a href="{% url 'staff:event_add' %}" style="color:#c9972a;">Add one &rarr;</a></p>
+  {% endif %}
+</div>
+
+{% if past %}
+<div class="sp-card">
+  <h2 style="font-size:0.85rem;font-weight:600;letter-spacing:0.05em;margin-bottom:1rem;color:#888;text-transform:uppercase;">Recent Past (last 20)</h2>
+  <table class="sp-table">
+    <thead>
+      <tr><th>Date</th><th>Event</th><th>Type</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for event in past %}
+      <tr>
+        <td style="color:#888;white-space:nowrap;">{{ event.date|date:"M j, Y" }}</td>
+        <td style="color:#888;">{{ event.display_label }}</td>
+        <td style="color:#888;">{{ event.type_label }}</td>
+        <td>
+          <form method="post" action="{% url 'staff:event_delete' event.pk %}" style="display:inline;"
+                onsubmit="return confirm('Delete this event?')">
+            {% csrf_token %}
+            <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endblock %}

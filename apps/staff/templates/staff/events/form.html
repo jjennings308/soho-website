@@ -1,0 +1,85 @@
+{% extends "staff/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:events' %}" class="sp-btn sp-btn--outline">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;">
+  <div class="sp-card">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="sp-grid-2">
+        <div class="sp-field">
+          <label class="sp-label">Date</label>
+          <input class="sp-input" type="date" name="date" value="{{ form.date.value|default:'' }}" required>
+          {% if form.date.errors %}<div class="sp-field-error">{{ form.date.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="sp-field">
+          <label class="sp-label">Event Type</label>
+          <select class="sp-select" name="event_type">
+            {% for val, label in form.fields.event_type.choices %}
+              <option value="{{ val }}" {% if form.event_type.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Label <span style="color:#888;font-weight:400;">(optional — overrides default event name)</span></label>
+        <input class="sp-input" type="text" name="label" value="{{ form.label.value|default:'' }}" placeholder="e.g. Pirates vs. Cubs">
+      </div>
+
+      <div class="sp-grid-2" x-data="{}">
+        <div class="sp-field">
+          <label class="sp-label">Team</label>
+          <select class="sp-select" name="team">
+            <option value="">— None —</option>
+            {% for val, label in form.fields.team.choices %}
+              {% if val %}<option value="{{ val }}" {% if form.team.value == val %}selected{% endif %}>{{ label }}</option>{% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <div class="sp-field">
+          <label class="sp-label">Home / Away</label>
+          <select class="sp-select" name="home_away">
+            <option value="">— N/A —</option>
+            {% for val, label in form.fields.home_away.choices %}
+              {% if val %}<option value="{{ val }}" {% if form.home_away.value == val %}selected{% endif %}>{{ label }}</option>{% endif %}
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="sp-field" style="max-width:200px;">
+        <label class="sp-label">Game / Start Time <span style="color:#888;font-weight:400;">(optional)</span></label>
+        <input class="sp-input" type="time" name="game_time" value="{{ form.game_time.value|default:'' }}">
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-checkbox-row">
+          <input type="checkbox" name="limited_menu" {% if form.limited_menu.value %}checked{% endif %}>
+          Activate limited menu for this event
+        </label>
+        <div style="font-size:0.78rem;color:#888;margin-top:0.35rem;margin-left:1.4rem;">
+          Uncheck for events that don't restrict the menu (e.g. live music with full service).
+        </div>
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-checkbox-row">
+          <input type="checkbox" name="is_active" {% if form.is_active.value != False %}checked{% endif %}>
+          Active (show on calendar, trigger menu mode)
+        </label>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button type="submit" class="sp-btn sp-btn--primary">Save Event</button>
+        <a href="{% url 'staff:events' %}" class="sp-btn sp-btn--outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -27,6 +27,7 @@ urlpatterns = [
     path('events/', include('apps.events.urls')),
     path('gallery/', include('apps.gallery.urls')),
     path('', include('apps.members.urls')),
+    path('staff/', include('apps.staff.urls')),
 ]
 
 if settings.DEBUG:

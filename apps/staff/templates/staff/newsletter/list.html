@@ -1,0 +1,60 @@
+{% extends "staff/base.html" %}
+{% block title %}Newsletter{% endblock %}
+{% block page_title %}Newsletter{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:newsletter_compose' %}" class="sp-btn sp-btn--primary">+ Compose</a>
+{% endblock %}
+
+{% block content %}
+<div class="sp-card">
+  {% if newsletters %}
+    <table class="sp-table">
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Recipients</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for nl in newsletters %}
+        <tr>
+          <td style="font-weight:500;">{{ nl.subject }}</td>
+          <td>
+            {% if nl.is_draft %}
+              <span class="sp-pill sp-pill--gray">Draft</span>
+            {% else %}
+              <span class="sp-pill sp-pill--green">Sent</span>
+            {% endif %}
+          </td>
+          <td>{% if not nl.is_draft %}{{ nl.recipient_count }}{% else %}&mdash;{% endif %}</td>
+          <td style="white-space:nowrap;color:#888;">
+            {% if nl.is_draft %}
+              Created {{ nl.created_at|date:"M j, Y" }}
+            {% else %}
+              {{ nl.sent_at|date:"M j, Y" }}
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            <a href="{% url 'staff:newsletter_detail' nl.pk %}" class="sp-btn sp-btn--outline sp-btn--sm">
+              {% if nl.is_draft %}Review{% else %}View{% endif %}
+            </a>
+            {% if nl.is_draft %}
+              <form method="post" action="{% url 'staff:newsletter_delete' nl.pk %}" style="display:inline;"
+                    onsubmit="return confirm('Delete this draft?')">
+                {% csrf_token %}
+                <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm">Delete</button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:#888;font-size:0.875rem;">No newsletters yet. <a href="{% url 'staff:newsletter_compose' %}" style="color:#c9972a;">Write one &rarr;</a></p>
+  {% endif %}
+</div>
+{% endblock %}
