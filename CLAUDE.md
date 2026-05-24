@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Stack
 
-Django 5.0, PostgreSQL, Tailwind CSS 3 (CLI build), Alpine.js (vendored at `static/js/alpine.min.js`). No webpack/bundler — Tailwind is compiled directly via its CLI.
+Django 6.0, PostgreSQL, Tailwind CSS 3 (CLI build), Alpine.js (vendored at `static/js/alpine.min.js`). No webpack/bundler — Tailwind is compiled directly via its CLI.
 
 ## Commands
 
@@ -69,7 +69,7 @@ If `.envrc` is blocked, run `direnv allow` from the project root. With direnv ac
 
 | App | Responsibility |
 |-----|---------------|
-| `apps.core` | Site settings singleton, page views, banners, 50/50 panels, home page |
+| `apps.core` | Site settings singleton, page views, banners, 50/50 panels, home page, color schemes, site popup, event inquiries |
 | `apps.menu` | Menu items, categories, menus, promotions; full/limited menu mode |
 | `apps.content` | Content slot/block CMS system for editable copy |
 | `apps.events` | Event calendar driving limited-menu mode (game days, etc.) |
@@ -134,6 +134,18 @@ The same item can appear in multiple categories at different prices.
 ### Theming
 
 Colors are CSS custom properties (`--color-bg-primary`, etc.) referenced in `tailwind.config.js` as `brand.*` and `text.*` utility classes. Color choices for admin-editable fields use slug strings like `bg-primary` / `text-secondary` that map to these variables.
+
+### Color schemes (`apps/core` — `ColorScheme` model)
+
+`ColorScheme` was moved from `apps.menu` to `apps.core` (migration `core/0032`). It is shared across promo menus and site popups. Fields: `name`, `primary_color`, `accent_color`, `text_color`, `bg_color`, `is_default`. Only one scheme can have `is_default=True` — the `save()` method enforces this. Import from `apps.core.models`.
+
+### Site popup (`SitePopup` model in `apps.core`)
+
+Singleton-style: only one popup is active at a time (`get_active()` class method). Fields include `title`, `body`, `cta_text`, `cta_url`, `show_subscribe_form`, `primary_color`, `color_scheme` FK, `delay_seconds`, `is_active`. The popup uses `sessionStorage` (not `localStorage`) for per-session dismissal. A separate `localStorage` key `soho_subscribed` suppresses the popup permanently once a user subscribes or confirms — set on form success, already-subscribed response, and the confirmation page.
+
+### Event inquiries (`EventInquiry` model in `apps.core`)
+
+Captures event booking requests from the public site. Fields: `name`, `email`, `phone`, `preferred_contact`, `event_type`, `guest_count`, `preferred_date`, `menu_preference`, `message`, `status` (new/contacted/closed). Managed via the staff portal inquiries section.
 
 ---
 
@@ -241,18 +253,14 @@ Each item card anchor:
 
 For video items, `href` is `item.video_url` — GLightbox auto-detects and renders inline player.
 
-### Management command
+### Management commands
 
-`python manage.py seed_gallery_categories`
+- `python manage.py seed_gallery_categories` — creates the 7 seeded categories if they don't already exist. Safe to re-run.
+- `python manage.py import_gallery_images` — scans the `media/gallery/` directory and creates `GalleryItem` records for any image files not already in the database. Imported items are unpublished by default; staff edit them to set category/caption before publishing. The staff portal has an "Import from Disk" button that calls this command via `call_command()`.
 
-Creates the 7 seeded categories if they don't already exist. Safe to re-run (uses `get_or_create`).
+### File deletion
 
-### Upload workflow (initial photo migration)
-
-21 photos downloaded from the existing GoDaddy site into `soho_gallery_originals/` on the dev machine. All are JPGs (iPhone VSCO-processed). To load them into the new gallery:
-
-1. Upload files to the VPS media directory: `scp soho_gallery_originals/* user@209.46.125.163:/var/www/soho/media/gallery/`
-2. Use Django admin to create `GalleryItem` records and assign categories, OR write a one-off management command to bulk-create them.
+`GalleryItem.image.delete(save=False)` is called before `item.delete()` in the staff delete view to remove the physical file from disk.
 
 ### Future: Ionos S3 storage
 
@@ -437,30 +445,44 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 
 | URL | What it does |
 |-----|-------------|
-| `/staff/` | Dashboard — menu mode status, subscriber count, draft newsletters, unpublished photos, today's and upcoming events |
+| `/staff/` | Dashboard — menu mode, subscriber count, draft newsletters, unpublished photos, new inquiries, popup status, today's events, upcoming events, promo menus panel |
 | `/staff/menu-mode/` | Toggle menu mode: Automatic / Force Full / Force Game Day. POSTs to `SiteSettings` |
 | `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
-| `/staff/gallery/` | Thumbnail table; publish/hide toggle; photo upload |
+| `/staff/gallery/` | Thumbnail table; publish/hide toggle; photo upload; import from disk; edit (caption, category, order) |
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
+| `/staff/popups/` | List, add, edit, delete site popups |
+| `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
+| `/staff/settings/` | Edit `SiteSettings` (notification email, phone, reservations URL, etc.); manage color schemes (add/edit/delete) |
 
 ### Design decisions
 
-- No models — no migrations needed for this app.
+- No models of its own — no migrations needed for this app.
 - All styles are inline CSS using brand CSS custom properties (`--color-gold-primary`, etc.) — no dependency on Tailwind compilation order when adding new templates.
-- Alpine.js hamburger for mobile sidebar (uses the vendored `static/js/alpine.min.js`).
+- Alpine.js collapsible sidebar sections (Operations, Content, Tools) with state persisted in `sessionStorage`.
 - Newsletter body is a plain `<textarea>` in the staff portal (the `Newsletter` model stores it as `CKEditor5Field`, but staff don't need rich text for basic sends). Django admin still available for rich-text composition if needed.
-- Sidebar links: Operations (Menu Mode, Events), Content (Gallery, Newsletter), Tools (Analytics ↗, View Site ↗).
 
 ### Deployment
 
-VPS: `209.46.125.163`, app root `/var/www/soho/`, runs as `www-data`.
+VPS: `209.46.125.163`, app root `/var/www/soho/`, runs as `www-data`. Service name: `soho.service`.
 
-Standard deploy after pushing to `main`:
+`main` branch = what's deployed. Work on `dev`, merge to `main` before deploying.
+
+**Standard deploy** — `soho_full` alias on the VPS:
 ```bash
-sudo chown -R www-data:www-data .git/   # only needed if git permissions get mixed
+sudo -u www-data git pull \
+  && sudo -u www-data /var/www/soho/.venv/bin/python manage.py migrate \
+  && sudo -u www-data /var/www/soho/.venv/bin/python manage.py collectstatic --noinput \
+  && sudo systemctl restart soho.service
+```
+
+**After a Django version upgrade** — pip install first, then `soho_full`, then force a fresh static collect:
+```bash
 sudo -u www-data git pull
-sudo -u www-data /var/www/soho/.venv/bin/python manage.py migrate   # if there are migrations
-sudo systemctl restart gunicorn
+sudo -u www-data /var/www/soho/.venv/bin/pip install -r requirements/base.txt
+soho_full
+# if admin CSS looks wrong, force full recollect:
+sudo -u www-data /var/www/soho/.venv/bin/python manage.py collectstatic --clear --noinput
+sudo systemctl restart soho.service
 ```
 
 Media directory must be owned by `www-data` for uploads to work:
@@ -468,4 +490,8 @@ Media directory must be owned by `www-data` for uploads to work:
 sudo chown -R www-data:www-data /var/www/soho/media/
 ```
 
-`main` branch = what's deployed. Work on `dev`, merge to `main` before deploying. Do not set `EMAIL_BACKEND` in the VPS `.env` — `production.py` hardcodes smtp.
+Do not set `EMAIL_BACKEND` in the VPS `.env` — `production.py` hardcodes smtp.
+
+### Timezone
+
+`TIME_ZONE = 'America/New_York'` with `USE_TZ = True`. Timestamps stored as UTC in the database; `timezone.localdate()` / `timezone.localtime()` return Eastern time. Always use these in views and templates rather than `datetime.date.today()`.
