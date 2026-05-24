@@ -561,4 +561,47 @@ class PanelSide(TimeStampedModel):
                 'text_color': self.button_text_color,
             }
 
+
+# =============================================================================
+# EVENT INQUIRY
+# =============================================================================
+
+class EventInquiry(TimeStampedModel):
+    CONTACT_CHOICES = [('email', 'Email'), ('phone', 'Phone')]
+    EVENT_TYPE_CHOICES = [
+        ('private_party', 'Private Party'),
+        ('corporate', 'Corporate Event'),
+        ('birthday', 'Birthday'),
+        ('other', 'Other'),
+    ]
+    MENU_CHOICES = [
+        ('full', 'Full Menu'),
+        ('limited', 'Limited Menu'),
+        ('not_sure', 'Not Sure / Flexible'),
+    ]
+    STATUS_CHOICES = [
+        ('new', 'New'),
+        ('contacted', 'Contacted'),
+        ('closed', 'Closed'),
+    ]
+
+    name = models.CharField(max_length=200)
+    email = models.EmailField()
+    phone = models.CharField(max_length=30)
+    preferred_contact = models.CharField(max_length=10, choices=CONTACT_CHOICES, default='email')
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES, default='private_party')
+    guest_count = models.PositiveIntegerField(null=True, blank=True)
+    preferred_date = models.DateField(null=True, blank=True)
+    menu_preference = models.CharField(max_length=10, choices=MENU_CHOICES, default='not_sure')
+    message = models.TextField(blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+
+    class Meta:
+        verbose_name = 'Event Inquiry'
+        verbose_name_plural = 'Event Inquiries'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.name} — {self.get_event_type_display()} ({self.preferred_date or 'date TBD'})"
+
         return result

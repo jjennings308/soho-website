@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import HomeView
+from .views import EventInquiryView, HomeView
 
 app_name = 'core'
 
@@ -10,4 +10,5 @@ urlpatterns = [
     path('contact', views.contact, name='contact'),
     path('test', views.theme_test, name='theme_test'),
     path('online-delivery/', views.online_delivery, name='online_delivery'),
+    path('event-inquiry/', EventInquiryView.as_view(), name='event_inquiry'),
 ]

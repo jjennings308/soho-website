@@ -1,8 +1,11 @@
 # core/views.py
+from django.core.mail import send_mail, EmailMessage
 from django.shortcuts import render
+from django.template.loader import render_to_string
+from django.views import View
 from django.views.generic import TemplateView
 from django.db.models import Prefetch
-from .models import SiteSettings
+from .models import EventInquiry, SiteSettings
 from .utils import get_banner, get_panel_side
 from apps.content.models import ContentGroup
 from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
@@ -158,3 +161,71 @@ def gallery(request):
 
 def online_delivery(request):
     return render(request, 'core/online_delivery.html')
+
+
+class EventInquiryView(View):
+    def post(self, request):
+        errors = {}
+        data = {
+            'name': request.POST.get('name', '').strip(),
+            'email': request.POST.get('email', '').strip(),
+            'phone': request.POST.get('phone', '').strip(),
+            'preferred_contact': request.POST.get('preferred_contact', 'email'),
+            'event_type': request.POST.get('event_type', 'private_party'),
+            'guest_count': request.POST.get('guest_count', '').strip() or None,
+            'preferred_date': request.POST.get('preferred_date', '').strip() or None,
+            'menu_preference': request.POST.get('menu_preference', 'not_sure'),
+            'message': request.POST.get('message', '').strip(),
+        }
+
+        if not data['name']:
+            errors['name'] = 'Please enter your name.'
+        if not data['email']:
+            errors['email'] = 'Please enter your email.'
+        if not data['phone']:
+            errors['phone'] = 'Please enter your phone number.'
+
+        if errors:
+            return render(request, 'core/partials/event_inquiry_form.html', {'errors': errors, 'data': data})
+
+        inquiry = EventInquiry.objects.create(
+            name=data['name'],
+            email=data['email'],
+            phone=data['phone'],
+            preferred_contact=data['preferred_contact'],
+            event_type=data['event_type'],
+            guest_count=data['guest_count'],
+            preferred_date=data['preferred_date'],
+            menu_preference=data['menu_preference'],
+            message=data['message'],
+        )
+
+        site = SiteSettings.load()
+        restaurant_email = site.email
+
+        # Notification to restaurant
+        if restaurant_email:
+            html = render_to_string('core/emails/event_inquiry_notification.html', {'inquiry': inquiry})
+            txt = render_to_string('core/emails/event_inquiry_notification.txt', {'inquiry': inquiry})
+            send_mail(
+                subject=f'New Event Inquiry — {inquiry.get_event_type_display()} from {inquiry.name}',
+                message=txt,
+                from_email=None,
+                recipient_list=[restaurant_email],
+                html_message=html,
+                fail_silently=True,
+            )
+
+        # Confirmation to inquirer
+        html = render_to_string('core/emails/event_inquiry_confirmation.html', {'inquiry': inquiry})
+        txt = render_to_string('core/emails/event_inquiry_confirmation.txt', {'inquiry': inquiry})
+        send_mail(
+            subject='We received your event inquiry — SoHo Pittsburgh',
+            message=txt,
+            from_email=None,
+            recipient_list=[inquiry.email],
+            html_message=html,
+            fail_silently=True,
+        )
+
+        return render(request, 'core/partials/event_inquiry_form.html', {'success': True, 'inquiry': inquiry})

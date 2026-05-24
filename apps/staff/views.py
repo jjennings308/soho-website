@@ -8,7 +8,7 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
 
-from apps.core.models import SiteSettings
+from apps.core.models import EventInquiry, SiteSettings
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
@@ -56,6 +56,7 @@ class DashboardView(StaffRequiredMixin, View):
         subscriber_count = SoHoMember.objects.filter(is_active=True, is_email_subscribed=True).count()
         draft_count = Newsletter.objects.filter(sent_at__isnull=True).count()
         unpublished_count = GalleryItem.objects.filter(is_published=False).count()
+        new_inquiry_count = EventInquiry.objects.filter(status='new').count()
 
         return render(request, 'staff/dashboard.html', {
             'menu_mode': menu_mode,
@@ -65,6 +66,7 @@ class DashboardView(StaffRequiredMixin, View):
             'subscriber_count': subscriber_count,
             'draft_count': draft_count,
             'unpublished_count': unpublished_count,
+            'new_inquiry_count': new_inquiry_count,
         })
 
 
@@ -266,3 +268,41 @@ class NewsletterDeleteView(StaffRequiredMixin, View):
         newsletter = get_object_or_404(Newsletter, pk=pk, sent_at__isnull=True)
         newsletter.delete()
         return redirect('staff:newsletter')
+
+
+# ── Event Inquiries ───────────────────────────────────────────────────────────
+
+class InquiryListView(StaffRequiredMixin, View):
+    def get(self, request):
+        status_filter = request.GET.get('status', '')
+        qs = EventInquiry.objects.all()
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        counts = {
+            'total': EventInquiry.objects.count(),
+            'new': EventInquiry.objects.filter(status='new').count(),
+            'contacted': EventInquiry.objects.filter(status='contacted').count(),
+            'closed': EventInquiry.objects.filter(status='closed').count(),
+        }
+        return render(request, 'staff/inquiries/list.html', {
+            'inquiries': qs,
+            'status_filter': status_filter,
+            'counts': counts,
+        })
+
+
+class InquiryStatusView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        inquiry = get_object_or_404(EventInquiry, pk=pk)
+        status = request.POST.get('status')
+        if status in ('new', 'contacted', 'closed'):
+            inquiry.status = status
+            inquiry.save(update_fields=['status'])
+        return redirect(request.META.get('HTTP_REFERER', 'staff:inquiries'))
+
+
+class InquiryDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        inquiry = get_object_or_404(EventInquiry, pk=pk)
+        inquiry.delete()
+        return redirect('staff:inquiries')

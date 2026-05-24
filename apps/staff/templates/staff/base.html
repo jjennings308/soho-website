@@ -259,6 +259,9 @@
         </a>
 
         <div class="sp-nav__section">Content</div>
+        <a href="{% url 'staff:inquiries' %}" class="{% if 'inquir' in request.resolver_match.url_name %}active{% endif %}">
+          &#9670; Inquiries
+        </a>
         <a href="{% url 'staff:gallery' %}" class="{% if 'gallery' in request.resolver_match.url_name %}active{% endif %}">
           &#9670; Gallery
         </a>

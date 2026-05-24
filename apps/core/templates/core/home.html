@@ -75,7 +75,10 @@
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {# CATERING & EVENTS BANNER                                                  #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
-{% include "core/components/db_banner_full.html" with banner=catering_banner %}
+<div x-data="{ inquiryOpen: false }">
+  {% include "core/components/db_banner_full.html" with banner=catering_banner inquiry_button="Inquire About Private Events" %}
+  {% include "core/components/event_inquiry_modal.html" %}
+</div>
 
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {# PROMO SLOT 1 — 3×3 GRID                                                  #}

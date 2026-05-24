@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from .views import InquiryDeleteView, InquiryListView, InquiryStatusView
 
 app_name = 'staff'
 
@@ -24,6 +25,11 @@ urlpatterns = [
     path('gallery/upload/', views.GalleryUploadView.as_view(), name='gallery_upload'),
     path('gallery/<int:pk>/toggle/', views.GalleryToggleView.as_view(), name='gallery_toggle'),
     path('gallery/<int:pk>/delete/', views.GalleryDeleteView.as_view(), name='gallery_delete'),
+
+    # Inquiries
+    path('inquiries/', InquiryListView.as_view(), name='inquiries'),
+    path('inquiries/<int:pk>/status/', InquiryStatusView.as_view(), name='inquiry_status'),
+    path('inquiries/<int:pk>/delete/', InquiryDeleteView.as_view(), name='inquiry_delete'),
 
     # Newsletter
     path('newsletter/', views.NewsletterListView.as_view(), name='newsletter'),

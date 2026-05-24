@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>New Event Inquiry</title></head>
+<body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#222;">
+  <h2 style="color:#c9972a;">New Event Inquiry</h2>
+  <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+    <tr><td style="padding:6px 0;color:#888;width:160px;">Name</td><td style="padding:6px 0;font-weight:500;">{{ inquiry.name }}</td></tr>
+    <tr><td style="padding:6px 0;color:#888;">Email</td><td style="padding:6px 0;"><a href="mailto:{{ inquiry.email }}">{{ inquiry.email }}</a></td></tr>
+    <tr><td style="padding:6px 0;color:#888;">Phone</td><td style="padding:6px 0;"><a href="tel:{{ inquiry.phone }}">{{ inquiry.phone }}</a></td></tr>
+    <tr><td style="padding:6px 0;color:#888;">Preferred Contact</td><td style="padding:6px 0;">{{ inquiry.get_preferred_contact_display }}</td></tr>
+    <tr><td style="padding:6px 0;color:#888;">Event Type</td><td style="padding:6px 0;">{{ inquiry.get_event_type_display }}</td></tr>
+    <tr><td style="padding:6px 0;color:#888;">Guest Count</td><td style="padding:6px 0;">{{ inquiry.guest_count|default:"Not specified" }}</td></tr>
+    <tr><td style="padding:6px 0;color:#888;">Preferred Date</td><td style="padding:6px 0;">{{ inquiry.preferred_date|default:"Not specified" }}</td></tr>
+    <tr><td style="padding:6px 0;color:#888;">Menu Preference</td><td style="padding:6px 0;">{{ inquiry.get_menu_preference_display }}</td></tr>
+  </table>
+  {% if inquiry.message %}
+    <h3 style="margin-top:1.5rem;font-size:0.9rem;color:#888;text-transform:uppercase;letter-spacing:0.1em;">Message</h3>
+    <p style="margin-top:0.5rem;line-height:1.6;white-space:pre-wrap;">{{ inquiry.message }}</p>
+  {% endif %}
+  <hr style="border:none;border-top:1px solid #eee;margin:1.5rem 0;">
+  <p style="font-size:0.8rem;color:#999;">Submitted {{ inquiry.created_at|date:"M j, Y g:i A" }}. View all inquiries in the <a href="/staff/inquiries/">staff portal</a>.</p>
+</body>
+</html>

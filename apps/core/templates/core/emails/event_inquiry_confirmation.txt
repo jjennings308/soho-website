@@ -1,0 +1,19 @@
+Thanks, {{ inquiry.name }}!
+
+We received your event inquiry and will be in touch via {{ inquiry.get_preferred_contact_display|lower }} shortly.
+
+Here's a summary of what you submitted:
+
+Event Type:      {{ inquiry.get_event_type_display }}
+Preferred Date:  {{ inquiry.preferred_date|default:"Not specified" }}
+Guest Count:     {{ inquiry.guest_count|default:"Not specified" }}
+Menu Preference: {{ inquiry.get_menu_preference_display }}
+{% if inquiry.message %}
+Your message: "{{ inquiry.message }}"
+{% endif %}
+
+If you have any questions in the meantime, feel free to call us or stop by. We look forward to hosting your event!
+
+--
+SoHo Pittsburgh
+203 Federal St, Pittsburgh, PA 15212

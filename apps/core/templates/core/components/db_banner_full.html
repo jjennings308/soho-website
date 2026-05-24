@@ -39,6 +39,14 @@
         </div>
         {% endif %}
 
+        {% if inquiry_button %}
+        <div class="flex flex-col items-center mt-6">
+          <button @click="inquiryOpen = true" class="btn btn-primary">
+            {{ inquiry_button }}
+          </button>
+        </div>
+        {% endif %}
+
     </div>
 
 </section>

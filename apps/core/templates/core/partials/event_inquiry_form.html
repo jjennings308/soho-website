@@ -1,0 +1,108 @@
+{% if success %}
+  <div style="text-align:center;padding:2rem 0;">
+    <div style="font-size:2rem;margin-bottom:1rem;">&#10003;</div>
+    <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:0.5rem;color:var(--color-gold-primary);">We got it!</h3>
+    <p style="color:var(--color-text-secondary);line-height:1.6;">
+      Thanks, {{ inquiry.name }}. We'll be in touch via {{ inquiry.get_preferred_contact_display|lower }} soon.<br>
+      A confirmation has been sent to {{ inquiry.email }}.
+    </p>
+  </div>
+
+{% else %}
+  <form method="post" action="{% url 'core:event_inquiry' %}"
+        x-data="{ loading: false }"
+        @submit.prevent="
+          loading = true;
+          fetch($el.action, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+            body: new FormData($el)
+          })
+          .then(r => r.text())
+          .then(html => { $el.closest('[data-inquiry-form]').innerHTML = html; })
+          .finally(() => { loading = false; });
+        ">
+    {% csrf_token %}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+      <div>
+        <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Name *</label>
+        <input type="text" name="name" value="{{ data.name|default:'' }}" required
+               style="width:100%;padding:0.5rem 0.75rem;border:1px solid {% if errors.name %}#dc2626{% else %}rgba(255,255,255,0.2){% endif %};border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;">
+        {% if errors.name %}<div style="font-size:0.75rem;color:#f87171;margin-top:0.25rem;">{{ errors.name }}</div>{% endif %}
+      </div>
+      <div>
+        <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Phone *</label>
+        <input type="tel" name="phone" value="{{ data.phone|default:'' }}" required
+               style="width:100%;padding:0.5rem 0.75rem;border:1px solid {% if errors.phone %}#dc2626{% else %}rgba(255,255,255,0.2){% endif %};border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;">
+        {% if errors.phone %}<div style="font-size:0.75rem;color:#f87171;margin-top:0.25rem;">{{ errors.phone }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+      <div>
+        <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Email *</label>
+        <input type="email" name="email" value="{{ data.email|default:'' }}" required
+               style="width:100%;padding:0.5rem 0.75rem;border:1px solid {% if errors.email %}#dc2626{% else %}rgba(255,255,255,0.2){% endif %};border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;">
+        {% if errors.email %}<div style="font-size:0.75rem;color:#f87171;margin-top:0.25rem;">{{ errors.email }}</div>{% endif %}
+      </div>
+      <div>
+        <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Preferred Contact</label>
+        <select name="preferred_contact"
+                style="width:100%;padding:0.5rem 0.75rem;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;">
+          <option value="email" {% if data.preferred_contact == 'email' or not data.preferred_contact %}selected{% endif %}>Email</option>
+          <option value="phone" {% if data.preferred_contact == 'phone' %}selected{% endif %}>Phone</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+      <div>
+        <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Event Type</label>
+        <select name="event_type"
+                style="width:100%;padding:0.5rem 0.75rem;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;">
+          <option value="private_party" {% if data.event_type == 'private_party' or not data.event_type %}selected{% endif %}>Private Party</option>
+          <option value="corporate" {% if data.event_type == 'corporate' %}selected{% endif %}>Corporate Event</option>
+          <option value="birthday" {% if data.event_type == 'birthday' %}selected{% endif %}>Birthday</option>
+          <option value="other" {% if data.event_type == 'other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Estimated Guests</label>
+        <input type="number" name="guest_count" value="{{ data.guest_count|default:'' }}" min="1"
+               style="width:100%;padding:0.5rem 0.75rem;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;" placeholder="e.g. 30">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+      <div>
+        <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Preferred Date</label>
+        <input type="date" name="preferred_date" value="{{ data.preferred_date|default:'' }}"
+               style="width:100%;padding:0.5rem 0.75rem;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;">
+      </div>
+      <div>
+        <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Menu Preference</label>
+        <select name="menu_preference"
+                style="width:100%;padding:0.5rem 0.75rem;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;">
+          <option value="not_sure" {% if data.menu_preference == 'not_sure' or not data.menu_preference %}selected{% endif %}>Not Sure / Flexible</option>
+          <option value="full" {% if data.menu_preference == 'full' %}selected{% endif %}>Full Menu</option>
+          <option value="limited" {% if data.menu_preference == 'limited' %}selected{% endif %}>Limited Menu</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-bottom:1rem;">
+      <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Additional Details</label>
+      <textarea name="message" rows="3"
+                style="width:100%;padding:0.5rem 0.75rem;border:1px solid rgba(255,255,255,0.2);border-radius:4px;background:rgba(255,255,255,0.08);color:var(--color-text-primary);font-size:0.9rem;resize:vertical;"
+                placeholder="Any special requests, timing details, etc.">{{ data.message|default:'' }}</textarea>
+    </div>
+
+    <button type="submit" :disabled="loading"
+            style="width:100%;padding:0.65rem;background:var(--color-gold-primary);color:#fff;border:none;border-radius:4px;font-size:0.95rem;font-weight:600;cursor:pointer;opacity:1;transition:opacity 0.15s;"
+            :style="loading ? 'opacity:0.6' : ''">
+      <span x-show="!loading">Send Inquiry</span>
+      <span x-show="loading">Sending&hellip;</span>
+    </button>
+  </form>
+{% endif %}

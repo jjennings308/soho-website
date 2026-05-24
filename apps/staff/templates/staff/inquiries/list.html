@@ -1,0 +1,80 @@
+{% extends "staff/base.html" %}
+{% block title %}Event Inquiries{% endblock %}
+{% block page_title %}Event Inquiries{% endblock %}
+
+{% block content %}
+<div style="display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap;">
+  <a href="?status=" class="sp-btn {% if not status_filter %}sp-btn--primary{% else %}sp-btn--outline{% endif %}">All ({{ counts.total }})</a>
+  <a href="?status=new" class="sp-btn {% if status_filter == 'new' %}sp-btn--primary{% else %}sp-btn--outline{% endif %}">New ({{ counts.new }})</a>
+  <a href="?status=contacted" class="sp-btn {% if status_filter == 'contacted' %}sp-btn--primary{% else %}sp-btn--outline{% endif %}">Contacted ({{ counts.contacted }})</a>
+  <a href="?status=closed" class="sp-btn {% if status_filter == 'closed' %}sp-btn--primary{% else %}sp-btn--outline{% endif %}">Closed ({{ counts.closed }})</a>
+</div>
+
+<div class="sp-card">
+  {% if inquiries %}
+    <table class="sp-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Contact</th>
+          <th>Event</th>
+          <th>Date</th>
+          <th>Guests</th>
+          <th>Menu</th>
+          <th>Status</th>
+          <th>Received</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for inq in inquiries %}
+        <tr>
+          <td>
+            <div style="font-weight:500;">{{ inq.name }}</div>
+            {% if inq.message %}
+              <div style="font-size:0.75rem;color:#888;margin-top:0.2rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ inq.message }}">
+                {{ inq.message }}
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            <div style="font-size:0.85rem;">
+              <a href="mailto:{{ inq.email }}" style="color:#c9972a;text-decoration:none;">{{ inq.email }}</a>
+            </div>
+            <div style="font-size:0.85rem;margin-top:0.2rem;">
+              <a href="tel:{{ inq.phone }}" style="color:inherit;text-decoration:none;">{{ inq.phone }}</a>
+            </div>
+            <div style="font-size:0.75rem;color:#888;margin-top:0.2rem;">Prefers {{ inq.get_preferred_contact_display }}</div>
+          </td>
+          <td>{{ inq.get_event_type_display }}</td>
+          <td style="white-space:nowrap;">{{ inq.preferred_date|default:"—" }}</td>
+          <td>{{ inq.guest_count|default:"—" }}</td>
+          <td style="white-space:nowrap;">{{ inq.get_menu_preference_display }}</td>
+          <td>
+            <form method="post" action="{% url 'staff:inquiry_status' inq.pk %}">
+              {% csrf_token %}
+              <select name="status" onchange="this.form.submit()"
+                      style="padding:0.25rem 0.5rem;border-radius:4px;border:1px solid #d1cfc9;font-size:0.8rem;background:#fff;cursor:pointer;">
+                <option value="new" {% if inq.status == 'new' %}selected{% endif %}>New</option>
+                <option value="contacted" {% if inq.status == 'contacted' %}selected{% endif %}>Contacted</option>
+                <option value="closed" {% if inq.status == 'closed' %}selected{% endif %}>Closed</option>
+              </select>
+            </form>
+          </td>
+          <td style="white-space:nowrap;color:#888;font-size:0.8rem;">{{ inq.created_at|date:"M j" }}</td>
+          <td>
+            <form method="post" action="{% url 'staff:inquiry_delete' inq.pk %}"
+                  onsubmit="return confirm('Delete this inquiry?')">
+              {% csrf_token %}
+              <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:#888;font-size:0.875rem;">No inquiries{% if status_filter %} with status "{{ status_filter }}"{% endif %}.</p>
+  {% endif %}
+</div>
+{% endblock %}

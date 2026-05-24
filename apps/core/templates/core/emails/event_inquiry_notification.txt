@@ -1,0 +1,17 @@
+New Event Inquiry — SoHo Pittsburgh
+
+Name:              {{ inquiry.name }}
+Email:             {{ inquiry.email }}
+Phone:             {{ inquiry.phone }}
+Preferred Contact: {{ inquiry.get_preferred_contact_display }}
+Event Type:        {{ inquiry.get_event_type_display }}
+Guest Count:       {{ inquiry.guest_count|default:"Not specified" }}
+Preferred Date:    {{ inquiry.preferred_date|default:"Not specified" }}
+Menu Preference:   {{ inquiry.get_menu_preference_display }}
+
+{% if inquiry.message %}Message:
+{{ inquiry.message }}
+{% endif %}
+
+Submitted {{ inquiry.created_at|date:"M j, Y g:i A" }}.
+View all inquiries in the staff portal: /staff/inquiries/
