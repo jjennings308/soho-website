@@ -55,7 +55,11 @@
         </p>
       {% endif %}
 
-      {% if site_popup.cta_label and site_popup.cta_url %}
+      {% if site_popup.show_subscribe_form %}
+        <div data-subscribe-widget>
+          {% include 'members/partials/subscribe_form.html' %}
+        </div>
+      {% elif site_popup.cta_label and site_popup.cta_url %}
         <a href="{{ site_popup.cta_url }}"
            style="display:inline-block;
                   background:{{ site_popup.accent_color }};

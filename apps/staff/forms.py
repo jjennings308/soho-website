@@ -41,6 +41,7 @@ class PopupForm(forms.ModelForm):
         model = SitePopup
         fields = [
             'title', 'heading', 'body',
+            'show_subscribe_form',
             'cta_label', 'cta_url',
             'image',
             'bg_color', 'text_color', 'accent_color',

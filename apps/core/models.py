@@ -623,6 +623,8 @@ class SitePopup(TimeStampedModel):
     bg_color    = models.CharField(max_length=20, default='#1a1a1a', verbose_name="Background colour")
     text_color  = models.CharField(max_length=20, default='#ffffff', verbose_name="Text colour")
     accent_color = models.CharField(max_length=20, default='#c9972a', verbose_name="Accent/button colour")
+    show_subscribe_form = models.BooleanField(default=False, verbose_name="Show email signup form",
+                                              help_text="Embed the mailing-list signup form instead of the CTA button")
     show_delay  = models.PositiveIntegerField(default=2, help_text="Seconds before the popup appears")
     is_active   = models.BooleanField(default=False)
 

@@ -33,18 +33,33 @@
         {% if form.body.errors %}<div class="sp-field-error">{{ form.body.errors.0 }}</div>{% endif %}
       </div>
 
-      <div class="sp-grid-2">
-        <div class="sp-field">
-          <label class="sp-label">Button Label <span style="font-weight:400;color:#aaa;">(optional)</span></label>
-          <input class="sp-input" type="text" name="cta_label" value="{{ form.cta_label.value|default:'' }}"
-                 placeholder="e.g. Buy Gift Cards">
-          {% if form.cta_label.errors %}<div class="sp-field-error">{{ form.cta_label.errors.0 }}</div>{% endif %}
+      <div class="sp-field">
+        <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
+          <input type="checkbox" id="id_show_subscribe_form" name="show_subscribe_form"
+                 {% if form.show_subscribe_form.value %}checked{% endif %}
+                 onchange="toggleCtaFields(this.checked); updatePreview();"
+                 style="width:16px;height:16px;accent-color:#c9972a;">
+          <span class="sp-label" style="margin:0;">Show email signup form</span>
+        </label>
+        <div style="font-size:0.75rem;color:#888;margin-top:0.3rem;margin-left:1.6rem;">
+          Embeds the mailing-list signup form. If checked, the button fields below are ignored.
         </div>
-        <div class="sp-field">
-          <label class="sp-label">Button URL <span style="font-weight:400;color:#aaa;">(optional)</span></label>
-          <input class="sp-input" type="url" name="cta_url" value="{{ form.cta_url.value|default:'' }}"
-                 placeholder="https://…">
-          {% if form.cta_url.errors %}<div class="sp-field-error">{{ form.cta_url.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div id="cta-fields">
+        <div class="sp-grid-2">
+          <div class="sp-field">
+            <label class="sp-label">Button Label <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+            <input class="sp-input" type="text" name="cta_label" value="{{ form.cta_label.value|default:'' }}"
+                   placeholder="e.g. Buy Gift Cards">
+            {% if form.cta_label.errors %}<div class="sp-field-error">{{ form.cta_label.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="sp-field">
+            <label class="sp-label">Button URL <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+            <input class="sp-input" type="url" name="cta_url" value="{{ form.cta_url.value|default:'' }}"
+                   placeholder="https://…">
+            {% if form.cta_url.errors %}<div class="sp-field-error">{{ form.cta_url.errors.0 }}</div>{% endif %}
+          </div>
         </div>
       </div>
 
@@ -171,6 +186,10 @@ function setColor(field, value) {
   document.getElementById('id_' + field + '_hex').value = value;
 }
 
+function toggleCtaFields(subscribeChecked) {
+  document.getElementById('cta-fields').style.display = subscribeChecked ? 'none' : 'block';
+}
+
 function updatePreview() {
   const bg     = document.getElementById('id_bg_color').value;
   const text   = document.getElementById('id_text_color').value;
@@ -178,6 +197,7 @@ function updatePreview() {
   const heading = document.querySelector('[name=heading]').value;
   const body    = document.querySelector('[name=body]').value;
   const ctaLabel = document.querySelector('[name=cta_label]').value;
+  const showSubscribe = document.getElementById('id_show_subscribe_form').checked;
 
   const preview = document.getElementById('popup-preview');
   const previewBody = document.getElementById('preview-body');
@@ -190,9 +210,17 @@ function updatePreview() {
   textEl.style.display = body ? 'block' : 'none';
 
   const btn = document.getElementById('preview-btn');
-  if (ctaLabel) {
+  if (showSubscribe) {
+    btn.textContent = '[ Email signup form ]';
+    btn.style.background = 'transparent';
+    btn.style.border = '1px dashed ' + accent;
+    btn.style.color = accent;
+    btn.style.display = 'inline-block';
+  } else if (ctaLabel) {
     btn.textContent = ctaLabel;
     btn.style.background = accent;
+    btn.style.border = 'none';
+    btn.style.color = '#fff';
     btn.style.display = 'inline-block';
   } else {
     btn.style.display = 'none';
@@ -214,6 +242,8 @@ function updatePreview() {
 });
 
 // Init
+const subscribeCheckbox = document.getElementById('id_show_subscribe_form');
+toggleCtaFields(subscribeCheckbox.checked);
 updatePreview();
 </script>
 {% endblock %}
