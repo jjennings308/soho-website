@@ -5,20 +5,30 @@ from django.utils import timezone
 from django.core.validators import RegexValidator
 
 
-def _site_upload(fixed_name):
-    """Always writes to site/<fixed_name>.<ext> — no random suffix."""
-    def upload_to(instance, filename):
+class SiteUpload:
+    """Always writes to site/<name>.<ext> — no random suffix."""
+    def __init__(self, name):
+        self.name = name
+
+    def __call__(self, instance, filename):
         ext = os.path.splitext(filename)[1]
-        return f'site/{fixed_name}{ext}'
-    return upload_to
+        return f'site/{self.name}{ext}'
+
+    def deconstruct(self):
+        return ('apps.core.models.SiteUpload', [self.name], {})
 
 
-def _slug_upload(folder):
+class SlugUpload:
     """Always writes to <folder>/<slug>.<ext> — one file per record, no suffix."""
-    def upload_to(instance, filename):
+    def __init__(self, folder):
+        self.folder = folder
+
+    def __call__(self, instance, filename):
         ext = os.path.splitext(filename)[1]
-        return f'{folder}/{instance.slug}{ext}'
-    return upload_to
+        return f'{self.folder}/{instance.slug}{ext}'
+
+    def deconstruct(self):
+        return ('apps.core.models.SlugUpload', [self.folder], {})
 
 
 # =============================================================================
@@ -210,8 +220,8 @@ class SiteSettings(models.Model):
     meta_description = models.TextField(blank=True, max_length=160)
     meta_keywords = models.CharField(max_length=255, blank=True)
 
-    logo = models.ImageField(upload_to=_site_upload('logo'), blank=True, null=True)
-    favicon = models.ImageField(upload_to=_site_upload('favicon'), blank=True, null=True)
+    logo = models.ImageField(upload_to=SiteUpload('logo'), blank=True, null=True)
+    favicon = models.ImageField(upload_to=SiteUpload('favicon'), blank=True, null=True)
 
     maintenance_mode = models.BooleanField(default=False)
 
@@ -293,7 +303,7 @@ class Banner(TimeStampedModel):
         default='text-primary',
     )
     image = models.ImageField(
-        upload_to=_slug_upload('banners'),
+        upload_to=SlugUpload('banners'),
         null=True,
         blank=True,
     )
@@ -454,7 +464,7 @@ class PanelSide(TimeStampedModel):
 
     # ── Image mode fields ─────────────────────────────────────────────────────
     image = models.ImageField(
-        upload_to=_slug_upload('panels'),
+        upload_to=SlugUpload('panels'),
         null=True,
         blank=True,
     )

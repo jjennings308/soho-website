@@ -7,9 +7,13 @@ from django_ckeditor_5.fields import CKEditor5Field
 from apps.core.models import ColorScheme, TimeStampedModel, ScheduledModel, RecurrenceMixin
 
 
-def _menu_item_upload(instance, filename):
-    ext = os.path.splitext(filename)[1]
-    return f'menu_items/{instance.slug}{ext}'
+class MenuItemUpload:
+    def __call__(self, instance, filename):
+        ext = os.path.splitext(filename)[1]
+        return f'menu_items/{instance.slug}{ext}'
+
+    def deconstruct(self):
+        return ('apps.menu.models.MenuItemUpload', [], {})
 
 
 # =============================================================================
@@ -241,7 +245,7 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
         help_text="Time of day this item stops being available (e.g. 16:00 for 4pm). Leave blank for no restriction."
     )
     
-    image = models.ImageField(upload_to=_menu_item_upload, null=True, blank=True)
+    image = models.ImageField(upload_to=MenuItemUpload(), null=True, blank=True)
     image_alt = models.CharField(max_length=255, blank=True)
 
     class Meta:
