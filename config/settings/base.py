@@ -136,9 +136,30 @@ CRISPY_TEMPLATE_PACK = "tailwind"
 CKEDITOR_5_CONFIGS = {
     'default': {
         'toolbar': ['bold', 'italic', 'underline', '|',
-                    'numberedList', 'bulletedList', '|', 
+                    'numberedList', 'bulletedList', '|',
                     'link', 'removeFormat'],
         'height': 200,
+    },
+    'newsletter': {
+        'toolbar': [
+            'heading', '|',
+            'bold', 'italic', 'underline', '|',
+            'numberedList', 'bulletedList', '|',
+            'link', 'uploadImage', '|',
+            'blockQuote', 'horizontalLine', '|',
+            'removeFormat',
+        ],
+        'heading': {
+            'options': [
+                {'model': 'paragraph', 'title': 'Paragraph', 'class': 'ck-heading_paragraph'},
+                {'model': 'heading2', 'view': 'h2', 'title': 'Heading', 'class': 'ck-heading_heading2'},
+                {'model': 'heading3', 'view': 'h3', 'title': 'Subheading', 'class': 'ck-heading_heading3'},
+            ],
+        },
+        'image': {
+            'toolbar': ['imageTextAlternative', '|', 'imageStyle:alignLeft', 'imageStyle:alignCenter', 'imageStyle:alignRight'],
+        },
+        'height': 420,
     },
 }
 

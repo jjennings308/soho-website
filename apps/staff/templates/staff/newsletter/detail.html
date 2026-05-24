@@ -1,6 +1,20 @@
 {% extends "staff/base.html" %}
 {% block title %}{{ newsletter.subject }}{% endblock %}
 {% block page_title %}{{ newsletter.subject }}{% endblock %}
+{% block extra_head %}
+<style>
+  .newsletter-preview h2 { font-size:1.15rem; font-weight:600; margin:1.2rem 0 0.4rem; }
+  .newsletter-preview h3 { font-size:1rem; font-weight:600; margin:1rem 0 0.3rem; }
+  .newsletter-preview p  { margin:0 0 0.75rem; }
+  .newsletter-preview ul, .newsletter-preview ol { padding-left:1.5rem; margin:0 0 0.75rem; }
+  .newsletter-preview li { margin-bottom:0.25rem; }
+  .newsletter-preview blockquote { border-left:3px solid #c9972a; padding-left:1rem; color:#555; margin:0.75rem 0; }
+  .newsletter-preview hr { border:none; border-top:1px solid #e5e2db; margin:1rem 0; }
+  .newsletter-preview a { color:#c9972a; }
+  .newsletter-preview img { max-width:100%; height:auto; border-radius:4px; }
+</style>
+{% endblock %}
+
 {% block topbar_actions %}
   <a href="{% url 'staff:newsletter' %}" class="sp-btn sp-btn--outline">← Back</a>
 {% endblock %}
@@ -13,11 +27,14 @@
       {% if newsletter.is_draft %}
         <span class="sp-pill sp-pill--gray">Draft</span>
         <span style="font-size:0.875rem;color:#888;">{{ subscriber_count }} subscriber{{ subscriber_count|pluralize }} will receive this.</span>
-        <form method="post" action="{% url 'staff:newsletter_send' newsletter.pk %}" style="margin-left:auto;"
-              onsubmit="return confirm('Send this newsletter to {{ subscriber_count }} subscriber{{ subscriber_count|pluralize }}?')">
-          {% csrf_token %}
-          <button type="submit" class="sp-btn sp-btn--gold">&#9654; Send Now</button>
-        </form>
+        <div style="display:flex;gap:0.75rem;margin-left:auto;">
+          <a href="{% url 'staff:newsletter_edit' newsletter.pk %}" class="sp-btn sp-btn--outline sp-btn--sm">Edit</a>
+          <form method="post" action="{% url 'staff:newsletter_send' newsletter.pk %}"
+                onsubmit="return confirm('Send this newsletter to {{ subscriber_count }} subscriber{{ subscriber_count|pluralize }}?')">
+            {% csrf_token %}
+            <button type="submit" class="sp-btn sp-btn--gold">&#9654; Send Now</button>
+          </form>
+        </div>
       {% else %}
         <span class="sp-pill sp-pill--green">Sent</span>
         <span style="font-size:0.875rem;color:#888;">
@@ -33,7 +50,7 @@
     <div style="font-size:1.1rem;font-weight:600;margin-bottom:1.5rem;">{{ newsletter.subject }}</div>
 
     <div style="font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:0.5rem;">Body</div>
-    <div style="font-size:0.9rem;line-height:1.7;white-space:pre-wrap;color:#333;">{{ newsletter.body }}</div>
+    <div style="font-size:0.9rem;line-height:1.7;color:#333;" class="newsletter-preview">{{ newsletter.body|safe }}</div>
   </div>
 
 </div>

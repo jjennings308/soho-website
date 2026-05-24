@@ -1,8 +1,20 @@
 {% extends "staff/base.html" %}
-{% block title %}Compose Newsletter{% endblock %}
-{% block page_title %}Compose Newsletter{% endblock %}
+{% block title %}{{ title|default:"Compose Newsletter" }}{% endblock %}
+{% block page_title %}{{ title|default:"Compose Newsletter" }}{% endblock %}
+
+{% block extra_head %}
+  {{ form.media }}
+  <style>
+    /* Scope CKEditor5 inside the staff portal card */
+    .ck-editor__editable { min-height: 380px; font-family: Georgia, serif; font-size: 15px; line-height: 1.7; }
+    .ck.ck-toolbar { border-color: #d1cfc9 !important; background: #faf9f7 !important; }
+    .ck.ck-editor__main > .ck-editor__editable { border-color: #d1cfc9 !important; }
+    .ck.ck-editor__main > .ck-editor__editable:focus { border-color: #c9972a !important; }
+  </style>
+{% endblock %}
+
 {% block topbar_actions %}
-  <a href="{% url 'staff:newsletter' %}" class="sp-btn sp-btn--outline">← Back</a>
+  <a href="{% if newsletter %}{% url 'staff:newsletter_detail' newsletter.pk %}{% else %}{% url 'staff:newsletter' %}{% endif %}" class="sp-btn sp-btn--outline">← Back</a>
 {% endblock %}
 
 {% block content %}
@@ -19,14 +31,13 @@
 
       <div class="sp-field">
         <label class="sp-label">Body</label>
-        <textarea class="sp-textarea" name="body" rows="16" placeholder="Write your newsletter here…" required>{{ form.body.value|default:'' }}</textarea>
+        {{ form.body }}
         {% if form.body.errors %}<div class="sp-field-error">{{ form.body.errors.0 }}</div>{% endif %}
-        <div style="font-size:0.75rem;color:#888;margin-top:0.4rem;">Plain text is fine. Line breaks are preserved in the email.</div>
       </div>
 
       <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
         <button type="submit" class="sp-btn sp-btn--primary">Save Draft</button>
-        <a href="{% url 'staff:newsletter' %}" class="sp-btn sp-btn--outline">Cancel</a>
+        <a href="{% if newsletter %}{% url 'staff:newsletter_detail' newsletter.pk %}{% else %}{% url 'staff:newsletter' %}{% endif %}" class="sp-btn sp-btn--outline">Cancel</a>
       </div>
     </form>
   </div>

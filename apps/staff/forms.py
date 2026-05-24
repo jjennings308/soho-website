@@ -1,4 +1,5 @@
 from django import forms
+from django_ckeditor_5.widgets import CKEditor5Widget
 
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
@@ -30,5 +31,5 @@ class NewsletterForm(forms.ModelForm):
         model = Newsletter
         fields = ['subject', 'body']
         widgets = {
-            'body': forms.Textarea(attrs={'rows': 16, 'placeholder': 'Write your newsletter here…'}),
+            'body': CKEditor5Widget(config_name='newsletter', attrs={'required': True}),
         }

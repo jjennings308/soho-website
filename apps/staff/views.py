@@ -233,6 +233,28 @@ class NewsletterDetailView(StaffRequiredMixin, View):
         })
 
 
+class NewsletterEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        newsletter = get_object_or_404(Newsletter, pk=pk, sent_at__isnull=True)
+        return render(request, 'staff/newsletter/compose.html', {
+            'form': NewsletterForm(instance=newsletter),
+            'newsletter': newsletter,
+            'title': 'Edit Draft',
+        })
+
+    def post(self, request, pk):
+        newsletter = get_object_or_404(Newsletter, pk=pk, sent_at__isnull=True)
+        form = NewsletterForm(request.POST, instance=newsletter)
+        if form.is_valid():
+            form.save()
+            return redirect('staff:newsletter_detail', pk=newsletter.pk)
+        return render(request, 'staff/newsletter/compose.html', {
+            'form': form,
+            'newsletter': newsletter,
+            'title': 'Edit Draft',
+        })
+
+
 class NewsletterSendView(StaffRequiredMixin, View):
     def post(self, request, pk):
         newsletter = get_object_or_404(Newsletter, pk=pk)
