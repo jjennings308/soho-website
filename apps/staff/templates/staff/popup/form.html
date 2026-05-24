@@ -74,22 +74,21 @@
                style="font-size:0.875rem;color:#444;">
       </div>
 
-      <!-- Color scheme presets -->
+      <!-- Color scheme presets (shared with menu PromoColorScheme) -->
+      {% if color_schemes %}
       <div class="sp-field">
         <label class="sp-label">Colour Preset</label>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('soho')">SoHo Dark</button>
-          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('light')">Light</button>
-          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('christmas')"
-                  style="color:#165016;border-color:#165016;">🎄 Christmas</button>
-          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('valentines')"
-                  style="color:#8b0000;border-color:#8b0000;">❤️ Valentine's</button>
-          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('stpatricks')"
-                  style="color:#165016;border-color:#165016;">☘️ St. Patrick's</button>
-          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('summer')"
-                  style="color:#0077b6;border-color:#0077b6;">☀️ Summer</button>
+          {% for scheme in color_schemes %}
+            <button type="button" class="sp-btn sp-btn--outline sp-btn--sm"
+                    onclick="applyPreset('{{ scheme.pk }}')"
+                    style="border-left:4px solid {{ scheme.bg_color }};">
+              {{ scheme.name }}
+            </button>
+          {% endfor %}
         </div>
       </div>
+      {% endif %}
 
       <div class="sp-grid-3">
         <div class="sp-field">
@@ -164,12 +163,9 @@
 {% block extra_js %}
 <script>
 const presets = {
-  soho:       { bg: '#1a1a1a', text: '#ffffff', accent: '#c9972a' },
-  light:      { bg: '#f5f4f0', text: '#1a1a1a', accent: '#c9972a' },
-  christmas:  { bg: '#165016', text: '#ffffff', accent: '#cc2200' },
-  valentines: { bg: '#6b0f1a', text: '#ffffff', accent: '#e8739a' },
-  stpatricks: { bg: '#14401e', text: '#ffffff', accent: '#f5c800' },
-  summer:     { bg: '#0077b6', text: '#ffffff', accent: '#f4a261' },
+  {% for scheme in color_schemes %}
+  '{{ scheme.pk }}': { bg: '{{ scheme.bg_color }}', text: '{{ scheme.text_color }}', accent: '{{ scheme.accent_color }}' },
+  {% endfor %}
 };
 
 function applyPreset(name) {

@@ -39,6 +39,7 @@ from apps.core.models import EventInquiry, SitePopup, SiteSettings
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
+from apps.menu.models import PromoColorScheme
 
 from .forms import EventForm, GalleryUploadForm, NewsletterForm, PopupForm
 
@@ -387,21 +388,27 @@ class PopupListView(StaffRequiredMixin, View):
 
 
 class PopupAddView(StaffRequiredMixin, View):
+    def _ctx(self, form):
+        return {'form': form, 'title': 'Add Popup', 'color_schemes': PromoColorScheme.objects.order_by('-is_default', 'name')}
+
     def get(self, request):
-        return render(request, 'staff/popup/form.html', {'form': PopupForm(), 'title': 'Add Popup'})
+        return render(request, 'staff/popup/form.html', self._ctx(PopupForm()))
 
     def post(self, request):
         form = PopupForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
             return redirect('staff:popups')
-        return render(request, 'staff/popup/form.html', {'form': form, 'title': 'Add Popup'})
+        return render(request, 'staff/popup/form.html', self._ctx(form))
 
 
 class PopupEditView(StaffRequiredMixin, View):
+    def _ctx(self, form, popup):
+        return {'form': form, 'popup': popup, 'title': 'Edit Popup', 'color_schemes': PromoColorScheme.objects.order_by('-is_default', 'name')}
+
     def get(self, request, pk):
         popup = get_object_or_404(SitePopup, pk=pk)
-        return render(request, 'staff/popup/form.html', {'form': PopupForm(instance=popup), 'popup': popup, 'title': 'Edit Popup'})
+        return render(request, 'staff/popup/form.html', self._ctx(PopupForm(instance=popup), popup))
 
     def post(self, request, pk):
         popup = get_object_or_404(SitePopup, pk=pk)
@@ -409,7 +416,7 @@ class PopupEditView(StaffRequiredMixin, View):
         if form.is_valid():
             form.save()
             return redirect('staff:popups')
-        return render(request, 'staff/popup/form.html', {'form': form, 'popup': popup, 'title': 'Edit Popup'})
+        return render(request, 'staff/popup/form.html', self._ctx(form, popup))
 
 
 class PopupToggleView(StaffRequiredMixin, View):
