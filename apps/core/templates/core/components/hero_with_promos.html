@@ -1,0 +1,51 @@
+{% load menu_tags %}
+{# ============================================================ #}
+{# Hero section: solid bg color + 20/60/20 grid                #}
+{#   left  — promo_slot_1 card                                  #}
+{#   center — hero image (natural size) + title/content         #}
+{#   right  — promo_slot_2 card                                 #}
+{# All context vars inherited from parent template.             #}
+{# ============================================================ #}
+
+<section class="w-full"
+         style="background-color: var(--color-{{ hero_banner.bg_color|default:'bg-primary' }});">
+
+  <div class="grid grid-cols-1 md:grid-cols-[1fr_3fr_1fr]">
+
+    {# ── Slot 1 (left) ── #}
+    <div class="flex items-center justify-center min-h-[300px] md:min-h-[400px] p-6">
+      {% if promo_slot_1 %}
+        {% include "menu/partials/homepage_promo_card.html" with menu=promo_slot_1 assignment=promo_slot_1_item anchor="promo1" %}
+      {% endif %}
+    </div>
+
+    {# ── Center: image at natural size, then title/content ── #}
+    <div class="flex flex-col items-center justify-center min-h-[300px] md:min-h-[400px] p-6 text-center">
+      {% if hero_banner and hero_banner.image %}
+        <img src="{{ hero_banner.image.file.url }}"
+             alt="{{ hero_banner.image.alt_text|default:'' }}"
+             style="max-width:100%;height:auto;display:block;margin-bottom:1rem;">
+      {% endif %}
+      {% if hero_banner.title %}
+        <h1 class="text-4xl font-bold mb-4"
+            style="color: var(--color-{{ hero_banner.text_color|default:'text-primary' }});">
+          {{ hero_banner.title }}
+        </h1>
+      {% endif %}
+      {% if hero_banner.content %}
+        <p class="mb-6 opacity-90"
+           style="color: var(--color-{{ hero_banner.text_color|default:'text-primary' }});">
+          {{ hero_banner.content }}
+        </p>
+      {% endif %}
+    </div>
+
+    {# ── Slot 2 (right) ── #}
+    <div class="flex items-center justify-center min-h-[300px] md:min-h-[400px] p-6">
+      {% if promo_slot_2 %}
+        {% include "menu/partials/homepage_promo_card.html" with menu=promo_slot_2 assignment=promo_slot_2_item anchor="promo2" %}
+      {% endif %}
+    </div>
+
+  </div>
+</section>
