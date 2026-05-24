@@ -41,7 +41,7 @@ from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
 from apps.menu.models import PromoColorScheme
 
-from .forms import EventForm, GalleryUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
+from .forms import ColorSchemeForm, EventForm, GalleryUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
 
 
 class StaffRequiredMixin(LoginRequiredMixin):
@@ -387,7 +387,10 @@ class StaffSettingsView(StaffRequiredMixin, View):
 
     def get(self, request):
         site = self._get_settings()
-        return render(request, 'staff/settings.html', {'form': SiteSettingsForm(instance=site)})
+        return render(request, 'staff/settings.html', {
+            'form': SiteSettingsForm(instance=site),
+            'color_schemes': PromoColorScheme.objects.order_by('-is_default', 'name'),
+        })
 
     def post(self, request):
         site = self._get_settings()
@@ -397,7 +400,42 @@ class StaffSettingsView(StaffRequiredMixin, View):
             from django.contrib import messages
             messages.success(request, 'Settings saved.')
             return redirect('staff:settings')
-        return render(request, 'staff/settings.html', {'form': form})
+        return render(request, 'staff/settings.html', {
+            'form': form,
+            'color_schemes': PromoColorScheme.objects.order_by('-is_default', 'name'),
+        })
+
+
+class ColorSchemeAddView(StaffRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'staff/color_scheme_form.html', {'form': ColorSchemeForm(), 'title': 'Add Color Scheme'})
+
+    def post(self, request):
+        form = ColorSchemeForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('staff:settings')
+        return render(request, 'staff/color_scheme_form.html', {'form': form, 'title': 'Add Color Scheme'})
+
+
+class ColorSchemeEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        scheme = get_object_or_404(PromoColorScheme, pk=pk)
+        return render(request, 'staff/color_scheme_form.html', {'form': ColorSchemeForm(instance=scheme), 'scheme': scheme, 'title': f'Edit — {scheme.name}'})
+
+    def post(self, request, pk):
+        scheme = get_object_or_404(PromoColorScheme, pk=pk)
+        form = ColorSchemeForm(request.POST, instance=scheme)
+        if form.is_valid():
+            form.save()
+            return redirect('staff:settings')
+        return render(request, 'staff/color_scheme_form.html', {'form': form, 'scheme': scheme, 'title': f'Edit — {scheme.name}'})
+
+
+class ColorSchemeDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        get_object_or_404(PromoColorScheme, pk=pk).delete()
+        return redirect('staff:settings')
 
 
 class PopupListView(StaffRequiredMixin, View):

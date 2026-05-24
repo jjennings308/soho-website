@@ -1,9 +1,12 @@
 {% extends "staff/base.html" %}
 {% block title %}Settings{% endblock %}
 {% block page_title %}Settings{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:color_scheme_add' %}" class="sp-btn sp-btn--primary">+ Add Color Scheme</a>
+{% endblock %}
 
 {% block content %}
-<div style="max-width:600px;">
+<div style="max-width:680px;">
   <div class="sp-card">
     <form method="post">
       {% csrf_token %}
@@ -57,6 +60,59 @@
         <button type="submit" class="sp-btn sp-btn--primary">Save Settings</button>
       </div>
     </form>
+  </div>
+
+  {# Color Schemes #}
+  <div class="sp-card" style="margin-top:1.5rem;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div class="sp-card__label" style="margin:0;">Color Schemes</div>
+      <a href="{% url 'staff:color_scheme_add' %}" class="sp-btn sp-btn--outline sp-btn--sm">+ Add</a>
+    </div>
+
+    {% if color_schemes %}
+      <table class="sp-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Palette</th>
+            <th>Default</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for scheme in color_schemes %}
+          <tr>
+            <td style="font-weight:500;">{{ scheme.name }}</td>
+            <td>
+              <div style="display:flex;gap:5px;align-items:center;">
+                <span title="Background" style="display:inline-block;width:18px;height:18px;border-radius:3px;background:{{ scheme.bg_color }};border:1px solid #e5e2db;"></span>
+                <span title="Primary"    style="display:inline-block;width:18px;height:18px;border-radius:3px;background:{{ scheme.primary_color }};border:1px solid #e5e2db;"></span>
+                <span title="Accent"     style="display:inline-block;width:18px;height:18px;border-radius:3px;background:{{ scheme.accent_color }};border:1px solid #e5e2db;"></span>
+                <span title="Text"       style="display:inline-block;width:18px;height:18px;border-radius:3px;background:{{ scheme.text_color }};border:1px solid #e5e2db;"></span>
+              </div>
+            </td>
+            <td>
+              {% if scheme.is_default %}
+                <span class="sp-pill sp-pill--gold">Default</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex;gap:0.5rem;">
+                <a href="{% url 'staff:color_scheme_edit' scheme.pk %}" class="sp-btn sp-btn--outline sp-btn--sm">Edit</a>
+                <form method="post" action="{% url 'staff:color_scheme_delete' scheme.pk %}"
+                      onsubmit="return confirm('Delete {{ scheme.name }}?')">
+                  {% csrf_token %}
+                  <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm">Delete</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color:#888;font-size:0.875rem;">No color schemes yet. <a href="{% url 'staff:color_scheme_add' %}" style="color:#c9972a;">Add one →</a></p>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

@@ -2,6 +2,7 @@ from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget
 
 from apps.core.models import SitePopup, SiteSettings
+from apps.menu.models import PromoColorScheme
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter
@@ -55,6 +56,18 @@ class SiteSettingsForm(forms.ModelForm):
             'notification_email': 'Where inquiry and contact-form alerts are sent (staff only — not shown on site).',
             'email':              'Displayed on the site and in the footer.',
             'reservations_url':   'Link shown on the homepage reservation bar.',
+        }
+
+
+class ColorSchemeForm(forms.ModelForm):
+    class Meta:
+        model = PromoColorScheme
+        fields = ['name', 'primary_color', 'accent_color', 'text_color', 'bg_color', 'is_default']
+        widgets = {
+            'primary_color': forms.TextInput(attrs={'type': 'color'}),
+            'accent_color':  forms.TextInput(attrs={'type': 'color'}),
+            'text_color':    forms.TextInput(attrs={'type': 'color'}),
+            'bg_color':      forms.TextInput(attrs={'type': 'color'}),
         }
 
 

@@ -1,0 +1,176 @@
+{% extends "staff/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block extra_head %}
+<style>
+  .cs-grid-2 > .sp-field { min-width: 0; }
+  .cs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 600px) { .cs-grid-2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:settings' %}" class="sp-btn sp-btn--outline">← Back to Settings</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:640px;">
+  <div class="sp-card">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="sp-field">
+        <label class="sp-label">Name</label>
+        <input class="sp-input" type="text" name="name"
+               value="{{ form.name.value|default:'' }}"
+               placeholder="e.g. Valentine's Day" required>
+        {% if form.name.errors %}<div class="sp-field-error">{{ form.name.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="cs-grid-2">
+        <div class="sp-field">
+          <label class="sp-label">Background</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="id_bg_color" type="color" name="bg_color"
+                   value="{{ form.bg_color.value|default:'#1a1a1a' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+            <input id="id_bg_hex" type="text" value="{{ form.bg_color.value|default:'#1a1a1a' }}"
+                   oninput="document.getElementById('id_bg_color').value=this.value"
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+          </div>
+          {% if form.bg_color.errors %}<div class="sp-field-error">{{ form.bg_color.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="sp-field">
+          <label class="sp-label">Text</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="id_text_color" type="color" name="text_color"
+                   value="{{ form.text_color.value|default:'#ffffff' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+            <input id="id_text_hex" type="text" value="{{ form.text_color.value|default:'#ffffff' }}"
+                   oninput="document.getElementById('id_text_color').value=this.value"
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+          </div>
+          {% if form.text_color.errors %}<div class="sp-field-error">{{ form.text_color.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="sp-field">
+          <label class="sp-label">Primary</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="id_primary_color" type="color" name="primary_color"
+                   value="{{ form.primary_color.value|default:'#c9972a' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+            <input id="id_primary_hex" type="text" value="{{ form.primary_color.value|default:'#c9972a' }}"
+                   oninput="document.getElementById('id_primary_color').value=this.value"
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+          </div>
+          {% if form.primary_color.errors %}<div class="sp-field-error">{{ form.primary_color.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="sp-field">
+          <label class="sp-label">Accent</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="id_accent_color" type="color" name="accent_color"
+                   value="{{ form.accent_color.value|default:'#c9972a' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+            <input id="id_accent_hex" type="text" value="{{ form.accent_color.value|default:'#c9972a' }}"
+                   oninput="document.getElementById('id_accent_color').value=this.value"
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+          </div>
+          {% if form.accent_color.errors %}<div class="sp-field-error">{{ form.accent_color.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="sp-field">
+        <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
+          <input type="checkbox" name="is_default"
+                 {% if form.is_default.value %}checked{% endif %}
+                 style="width:16px;height:16px;accent-color:#c9972a;">
+          <span class="sp-label" style="margin:0;">Set as default scheme</span>
+        </label>
+        <div style="font-size:0.75rem;color:#888;margin-top:0.3rem;margin-left:1.6rem;">
+          Used when a menu has no scheme assigned. Saving will clear the flag from any other default.
+        </div>
+      </div>
+
+      {# Live preview #}
+      <div class="sp-field" style="margin-top:0.5rem;">
+        <label class="sp-label">Preview</label>
+        <div style="background:#e5e2db;padding:1.25rem;border-radius:6px;">
+          <div id="cs-preview" style="border-radius:6px;overflow:hidden;padding:1.5rem;transition:background 0.15s,color 0.15s;">
+            <div id="cs-preview-heading"
+                 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;transition:color 0.15s;">
+              Sample Heading
+            </div>
+            <p id="cs-preview-body"
+               style="font-size:0.875rem;margin-bottom:1rem;opacity:0.8;">
+              Sample body text showing how content looks on this background.
+            </p>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <span id="cs-preview-primary-btn"
+                    style="display:inline-block;padding:0.4rem 1rem;border-radius:4px;font-size:0.8rem;font-weight:600;transition:background 0.15s,color 0.15s;">
+                Primary
+              </span>
+              <span id="cs-preview-accent-btn"
+                    style="display:inline-block;padding:0.4rem 1rem;border-radius:4px;font-size:0.8rem;font-weight:600;transition:background 0.15s,color 0.15s;">
+                Accent
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button type="submit" class="sp-btn sp-btn--primary">Save</button>
+        <a href="{% url 'staff:settings' %}" class="sp-btn sp-btn--outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const fields = {
+  bg:      { picker: 'id_bg_color',      hex: 'id_bg_hex'      },
+  text:    { picker: 'id_text_color',    hex: 'id_text_hex'    },
+  primary: { picker: 'id_primary_color', hex: 'id_primary_hex' },
+  accent:  { picker: 'id_accent_color',  hex: 'id_accent_hex'  },
+};
+
+function getColor(key) {
+  return document.getElementById(fields[key].picker).value;
+}
+
+function updatePreview() {
+  const bg      = getColor('bg');
+  const text    = getColor('text');
+  const primary = getColor('primary');
+  const accent  = getColor('accent');
+
+  const preview = document.getElementById('cs-preview');
+  preview.style.background = bg;
+  preview.style.color = text;
+
+  document.getElementById('cs-preview-heading').style.color = primary;
+
+  const pBtn = document.getElementById('cs-preview-primary-btn');
+  pBtn.style.background = primary;
+  pBtn.style.color = bg;
+
+  const aBtn = document.getElementById('cs-preview-accent-btn');
+  aBtn.style.background = accent;
+  aBtn.style.color = bg;
+}
+
+Object.entries(fields).forEach(([key, ids]) => {
+  const picker = document.getElementById(ids.picker);
+  const hex    = document.getElementById(ids.hex);
+  picker.addEventListener('input', () => { hex.value = picker.value; updatePreview(); });
+  hex.addEventListener('input', () => {
+    if (/^#[0-9a-f]{6}$/i.test(hex.value)) { picker.value = hex.value; updatePreview(); }
+  });
+});
+
+updatePreview();
+</script>
+{% endblock %}

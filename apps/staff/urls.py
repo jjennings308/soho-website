@@ -10,6 +10,9 @@ urlpatterns = [
     path('logout/', views.StaffLogoutView.as_view(), name='logout'),
     path('', views.DashboardView.as_view(), name='dashboard'),
     path('settings/', views.StaffSettingsView.as_view(), name='settings'),
+    path('settings/colors/add/', views.ColorSchemeAddView.as_view(), name='color_scheme_add'),
+    path('settings/colors/<int:pk>/edit/', views.ColorSchemeEditView.as_view(), name='color_scheme_edit'),
+    path('settings/colors/<int:pk>/delete/', views.ColorSchemeDeleteView.as_view(), name='color_scheme_delete'),
 
     # Menu mode
     path('menu-mode/', views.MenuModeView.as_view(), name='menu_mode'),
