@@ -232,6 +232,8 @@ class GalleryToggleView(StaffRequiredMixin, View):
 class GalleryDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         item = get_object_or_404(GalleryItem, pk=pk)
+        if item.image:
+            item.image.delete(save=False)  # delete file from disk before removing the record
         item.delete()
         return redirect('staff:gallery')
 
