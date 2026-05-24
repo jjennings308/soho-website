@@ -42,7 +42,7 @@ from apps.core.models import EventInquiry, SitePopup, SiteSettings
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
-from apps.menu.models import ColorScheme
+from apps.core.models import ColorScheme
 
 from .forms import ColorSchemeForm, EventForm, GalleryEditForm, GalleryUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
 

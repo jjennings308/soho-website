@@ -610,6 +610,60 @@ class EventInquiry(TimeStampedModel):
 
 
 # =============================================================================
+# COLOR SCHEME
+# =============================================================================
+
+class ColorScheme(TimeStampedModel):
+    """
+    A named, reusable color palette. Used by menus, popups, and any other
+    site feature that needs a consistent seasonal or branded color set.
+    """
+    name = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Internal label, e.g. 'Black & Gold', 'Holiday Red'."
+    )
+    primary_color = models.CharField(max_length=30, blank=True,
+        help_text="Main color (hex, e.g. #ffb612).")
+    accent_color  = models.CharField(max_length=30, blank=True,
+        help_text="Secondary / highlight color (hex).")
+    text_color    = models.CharField(max_length=30, blank=True,
+        help_text="Text color (hex).")
+    bg_color      = models.CharField(max_length=30, blank=True,
+        help_text="Background color (hex).")
+    is_default = models.BooleanField(
+        default=False,
+        help_text=(
+            "Use this scheme when a menu has no scheme assigned. "
+            "Saving a new default clears the flag on the previous one."
+        )
+    )
+
+    class Meta:
+        ordering = ['-is_default', 'name']
+        verbose_name = 'Color Scheme'
+        verbose_name_plural = 'Color Schemes'
+
+    def __str__(self):
+        return f"{self.name} (default)" if self.is_default else self.name
+
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            ColorScheme.objects.exclude(pk=self.pk).filter(
+                is_default=True
+            ).update(is_default=False)
+        super().save(*args, **kwargs)
+
+    def as_dict(self):
+        return {
+            'primary': self.primary_color,
+            'accent':  self.accent_color,
+            'text':    self.text_color,
+            'bg':      self.bg_color,
+        }
+
+
+# =============================================================================
 # SITE POPUP
 # =============================================================================
 

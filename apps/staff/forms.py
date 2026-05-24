@@ -2,7 +2,7 @@ from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget
 
 from apps.core.models import SitePopup, SiteSettings
-from apps.menu.models import ColorScheme
+from apps.core.models import ColorScheme
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter

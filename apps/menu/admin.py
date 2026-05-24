@@ -4,12 +4,13 @@ from django.utils.html import format_html, mark_safe
 from media_manager.models import Media
 from apps.core.forms import DaysOfWeekField
 from django import forms
+from apps.core.models import ColorScheme
 from .models import (
     MenuCategory, MenuSubCategory,
     MenuItem, MenuItemVariation, MenuItemAddon,
     MenuItemCategoryAssignment,
     Menu, MenuCategoryAssignment,
-    ColorScheme, PromoSettings,
+    PromoSettings,
 )
 
 

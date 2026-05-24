@@ -4,7 +4,7 @@ from django.utils import timezone
 from decimal import Decimal
 from django_ckeditor_5.fields import CKEditor5Field
 from django.contrib.contenttypes.fields import GenericRelation
-from apps.core.models import TimeStampedModel, ScheduledModel, RecurrenceMixin
+from apps.core.models import ColorScheme, TimeStampedModel, ScheduledModel, RecurrenceMixin
 
 
 # =============================================================================
@@ -378,70 +378,6 @@ class MenuItemAddon(TimeStampedModel):
 
     def __str__(self):
         return f"{self.menu_item.name} — {self.name} (${self.price})"
-
-
-# =============================================================================
-# COLOR SCHEME  (unchanged — applies to any Menu)
-# =============================================================================
-
-class ColorScheme(TimeStampedModel):
-    """
-    A named, reusable color palette assignable to any Menu.
-    One scheme may be flagged as the default fallback.
-
-    Inject resolved colors in templates:
-        {% with colors=menu.resolve_colors %}
-        <section style="
-            --color-promo-primary: {{ colors.primary }};
-            --color-promo-accent:  {{ colors.accent }};
-            --color-promo-text:    {{ colors.text }};
-            --color-promo-bg:      {{ colors.bg }};
-        ">
-        {% endwith %}
-    """
-    name = models.CharField(
-        max_length=100,
-        unique=True,
-        help_text="Internal label, e.g. 'Black & Gold', 'Holiday Red'."
-    )
-    primary_color = models.CharField(max_length=30, blank=True,
-        help_text="Main color (hex, e.g. #ffb612).")
-    accent_color  = models.CharField(max_length=30, blank=True,
-        help_text="Secondary / highlight color (hex).")
-    text_color    = models.CharField(max_length=30, blank=True,
-        help_text="Text color (hex).")
-    bg_color      = models.CharField(max_length=30, blank=True,
-        help_text="Background color (hex).")
-    is_default = models.BooleanField(
-        default=False,
-        help_text=(
-            "Use this scheme when a menu has no scheme assigned. "
-            "Saving a new default clears the flag on the previous one."
-        )
-    )
-
-    class Meta:
-        ordering = ['-is_default', 'name']
-        verbose_name = 'Color Scheme'
-        verbose_name_plural = 'Color Schemes'
-
-    def __str__(self):
-        return f"{self.name} (default)" if self.is_default else self.name
-
-    def save(self, *args, **kwargs):
-        if self.is_default:
-            ColorScheme.objects.exclude(pk=self.pk).filter(
-                is_default=True
-            ).update(is_default=False)
-        super().save(*args, **kwargs)
-
-    def as_dict(self):
-        return {
-            'primary': self.primary_color,
-            'accent':  self.accent_color,
-            'text':    self.text_color,
-            'bg':      self.bg_color,
-        }
 
 
 class PromoSettings(models.Model):

@@ -10,7 +10,7 @@ The default scheme (SoHo Black & Gold) is always enforced on every run.
 """
 
 from django.core.management.base import BaseCommand
-from apps.menu.models import ColorScheme
+from apps.core.models import ColorScheme
 
 
 SCHEMES = [
