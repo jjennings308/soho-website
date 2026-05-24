@@ -1,9 +1,12 @@
 import re
+from io import StringIO
 
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMessage
+from django.core.management import call_command
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
@@ -230,6 +233,15 @@ class GalleryDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         item = get_object_or_404(GalleryItem, pk=pk)
         item.delete()
+        return redirect('staff:gallery')
+
+
+class GalleryImportView(StaffRequiredMixin, View):
+    def post(self, request):
+        out = StringIO()
+        call_command('import_gallery_images', stdout=out)
+        lines = [l for l in out.getvalue().strip().splitlines() if l.strip()]
+        messages.success(request, lines[-1] if lines else 'Import complete.')
         return redirect('staff:gallery')
 
 

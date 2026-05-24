@@ -2,6 +2,13 @@
 {% block title %}Gallery{% endblock %}
 {% block page_title %}Gallery{% endblock %}
 {% block topbar_actions %}
+  <form method="post" action="{% url 'staff:gallery_import' %}" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="sp-btn sp-btn--outline"
+            onclick="return confirm('Import new images from the media/gallery/ folder?')">
+      Import from Disk
+    </button>
+  </form>
   <a href="{% url 'staff:gallery_upload' %}" class="sp-btn sp-btn--primary">+ Upload Photo</a>
 {% endblock %}
 
