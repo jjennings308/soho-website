@@ -84,13 +84,13 @@ function sitePopup(id, delay) {
   return {
     open: false,
     init() {
-      if (!localStorage.getItem('popup_dismissed_' + id)) {
+      if (!sessionStorage.getItem('popup_dismissed_' + id)) {
         setTimeout(() => { this.open = true; }, delay * 1000);
       }
     },
     close() {
       this.open = false;
-      localStorage.setItem('popup_dismissed_' + id, '1');
+      sessionStorage.setItem('popup_dismissed_' + id, '1');
     },
   };
 }

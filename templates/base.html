@@ -92,6 +92,7 @@
   {# ── Tailwind compiled output ─────────────────────────────────────────── #}
   <link rel="stylesheet" href="{% static 'dist/output.css' %}?v={{ VERSION }}">
   
+  <style>[x-cloak] { display: none !important; }</style>
   {% block extra_css %}{% endblock %}
   {% block extra_head %}{% endblock %}
 
@@ -138,10 +139,10 @@
   <script defer src="{% static 'js/alpine.min.js' %}"></script>
 
   <!-- Cookie Notice -->
- <!-- Cookie Notice -->
 <div
   x-data="{ show: !(() => { try { return localStorage.getItem('cookieDismissed'); } catch(e) { return true; } })() }"
   x-show="show"
+  x-cloak
   class="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 text-white px-6 py-4 flex items-center justify-between gap-4"
 >
   <p class="text-sm">
