@@ -266,6 +266,7 @@ class NewsletterSendView(StaffRequiredMixin, View):
         )
 
         if members:
+            base_url = request.build_absolute_uri('/')
             for member in members:
                 unsubscribe_url = request.build_absolute_uri(
                     reverse('members:unsubscribe', kwargs={'token': member.unsubscribe_token})
@@ -275,6 +276,9 @@ class NewsletterSendView(StaffRequiredMixin, View):
                     'member': member,
                     'unsubscribe_url': unsubscribe_url,
                 })
+                # Email clients can't resolve relative URLs — make media links absolute
+                html_body = html_body.replace('src="/media/', f'src="{base_url}media/')
+                html_body = html_body.replace('href="/media/', f'href="{base_url}media/')
                 msg = EmailMessage(
                     subject=newsletter.subject,
                     body=html_body,
