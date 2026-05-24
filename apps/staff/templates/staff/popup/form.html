@@ -1,6 +1,13 @@
 {% extends "staff/base.html" %}
 {% block title %}{{ title }}{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
+{% block extra_head %}
+<style>
+  /* Prevent grid columns from overflowing their track */
+  .sp-grid-3 > .sp-field { min-width: 0; }
+  .sp-grid-3 .sp-field > div { min-width: 0; }
+</style>
+{% endblock %}
 {% block topbar_actions %}
   <a href="{% url 'staff:popups' %}" class="sp-btn sp-btn--outline">← Back</a>
 {% endblock %}
