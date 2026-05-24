@@ -77,7 +77,7 @@ class DashboardView(StaffRequiredMixin, View):
         today_events = EventDay.get_todays_events()
         upcoming = (
             EventDay.objects
-            .filter(date__gte=timezone.localdate(), is_active=True)
+            .filter(date__gt=timezone.localdate(), is_active=True)
             .order_by('date', 'game_time')[:5]
         )
         site = SiteSettings.load()
@@ -133,7 +133,7 @@ class EventListView(StaffRequiredMixin, View):
     def get(self, request):
         upcoming = (
             EventDay.objects
-            .filter(date__gte=timezone.localdate())
+            .filter(date__gt=timezone.localdate())
             .order_by('date', 'game_time')
         )
         past = (
