@@ -108,6 +108,14 @@
       <span>© {% now "Y" %} {{ site_settings.site_name|default:"SoHo Pittsburgh" }} — All rights reserved.</span>
       <span style="color:var(--color-gold-deep);">&#9670;</span>
       <span>203 Federal Street, Pittsburgh, PA 15212</span>
+      <span style="color:var(--color-gold-deep);">&#9670;</span>
+      <span>
+        <a href="{% url 'core:privacy' %}" style="color:var(--color-footer-muted);text-decoration:none;" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-footer-muted)'">Privacy Policy</a>
+        &nbsp;·&nbsp;
+        <a href="{% url 'core:terms' %}" style="color:var(--color-footer-muted);text-decoration:none;" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-footer-muted)'">Terms of Use</a>
+        &nbsp;·&nbsp;
+        <a href="{% url 'core:accessibility' %}" style="color:var(--color-footer-muted);text-decoration:none;" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-footer-muted)'">Accessibility</a>
+      </span>
       {% if VERSION %}
         <span style="color:var(--color-text-muted);font-size:0.7rem;">v{{ VERSION }}</span>
       {% endif %}

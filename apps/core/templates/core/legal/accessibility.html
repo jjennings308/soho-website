@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Accessibility — {{ site_settings.restaurant_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;margin:4rem auto;padding:0 1.5rem;">
+
+  <h1 style="font-family:var(--font-primary);font-size:2rem;color:var(--color-text-heading);margin-bottom:0.5rem;">Accessibility Statement</h1>
+  <p style="font-size:0.85rem;color:var(--color-text-secondary);margin-bottom:3rem;">Last updated: January 2025</p>
+
+  <div style="font-size:0.95rem;line-height:1.8;color:var(--color-text-primary);">
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Our Commitment</h2>
+    <p>SoHo Pittsburgh is committed to ensuring that our website and physical location are accessible to all guests, including those with disabilities. We strive to provide an inclusive experience both online and in our restaurant.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Website Accessibility</h2>
+    <p>We aim to conform to the Web Content Accessibility Guidelines (WCAG) 2.1 Level AA. Our ongoing efforts include:</p>
+    <ul style="margin:0.75rem 0 0.75rem 1.5rem;">
+      <li>Providing text alternatives for non-text content such as images.</li>
+      <li>Ensuring sufficient color contrast between text and backgrounds.</li>
+      <li>Making all functionality available via keyboard navigation.</li>
+      <li>Using semantic HTML to support screen readers and assistive technologies.</li>
+      <li>Ensuring forms and interactive elements are properly labeled.</li>
+    </ul>
+    <p>We recognize that accessibility is an ongoing effort. If you encounter any barriers while using our site, we want to hear from you.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Physical Accessibility</h2>
+    <p>Our restaurant at 203 Federal Street is committed to providing a welcoming environment for guests with physical disabilities. If you have specific accommodation needs — including seating arrangements, accessible entrances, or other assistance — please contact us in advance and we will do everything we can to accommodate you.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Feedback and Contact</h2>
+    <p>If you experience difficulty accessing any content on our website or have suggestions for improving accessibility, please contact us:</p>
+    <p style="margin-top:1rem;">
+      SoHo Pittsburgh<br>
+      203 Federal Street, Pittsburgh, PA 15212<br>
+      <a href="tel:{{ site_settings.phone|default:'4123217646' }}" style="color:var(--color-gold-primary);">{{ site_settings.phone|default:"(412) 321-7646" }}</a><br>
+      {% if site_settings.email %}<a href="mailto:{{ site_settings.email }}" style="color:var(--color-gold-primary);">{{ site_settings.email }}</a>{% endif %}
+    </p>
+    <p style="margin-top:1.5rem;">We will make reasonable efforts to respond to accessibility feedback within 5 business days.</p>
+
+  </div>
+</div>
+{% endblock %}

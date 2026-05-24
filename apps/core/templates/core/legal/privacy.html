@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy — {{ site_settings.restaurant_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;margin:4rem auto;padding:0 1.5rem;">
+
+  <h1 style="font-family:var(--font-primary);font-size:2rem;color:var(--color-text-heading);margin-bottom:0.5rem;">Privacy Policy</h1>
+  <p style="font-size:0.85rem;color:var(--color-text-secondary);margin-bottom:3rem;">Last updated: January 2025</p>
+
+  <div style="font-size:0.95rem;line-height:1.8;color:var(--color-text-primary);">
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Information We Collect</h2>
+    <p>When you interact with our website, we may collect the following information:</p>
+    <ul style="margin:0.75rem 0 0.75rem 1.5rem;">
+      <li><strong>Email address and name</strong> — when you subscribe to our mailing list or submit a contact or event inquiry form.</li>
+      <li><strong>Contact details</strong> — phone number and event preferences submitted through our private event inquiry form.</li>
+      <li><strong>Usage data</strong> — standard server logs including IP address, browser type, and pages visited, collected automatically when you access the site.</li>
+    </ul>
+    <p>We do not collect payment information. Online orders and reservations are processed through third-party platforms subject to their own privacy policies.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">How We Use Your Information</h2>
+    <p>We use the information we collect to:</p>
+    <ul style="margin:0.75rem 0 0.75rem 1.5rem;">
+      <li>Send you email newsletters and promotional updates (only if you have subscribed and confirmed your subscription).</li>
+      <li>Respond to event inquiry requests and contact form submissions.</li>
+      <li>Maintain and improve the functionality and security of our website.</li>
+    </ul>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Email Communications</h2>
+    <p>We use a double opt-in process for email subscriptions. You will receive a confirmation email before being added to our list. You may unsubscribe at any time by clicking the unsubscribe link in any email we send. We will not send you marketing emails without your confirmed consent.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Sharing of Information</h2>
+    <p>We do not sell, rent, or trade your personal information to third parties. We do not share your data with advertisers or data brokers. Information may be disclosed only if required by law or to protect the rights and safety of SoHo Pittsburgh and its guests.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Cookies</h2>
+    <p>Our website uses session cookies to maintain basic functionality (such as suppressing popups you have already dismissed). We do not use tracking cookies or third-party advertising cookies. No cookie consent banner is required for strictly functional cookies under applicable law.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Data Retention</h2>
+    <p>Email subscriber records are retained until you unsubscribe. Unconfirmed subscription requests are automatically purged after 7 days. Contact and event inquiry submissions are retained for a reasonable period to allow us to follow up and for record-keeping purposes.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Your Rights</h2>
+    <p>You may request access to, correction of, or deletion of any personal information we hold about you by contacting us at the address below. We will respond within a reasonable timeframe.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Contact</h2>
+    <p>
+      SoHo Pittsburgh<br>
+      203 Federal Street, Pittsburgh, PA 15212<br>
+      {% if site_settings.email %}<a href="mailto:{{ site_settings.email }}" style="color:var(--color-gold-primary);">{{ site_settings.email }}</a>{% endif %}
+    </p>
+
+    <p style="margin-top:2rem;font-size:0.85rem;color:var(--color-text-secondary);">This policy may be updated periodically. Continued use of the site after changes constitutes acceptance of the revised policy.</p>
+
+  </div>
+</div>
+{% endblock %}

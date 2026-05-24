@@ -162,6 +162,18 @@ def online_delivery(request):
     return render(request, 'core/online_delivery.html')
 
 
+def privacy(request):
+    return render(request, 'core/legal/privacy.html')
+
+
+def terms(request):
+    return render(request, 'core/legal/terms.html')
+
+
+def accessibility(request):
+    return render(request, 'core/legal/accessibility.html')
+
+
 class EventInquiryView(View):
     def post(self, request):
         errors = {}

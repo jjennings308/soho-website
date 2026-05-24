@@ -11,4 +11,7 @@ urlpatterns = [
     path('test', views.theme_test, name='theme_test'),
     path('online-delivery/', views.online_delivery, name='online_delivery'),
     path('event-inquiry/', EventInquiryView.as_view(), name='event_inquiry'),
+    path('privacy/', views.privacy, name='privacy'),
+    path('terms/', views.terms, name='terms'),
+    path('accessibility/', views.accessibility, name='accessibility'),
 ]

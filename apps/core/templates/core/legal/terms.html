@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Terms of Use — {{ site_settings.restaurant_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;margin:4rem auto;padding:0 1.5rem;">
+
+  <h1 style="font-family:var(--font-primary);font-size:2rem;color:var(--color-text-heading);margin-bottom:0.5rem;">Terms of Use</h1>
+  <p style="font-size:0.85rem;color:var(--color-text-secondary);margin-bottom:3rem;">Last updated: January 2025</p>
+
+  <div style="font-size:0.95rem;line-height:1.8;color:var(--color-text-primary);">
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Acceptance of Terms</h2>
+    <p>By accessing or using the SoHo Pittsburgh website (sohopittsburgh.com), you agree to be bound by these Terms of Use. If you do not agree, please do not use the site.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Use of the Site</h2>
+    <p>This website is provided for informational purposes — to share our menu, hours, location, and event information. You agree to use the site only for lawful purposes and in a manner that does not infringe the rights of others or restrict their use of the site.</p>
+    <p>You may not use the site to:</p>
+    <ul style="margin:0.75rem 0 0.75rem 1.5rem;">
+      <li>Attempt to gain unauthorized access to any part of the site or its related systems.</li>
+      <li>Transmit unsolicited commercial communications.</li>
+      <li>Scrape, harvest, or otherwise collect data from the site without our written permission.</li>
+    </ul>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Menu and Pricing</h2>
+    <p>Menu items, descriptions, and prices displayed on this website are provided for general reference and are subject to change without notice. Actual pricing at the restaurant may differ. Please ask your server for current pricing and availability. We are not responsible for errors or omissions in menu information.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Reservations and Events</h2>
+    <p>Reservation links on this site connect to third-party platforms (such as OpenTable). Reservations and private event bookings are subject to availability and our internal policies. Submitting an inquiry form does not constitute a confirmed booking. We will contact you to confirm arrangements.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Intellectual Property</h2>
+    <p>All content on this site — including text, photographs, logos, and design — is the property of SoHo Pittsburgh or its content suppliers and is protected by applicable copyright and trademark laws. You may not reproduce, distribute, or create derivative works from any content on this site without our prior written consent.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Third-Party Links</h2>
+    <p>This site may contain links to third-party websites (such as delivery platforms, reservation services, or social media). These links are provided for convenience only. We have no control over those sites and are not responsible for their content, privacy practices, or availability.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Disclaimer of Warranties</h2>
+    <p>This website is provided "as is" without warranties of any kind. We do not warrant that the site will be uninterrupted, error-free, or free of viruses or other harmful components. Your use of the site is at your own risk.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Limitation of Liability</h2>
+    <p>To the fullest extent permitted by law, SoHo Pittsburgh shall not be liable for any indirect, incidental, or consequential damages arising from your use of this site or its content.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Governing Law</h2>
+    <p>These Terms are governed by the laws of the Commonwealth of Pennsylvania. Any disputes shall be resolved in the courts of Allegheny County, Pennsylvania.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Changes to These Terms</h2>
+    <p>We reserve the right to modify these Terms at any time. Changes take effect when posted to this page. Continued use of the site constitutes acceptance of the revised Terms.</p>
+
+    <h2 style="font-family:var(--font-primary);font-size:1.2rem;color:var(--color-text-heading);margin:2rem 0 0.75rem;">Contact</h2>
+    <p>
+      SoHo Pittsburgh<br>
+      203 Federal Street, Pittsburgh, PA 15212<br>
+      {% if site_settings.email %}<a href="mailto:{{ site_settings.email }}" style="color:var(--color-gold-primary);">{{ site_settings.email }}</a>{% endif %}
+    </p>
+
+  </div>
+</div>
+{% endblock %}
