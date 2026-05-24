@@ -1,0 +1,219 @@
+{% extends "staff/base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:popups' %}" class="sp-btn sp-btn--outline">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;">
+  <div class="sp-card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="sp-field">
+        <label class="sp-label">Internal Name</label>
+        <input class="sp-input" type="text" name="title" value="{{ form.title.value|default:'' }}"
+               placeholder="e.g. Christmas Gift Cards 2024" required>
+        <div style="font-size:0.75rem;color:#888;margin-top:0.3rem;">Staff-only label — not shown to visitors.</div>
+        {% if form.title.errors %}<div class="sp-field-error">{{ form.title.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Heading</label>
+        <input class="sp-input" type="text" name="heading" value="{{ form.heading.value|default:'' }}"
+               placeholder="e.g. Give the Gift of Great Food" required>
+        {% if form.heading.errors %}<div class="sp-field-error">{{ form.heading.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Body <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+        <textarea class="sp-textarea" name="body" rows="4"
+                  placeholder="A short description or offer details…">{{ form.body.value|default:'' }}</textarea>
+        {% if form.body.errors %}<div class="sp-field-error">{{ form.body.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="sp-grid-2">
+        <div class="sp-field">
+          <label class="sp-label">Button Label <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+          <input class="sp-input" type="text" name="cta_label" value="{{ form.cta_label.value|default:'' }}"
+                 placeholder="e.g. Buy Gift Cards">
+          {% if form.cta_label.errors %}<div class="sp-field-error">{{ form.cta_label.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="sp-field">
+          <label class="sp-label">Button URL <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+          <input class="sp-input" type="url" name="cta_url" value="{{ form.cta_url.value|default:'' }}"
+                 placeholder="https://…">
+          {% if form.cta_url.errors %}<div class="sp-field-error">{{ form.cta_url.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Image <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+        {% if popup and popup.image %}
+          <div style="margin-bottom:0.5rem;">
+            <img src="{{ popup.image.url }}" alt="" style="height:80px;border-radius:4px;object-fit:cover;">
+          </div>
+        {% endif %}
+        <input type="file" name="image" accept="image/*"
+               style="font-size:0.875rem;color:#444;">
+      </div>
+
+      <!-- Color scheme presets -->
+      <div class="sp-field">
+        <label class="sp-label">Colour Preset</label>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('soho')">SoHo Dark</button>
+          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('light')">Light</button>
+          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('christmas')"
+                  style="color:#165016;border-color:#165016;">🎄 Christmas</button>
+          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('valentines')"
+                  style="color:#8b0000;border-color:#8b0000;">❤️ Valentine's</button>
+          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('stpatricks')"
+                  style="color:#165016;border-color:#165016;">☘️ St. Patrick's</button>
+          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" onclick="applyPreset('summer')"
+                  style="color:#0077b6;border-color:#0077b6;">☀️ Summer</button>
+        </div>
+      </div>
+
+      <div class="sp-grid-3">
+        <div class="sp-field">
+          <label class="sp-label">Background</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="id_bg_color" type="color" name="bg_color"
+                   value="{{ form.bg_color.value|default:'#1a1a1a' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+            <input id="id_bg_color_hex" type="text" value="{{ form.bg_color.value|default:'#1a1a1a' }}"
+                   oninput="document.getElementById('id_bg_color').value=this.value"
+                   style="flex:1;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+          </div>
+        </div>
+        <div class="sp-field">
+          <label class="sp-label">Text</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="id_text_color" type="color" name="text_color"
+                   value="{{ form.text_color.value|default:'#ffffff' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+            <input id="id_text_color_hex" type="text" value="{{ form.text_color.value|default:'#ffffff' }}"
+                   oninput="document.getElementById('id_text_color').value=this.value"
+                   style="flex:1;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+          </div>
+        </div>
+        <div class="sp-field">
+          <label class="sp-label">Accent / Button</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="id_accent_color" type="color" name="accent_color"
+                   value="{{ form.accent_color.value|default:'#c9972a' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+            <input id="id_accent_color_hex" type="text" value="{{ form.accent_color.value|default:'#c9972a' }}"
+                   oninput="document.getElementById('id_accent_color').value=this.value"
+                   style="flex:1;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Live preview -->
+      <div class="sp-field">
+        <label class="sp-label">Preview</label>
+        <div style="background:#e5e2db;padding:1.5rem;border-radius:6px;display:flex;justify-content:center;">
+          <div id="popup-preview" style="width:100%;max-width:400px;border-radius:8px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <div id="preview-body" style="padding:1.75rem;">
+              <h2 id="preview-heading" style="margin:0 0 0.6rem;font-size:1.3rem;font-family:Georgia,serif;"></h2>
+              <p id="preview-text" style="margin:0 0 1rem;font-size:0.9rem;line-height:1.6;opacity:0.85;"></p>
+              <a id="preview-btn" href="#" onclick="return false;"
+                 style="display:none;padding:0.6rem 1.25rem;font-size:0.8rem;font-weight:600;
+                        letter-spacing:0.05em;text-transform:uppercase;border-radius:4px;
+                        text-decoration:none;color:#fff;">
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Show delay (seconds)</label>
+        <input class="sp-input" type="number" name="show_delay" min="0" max="30"
+               value="{{ form.show_delay.value|default:'2' }}" style="max-width:120px;">
+        {% if form.show_delay.errors %}<div class="sp-field-error">{{ form.show_delay.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button type="submit" class="sp-btn sp-btn--primary">Save</button>
+        <a href="{% url 'staff:popups' %}" class="sp-btn sp-btn--outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const presets = {
+  soho:       { bg: '#1a1a1a', text: '#ffffff', accent: '#c9972a' },
+  light:      { bg: '#f5f4f0', text: '#1a1a1a', accent: '#c9972a' },
+  christmas:  { bg: '#165016', text: '#ffffff', accent: '#cc2200' },
+  valentines: { bg: '#6b0f1a', text: '#ffffff', accent: '#e8739a' },
+  stpatricks: { bg: '#14401e', text: '#ffffff', accent: '#f5c800' },
+  summer:     { bg: '#0077b6', text: '#ffffff', accent: '#f4a261' },
+};
+
+function applyPreset(name) {
+  const p = presets[name];
+  if (!p) return;
+  setColor('bg_color', p.bg);
+  setColor('text_color', p.text);
+  setColor('accent_color', p.accent);
+  updatePreview();
+}
+
+function setColor(field, value) {
+  document.getElementById('id_' + field).value = value;
+  document.getElementById('id_' + field + '_hex').value = value;
+}
+
+function updatePreview() {
+  const bg     = document.getElementById('id_bg_color').value;
+  const text   = document.getElementById('id_text_color').value;
+  const accent = document.getElementById('id_accent_color').value;
+  const heading = document.querySelector('[name=heading]').value;
+  const body    = document.querySelector('[name=body]').value;
+  const ctaLabel = document.querySelector('[name=cta_label]').value;
+
+  const preview = document.getElementById('popup-preview');
+  const previewBody = document.getElementById('preview-body');
+  preview.style.background = bg;
+  previewBody.style.color = text;
+
+  document.getElementById('preview-heading').textContent = heading || 'Your Heading Here';
+  const textEl = document.getElementById('preview-text');
+  textEl.textContent = body;
+  textEl.style.display = body ? 'block' : 'none';
+
+  const btn = document.getElementById('preview-btn');
+  if (ctaLabel) {
+    btn.textContent = ctaLabel;
+    btn.style.background = accent;
+    btn.style.display = 'inline-block';
+  } else {
+    btn.style.display = 'none';
+  }
+}
+
+// Sync hex inputs ↔ color pickers
+['bg_color', 'text_color', 'accent_color'].forEach(field => {
+  const picker = document.getElementById('id_' + field);
+  const hex    = document.getElementById('id_' + field + '_hex');
+  picker.addEventListener('input', () => { hex.value = picker.value; updatePreview(); });
+  hex.addEventListener('input', () => { if (/^#[0-9a-f]{6}$/i.test(hex.value)) picker.value = hex.value; updatePreview(); });
+});
+
+// Live preview on text changes
+['heading', 'body', 'cta_label'].forEach(name => {
+  const el = document.querySelector('[name=' + name + ']');
+  if (el) el.addEventListener('input', updatePreview);
+});
+
+// Init
+updatePreview();
+</script>
+{% endblock %}

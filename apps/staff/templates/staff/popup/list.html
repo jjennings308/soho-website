@@ -1,0 +1,66 @@
+{% extends "staff/base.html" %}
+{% block title %}Popups{% endblock %}
+{% block page_title %}Popups{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:popup_add' %}" class="sp-btn sp-btn--primary">+ New Popup</a>
+{% endblock %}
+
+{% block content %}
+<div class="sp-card">
+  {% if popups %}
+    <table class="sp-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Heading</th>
+          <th>Colors</th>
+          <th>Delay</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for popup in popups %}
+        <tr>
+          <td style="font-weight:500;">{{ popup.title }}</td>
+          <td style="color:#555;">{{ popup.heading }}</td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span title="Background" style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.bg_color }};border:1px solid #e5e2db;"></span>
+              <span title="Text" style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.text_color }};border:1px solid #e5e2db;"></span>
+              <span title="Accent" style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.accent_color }};border:1px solid #e5e2db;"></span>
+            </div>
+          </td>
+          <td style="color:#888;">{{ popup.show_delay }}s</td>
+          <td>
+            {% if popup.is_active %}
+              <span class="sp-pill sp-pill--green">Active</span>
+            {% else %}
+              <span class="sp-pill sp-pill--gray">Off</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              <form method="post" action="{% url 'staff:popup_toggle' popup.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="sp-btn sp-btn--outline sp-btn--sm">
+                  {% if popup.is_active %}Deactivate{% else %}Activate{% endif %}
+                </button>
+              </form>
+              <a href="{% url 'staff:popup_edit' popup.pk %}" class="sp-btn sp-btn--outline sp-btn--sm">Edit</a>
+              <form method="post" action="{% url 'staff:popup_delete' popup.pk %}"
+                    onsubmit="return confirm('Delete {{ popup.title }}?')">
+                {% csrf_token %}
+                <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:#888;font-size:0.875rem;">No popups yet. <a href="{% url 'staff:popup_add' %}" style="color:#c9972a;">Add one →</a></p>
+  {% endif %}
+</div>
+{% endblock %}

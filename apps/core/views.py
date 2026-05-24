@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import TemplateView
 from django.db.models import Prefetch
-from .models import EventInquiry, SiteSettings
+from .models import EventInquiry, SitePopup, SiteSettings
 from .utils import get_banner, get_panel_side
 from apps.content.models import ContentGroup
 from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
@@ -130,6 +130,7 @@ class HomeView(TemplateView):
         context['promo_slot_2_grid'] = promo_slot_2_grid = _build_promo_grid(promo_slot_2)
         context['promo_slot_1_item'] = _get_random_promo_item(promo_slot_1)
         context['promo_slot_2_item'] = _get_random_promo_item(promo_slot_2)
+        context['site_popup'] = SitePopup.get_active()
 
         return context
 

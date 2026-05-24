@@ -269,6 +269,10 @@
           &#9670; Newsletter
         </a>
 
+        <a href="{% url 'staff:popups' %}" class="{% if 'popup' in request.resolver_match.url_name %}active{% endif %}">
+          &#9670; Popups
+        </a>
+
         <div class="sp-nav__section">Tools</div>
         <a href="https://analytics.tazcomputer.com" target="_blank" rel="noopener">
           &#9670; Analytics &#8599;

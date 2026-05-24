@@ -26,6 +26,13 @@ urlpatterns = [
     path('gallery/<int:pk>/toggle/', views.GalleryToggleView.as_view(), name='gallery_toggle'),
     path('gallery/<int:pk>/delete/', views.GalleryDeleteView.as_view(), name='gallery_delete'),
 
+    # Popups
+    path('popups/', views.PopupListView.as_view(), name='popups'),
+    path('popups/add/', views.PopupAddView.as_view(), name='popup_add'),
+    path('popups/<int:pk>/edit/', views.PopupEditView.as_view(), name='popup_edit'),
+    path('popups/<int:pk>/toggle/', views.PopupToggleView.as_view(), name='popup_toggle'),
+    path('popups/<int:pk>/delete/', views.PopupDeleteView.as_view(), name='popup_delete'),
+
     # Inquiries
     path('inquiries/', InquiryListView.as_view(), name='inquiries'),
     path('inquiries/<int:pk>/status/', InquiryStatusView.as_view(), name='inquiry_status'),

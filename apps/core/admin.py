@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.contenttypes.admin import GenericTabularInline
 from django.utils.html import format_html
 from media_manager.models import Media
-from .models import EventInquiry, SiteSettings, Banner, BannerButton, PanelSide
+from .models import EventInquiry, SitePopup, SiteSettings, Banner, BannerButton, PanelSide
 
 
 @admin.register(SiteSettings)
@@ -123,4 +123,10 @@ class EventInquiryAdmin(admin.ModelAdmin):
     list_filter = ['status', 'event_type', 'menu_preference']
     search_fields = ['name', 'email', 'phone']
     list_editable = ['status']
+    readonly_fields = ['created_at', 'updated_at']
+
+@admin.register(SitePopup)
+class SitePopupAdmin(admin.ModelAdmin):
+    list_display = ['title', 'heading', 'is_active', 'show_delay', 'created_at']
+    list_filter = ['is_active']
     readonly_fields = ['created_at', 'updated_at']

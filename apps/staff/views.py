@@ -35,12 +35,12 @@ def _prepare_newsletter_html(html, base_url):
     html = re.sub(r'<figure\b([^>]*)>(.*?)</figure>', unwrap_figure, html, flags=re.DOTALL | re.IGNORECASE)
     return html
 
-from apps.core.models import EventInquiry, SiteSettings
+from apps.core.models import EventInquiry, SitePopup, SiteSettings
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
 
-from .forms import EventForm, GalleryUploadForm, NewsletterForm
+from .forms import EventForm, GalleryUploadForm, NewsletterForm, PopupForm
 
 
 class StaffRequiredMixin(LoginRequiredMixin):
@@ -84,6 +84,7 @@ class DashboardView(StaffRequiredMixin, View):
         draft_count = Newsletter.objects.filter(sent_at__isnull=True).count()
         unpublished_count = GalleryItem.objects.filter(is_published=False).count()
         new_inquiry_count = EventInquiry.objects.filter(status='new').count()
+        active_popup = SitePopup.get_active()
 
         return render(request, 'staff/dashboard.html', {
             'menu_mode': menu_mode,
@@ -94,6 +95,7 @@ class DashboardView(StaffRequiredMixin, View):
             'draft_count': draft_count,
             'unpublished_count': unpublished_count,
             'new_inquiry_count': new_inquiry_count,
+            'active_popup': active_popup,
         })
 
 
@@ -374,3 +376,54 @@ class InquiryDeleteView(StaffRequiredMixin, View):
         inquiry = get_object_or_404(EventInquiry, pk=pk)
         inquiry.delete()
         return redirect('staff:inquiries')
+
+
+# ── Popups ────────────────────────────────────────────────────────────────────
+
+class PopupListView(StaffRequiredMixin, View):
+    def get(self, request):
+        popups = SitePopup.objects.all()
+        return render(request, 'staff/popup/list.html', {'popups': popups})
+
+
+class PopupAddView(StaffRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'staff/popup/form.html', {'form': PopupForm(), 'title': 'Add Popup'})
+
+    def post(self, request):
+        form = PopupForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('staff:popups')
+        return render(request, 'staff/popup/form.html', {'form': form, 'title': 'Add Popup'})
+
+
+class PopupEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        popup = get_object_or_404(SitePopup, pk=pk)
+        return render(request, 'staff/popup/form.html', {'form': PopupForm(instance=popup), 'popup': popup, 'title': 'Edit Popup'})
+
+    def post(self, request, pk):
+        popup = get_object_or_404(SitePopup, pk=pk)
+        form = PopupForm(request.POST, request.FILES, instance=popup)
+        if form.is_valid():
+            form.save()
+            return redirect('staff:popups')
+        return render(request, 'staff/popup/form.html', {'form': form, 'popup': popup, 'title': 'Edit Popup'})
+
+
+class PopupToggleView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        popup = get_object_or_404(SitePopup, pk=pk)
+        if popup.is_active:
+            popup.deactivate()
+        else:
+            popup.activate()
+        return redirect('staff:popups')
+
+
+class PopupDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        popup = get_object_or_404(SitePopup, pk=pk)
+        popup.delete()
+        return redirect('staff:popups')

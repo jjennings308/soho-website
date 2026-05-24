@@ -1,0 +1,90 @@
+{% if site_popup %}
+<div x-data="sitePopup({{ site_popup.pk }}, {{ site_popup.show_delay }})"
+     x-init="init()"
+     @keydown.escape.window="close()">
+
+  <!-- Backdrop -->
+  <div x-show="open"
+       x-transition:enter="transition ease-out duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       @click="close()"
+       style="position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:200;"
+       x-cloak>
+  </div>
+
+  <!-- Popup card -->
+  <div x-show="open"
+       x-transition:enter="transition ease-out duration-250"
+       x-transition:enter-start="opacity-0 scale-95"
+       x-transition:enter-end="opacity-100 scale-100"
+       x-transition:leave="transition ease-in duration-150"
+       x-transition:leave-start="opacity-100 scale-100"
+       x-transition:leave-end="opacity-0 scale-95"
+       style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+              z-index:201;width:92%;max-width:460px;
+              border-radius:8px;overflow:hidden;
+              box-shadow:0 16px 48px rgba(0,0,0,0.4);"
+       x-cloak>
+
+    {% if site_popup.image %}
+      <img src="{{ site_popup.image.url }}" alt=""
+           style="width:100%;height:200px;object-fit:cover;display:block;">
+    {% endif %}
+
+    <!-- Close button -->
+    <button @click="close()" aria-label="Close"
+            style="position:absolute;top:10px;right:10px;
+                   background:rgba(0,0,0,0.35);border:none;cursor:pointer;
+                   color:#fff;width:30px;height:30px;border-radius:50%;
+                   font-size:1.1rem;line-height:1;display:flex;align-items:center;justify-content:center;">
+      &times;
+    </button>
+
+    <div style="padding:2rem;background:{{ site_popup.bg_color }};color:{{ site_popup.text_color }};">
+      <h2 style="margin:0 0 0.65rem;font-size:1.45rem;font-family:Georgia,serif;line-height:1.25;">
+        {{ site_popup.heading }}
+      </h2>
+
+      {% if site_popup.body %}
+        <p style="margin:0 0 1.25rem;font-size:0.95rem;line-height:1.65;opacity:0.88;">
+          {{ site_popup.body }}
+        </p>
+      {% endif %}
+
+      {% if site_popup.cta_label and site_popup.cta_url %}
+        <a href="{{ site_popup.cta_url }}"
+           style="display:inline-block;
+                  background:{{ site_popup.accent_color }};
+                  color:#fff;text-decoration:none;
+                  padding:0.65rem 1.5rem;border-radius:4px;
+                  font-size:0.8rem;font-weight:600;
+                  letter-spacing:0.08em;text-transform:uppercase;">
+          {{ site_popup.cta_label }}
+        </a>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+function sitePopup(id, delay) {
+  return {
+    open: false,
+    init() {
+      if (!localStorage.getItem('popup_dismissed_' + id)) {
+        setTimeout(() => { this.open = true; }, delay * 1000);
+      }
+    },
+    close() {
+      this.open = false;
+      localStorage.setItem('popup_dismissed_' + id, '1');
+    },
+  };
+}
+</script>
+{% endif %}

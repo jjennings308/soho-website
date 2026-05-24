@@ -42,6 +42,21 @@
   </div>
 
   <div class="sp-card">
+    <div class="sp-card__label">Popup</div>
+    <div style="margin-top:0.25rem;">
+      {% if active_popup %}
+        <span class="sp-pill sp-pill--green">Active</span>
+        <div style="font-size:0.78rem;color:#555;margin-top:0.4rem;">{{ active_popup.title }}</div>
+      {% else %}
+        <span class="sp-pill sp-pill--gray">Off</span>
+      {% endif %}
+    </div>
+    <div class="sp-card__sub" style="margin-top:0.5rem;">
+      <a href="{% url 'staff:popups' %}" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">Manage &rarr;</a>
+    </div>
+  </div>
+
+  <div class="sp-card">
     <div class="sp-card__label">New Inquiries</div>
     <div class="sp-card__value" style="{% if new_inquiry_count %}color:#c9972a;{% endif %}">{{ new_inquiry_count }}</div>
     <div class="sp-card__sub">

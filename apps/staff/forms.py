@@ -1,6 +1,7 @@
 from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget
 
+from apps.core.models import SitePopup
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter
@@ -32,4 +33,22 @@ class NewsletterForm(forms.ModelForm):
         fields = ['subject', 'body']
         widgets = {
             'body': CKEditor5Widget(config_name='newsletter', attrs={'required': True}),
+        }
+
+
+class PopupForm(forms.ModelForm):
+    class Meta:
+        model = SitePopup
+        fields = [
+            'title', 'heading', 'body',
+            'cta_label', 'cta_url',
+            'image',
+            'bg_color', 'text_color', 'accent_color',
+            'show_delay',
+        ]
+        widgets = {
+            'body':         forms.Textarea(attrs={'rows': 4}),
+            'bg_color':     forms.TextInput(attrs={'type': 'color'}),
+            'text_color':   forms.TextInput(attrs={'type': 'color'}),
+            'accent_color': forms.TextInput(attrs={'type': 'color'}),
         }

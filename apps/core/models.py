@@ -608,4 +608,41 @@ class EventInquiry(TimeStampedModel):
     def __str__(self):
         return f"{self.name} — {self.get_event_type_display()} ({self.preferred_date or 'date TBD'})"
 
-        return result
+
+# =============================================================================
+# SITE POPUP
+# =============================================================================
+
+class SitePopup(TimeStampedModel):
+    title       = models.CharField(max_length=100, help_text="Internal name — not shown to visitors")
+    heading     = models.CharField(max_length=200)
+    body        = models.TextField(blank=True)
+    cta_label   = models.CharField(max_length=100, blank=True, verbose_name="Button label")
+    cta_url     = models.URLField(blank=True, verbose_name="Button URL")
+    image       = models.ImageField(upload_to='popups/', blank=True, null=True)
+    bg_color    = models.CharField(max_length=20, default='#1a1a1a', verbose_name="Background colour")
+    text_color  = models.CharField(max_length=20, default='#ffffff', verbose_name="Text colour")
+    accent_color = models.CharField(max_length=20, default='#c9972a', verbose_name="Accent/button colour")
+    show_delay  = models.PositiveIntegerField(default=2, help_text="Seconds before the popup appears")
+    is_active   = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Site Popup'
+        verbose_name_plural = 'Site Popups'
+
+    def __str__(self):
+        return self.title
+
+    def activate(self):
+        SitePopup.objects.exclude(pk=self.pk).update(is_active=False)
+        self.is_active = True
+        self.save(update_fields=['is_active'])
+
+    def deactivate(self):
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+
+    @classmethod
+    def get_active(cls):
+        return cls.objects.filter(is_active=True).first()
