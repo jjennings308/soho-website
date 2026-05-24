@@ -11,46 +11,49 @@
 {% load menu_filters menu_tags %}
 
 {% with item=assignment.menu_item %}
-<div class="rounded-lg shadow p-4 flex flex-col gap-2"
+{% get_primary_media item as primary_image %}
+
+<div class="rounded-lg shadow flex gap-3 p-4"
      style="background-color: var(--color-promo-bg); filter: brightness(1.1);">
 
-  {# ── Item image ── #}
-  {% get_primary_media item as primary_image %}
   {% if primary_image %}
-    <img
-      src="{{ primary_image.file.url }}"
-      alt="{{ primary_image.alt_text|default:item.name }}"
-      class="w-full h-36 object-cover rounded"
-    >
+    <div class="shrink-0 w-16 h-16 rounded overflow-hidden">
+      <img
+        src="{{ primary_image.file.url }}"
+        alt="{{ primary_image.alt_text|default:item.name }}"
+        class="w-full h-full object-cover"
+        loading="lazy"
+      >
+    </div>
   {% endif %}
 
-  {# ── Name + price ── #}
-  <div class="flex justify-between items-start gap-2">
-    <h4 class="font-semibold text-base leading-tight"
-        style="color: var(--color-promo-text);">
-      {{ item.name }}
-      {% if assignment.note %}
-        <span class="ml-1 t-badge badge-seasonal">{{ assignment.note }}</span>
-      {% endif %}
-    </h4>
-    <span class="font-bold shrink-0 text-sm"
-          style="color: var(--color-promo-accent);">
-      {% if item.is_on_sale and not assignment.override_price %}
-        <span class="line-through text-xs opacity-60">{{ item.price|currency }}</span>
-        {{ item.sale_price|currency }}
-      {% else %}
-        {{ assignment.display_price }}
-      {% endif %}
-    </span>
+  <div class="flex-1 min-w-0">
+    <div class="flex justify-between items-start gap-2 mb-1">
+      <h4 class="font-semibold text-base leading-tight"
+          style="color: var(--color-promo-text);">
+        {{ item.name }}
+        {% if assignment.note %}
+          <span class="ml-1 t-badge badge-seasonal">{{ assignment.note }}</span>
+        {% endif %}
+      </h4>
+      <span class="font-bold shrink-0 text-sm"
+            style="color: var(--color-promo-accent);">
+        {% if item.is_on_sale and not assignment.override_price %}
+          <span class="line-through text-xs opacity-60">{{ item.price|currency }}</span>
+          {{ item.sale_price|currency }}
+        {% else %}
+          {{ assignment.display_price }}
+        {% endif %}
+      </span>
+    </div>
+
+    {% if item.short_description %}
+      <p class="text-sm leading-snug opacity-80"
+         style="color: var(--color-promo-text);">
+        {{ item.short_description|truncatechars:100 }}
+      </p>
+    {% endif %}
   </div>
-
-  {# ── Short description ── #}
-  {% if item.short_description %}
-    <p class="text-sm leading-snug opacity-80"
-       style="color: var(--color-promo-text);">
-      {{ item.short_description|truncatechars:100 }}
-    </p>
-  {% endif %}
 
 </div>
 {% endwith %}
