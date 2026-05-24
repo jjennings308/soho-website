@@ -1,30 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Confirm your subscription</title>
-</head>
-<body style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #222;">
-  <p>Hi {{ member.first_name }},</p>
+{% extends "emails/base_email.html" %}
 
-  <p>It looks like you signed up for the SoHo Pittsburgh email list. Please confirm your subscription by clicking the button below.</p>
+{% block subject %}Confirm your subscription — SoHo Pittsburgh{% endblock %}
 
-  <p style="text-align: center; margin: 32px 0;">
-    <a href="{{ confirm_url }}"
-       style="background-color: #1a1a1a; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 4px; font-weight: bold; display: inline-block;">
-      Confirm Subscription
-    </a>
+{% block body %}
+  <h1 style="margin:0 0 20px 0;font-size:22px;font-weight:normal;color:#1a1a1a;font-family:Georgia,serif;">Confirm your subscription</h1>
+
+  <p style="margin:0 0 16px 0;font-size:16px;color:#333333;line-height:1.7;font-family:Georgia,serif;">Hi {{ member.first_name }},</p>
+
+  <p style="margin:0 0 24px 0;font-size:16px;color:#333333;line-height:1.7;font-family:Georgia,serif;">
+    It looks like you signed up for the SoHo Pittsburgh email list. Click the button below to confirm your subscription.
   </p>
 
-  <p>Or copy and paste this link into your browser:</p>
-  <p style="word-break: break-all; color: #555;">{{ confirm_url }}</p>
+  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+    <tr>
+      <td align="center" style="padding:8px 0 24px 0;">
+        <a href="{{ confirm_url }}"
+           style="display:inline-block;background-color:#c9972a;color:#ffffff;text-decoration:none;padding:13px 32px;font-size:13px;letter-spacing:0.1em;text-transform:uppercase;font-family:sans-serif;font-weight:600;">
+          Confirm Subscription
+        </a>
+      </td>
+    </tr>
+  </table>
 
-  <p>If you didn't sign up, you can safely ignore this email.</p>
+  <p style="margin:0 0 8px 0;font-size:13px;color:#888888;font-family:sans-serif;">Or copy and paste this link into your browser:</p>
+  <p style="margin:0 0 24px 0;font-size:13px;color:#888888;word-break:break-all;font-family:sans-serif;">{{ confirm_url }}</p>
 
-  <hr style="border: none; border-top: 1px solid #eee; margin: 32px 0;">
-  <p style="color: #999; font-size: 12px;">
-    SoHo Pittsburgh &mdash; 203 Federal St, Pittsburgh, PA 15212
+  <p style="margin:0;font-size:14px;color:#aaaaaa;line-height:1.6;font-family:sans-serif;">
+    If you didn't sign up, you can safely ignore this email.
   </p>
-</body>
-</html>
+{% endblock %}

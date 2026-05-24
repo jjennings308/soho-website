@@ -1,28 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="UTF-8"><title>We received your inquiry</title></head>
-<body style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#222;">
-  <h2 style="color:#c9972a;">Thanks, {{ inquiry.name }}!</h2>
-  <p style="line-height:1.7;">We received your event inquiry and will be in touch via <strong>{{ inquiry.get_preferred_contact_display|lower }}</strong> shortly.</p>
-  <p style="line-height:1.7;">Here's a summary of what you submitted:</p>
+{% extends "emails/base_email.html" %}
 
-  <table style="width:100%;border-collapse:collapse;font-size:0.9rem;margin-top:1rem;">
-    <tr><td style="padding:6px 0;color:#888;width:160px;">Event Type</td><td style="padding:6px 0;">{{ inquiry.get_event_type_display }}</td></tr>
-    <tr><td style="padding:6px 0;color:#888;">Preferred Date</td><td style="padding:6px 0;">{{ inquiry.preferred_date|default:"Not specified" }}</td></tr>
-    <tr><td style="padding:6px 0;color:#888;">Guest Count</td><td style="padding:6px 0;">{{ inquiry.guest_count|default:"Not specified" }}</td></tr>
-    <tr><td style="padding:6px 0;color:#888;">Menu Preference</td><td style="padding:6px 0;">{{ inquiry.get_menu_preference_display }}</td></tr>
+{% block subject %}We received your inquiry — SoHo Pittsburgh{% endblock %}
+
+{% block body %}
+  <h1 style="margin:0 0 20px 0;font-size:22px;font-weight:normal;color:#1a1a1a;font-family:Georgia,serif;">Thanks, {{ inquiry.name }}!</h1>
+
+  <p style="margin:0 0 16px 0;font-size:16px;color:#333333;line-height:1.7;font-family:Georgia,serif;">
+    We received your event inquiry and will be in touch via <strong>{{ inquiry.get_preferred_contact_display|lower }}</strong> shortly.
+  </p>
+
+  <p style="margin:0 0 16px 0;font-size:15px;color:#555555;font-family:sans-serif;">Here's a summary of what you submitted:</p>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;font-family:sans-serif;margin-bottom:24px;">
+    <tr>
+      <td style="padding:8px 0;color:#888888;width:160px;border-bottom:1px solid #f0ede8;">Event Type</td>
+      <td style="padding:8px 0;color:#1a1a1a;border-bottom:1px solid #f0ede8;">{{ inquiry.get_event_type_display }}</td>
+    </tr>
+    <tr>
+      <td style="padding:8px 0;color:#888888;border-bottom:1px solid #f0ede8;">Preferred Date</td>
+      <td style="padding:8px 0;color:#1a1a1a;border-bottom:1px solid #f0ede8;">{{ inquiry.preferred_date|default:"Not specified" }}</td>
+    </tr>
+    <tr>
+      <td style="padding:8px 0;color:#888888;border-bottom:1px solid #f0ede8;">Guest Count</td>
+      <td style="padding:8px 0;color:#1a1a1a;border-bottom:1px solid #f0ede8;">{{ inquiry.guest_count|default:"Not specified" }}</td>
+    </tr>
+    <tr>
+      <td style="padding:8px 0;color:#888888;">Menu Preference</td>
+      <td style="padding:8px 0;color:#1a1a1a;">{{ inquiry.get_menu_preference_display }}</td>
+    </tr>
   </table>
 
   {% if inquiry.message %}
-    <p style="margin-top:1rem;line-height:1.6;color:#555;font-style:italic;">"{{ inquiry.message }}"</p>
+    <p style="margin:0 0 24px 0;font-size:15px;color:#555555;line-height:1.7;font-style:italic;font-family:Georgia,serif;">"{{ inquiry.message }}"</p>
   {% endif %}
 
-  <p style="margin-top:1.5rem;line-height:1.7;color:#555;">
+  <p style="margin:0;font-size:15px;color:#555555;line-height:1.7;font-family:Georgia,serif;">
     If you have any questions in the meantime, feel free to call us or stop by.<br>
     We look forward to hosting your event!
   </p>
-
-  <hr style="border:none;border-top:1px solid #eee;margin:1.5rem 0;">
-  <p style="color:#999;font-size:0.8rem;">SoHo Pittsburgh &mdash; 203 Federal St, Pittsburgh, PA 15212</p>
-</body>
-</html>
+{% endblock %}

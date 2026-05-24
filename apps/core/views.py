@@ -201,7 +201,7 @@ class EventInquiryView(View):
         )
 
         site = SiteSettings.load()
-        restaurant_email = site.email
+        restaurant_email = site.notification_email or site.email
 
         # Notification to restaurant
         if restaurant_email:

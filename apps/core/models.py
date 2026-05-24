@@ -169,6 +169,10 @@ class SiteSettings(models.Model):
     )
     phone = models.CharField(validators=[phone_regex], max_length=17, blank=True)
     email = models.EmailField(blank=True)
+    notification_email = models.EmailField(
+        blank=True,
+        help_text="Internal address for staff alerts (new inquiries, etc.). Falls back to the contact email above if blank."
+    )
 
     address_line1 = models.CharField(max_length=200, blank=True)
     address_line2 = models.CharField(max_length=200, blank=True)
