@@ -1,7 +1,5 @@
 from django.contrib import admin
-from django.contrib.contenttypes.admin import GenericTabularInline
 from django.utils.html import format_html
-from media_manager.models import Media
 from .models import EventInquiry, SitePopup, SiteSettings, Banner, BannerButton, PanelSide
 
 
@@ -73,7 +71,7 @@ class BannerAdmin(admin.ModelAdmin):
             )
         }),
         ('Appearance', {
-            'fields': ('bg_color', 'text_color', 'image', 'image_opacity', 'image_only'),
+            'fields': ('bg_color', 'text_color', 'image', 'image_alt', 'image_opacity', 'image_only'),
         }),
     )
 
@@ -96,7 +94,7 @@ class PanelSideAdmin(admin.ModelAdmin):
             'description': 'Slug is set on creation and cannot be changed.'
         }),
         ('Image Mode', {
-            'fields': ('image', 'image_fallback_url', 'bg_color'),
+            'fields': ('image', 'image_alt', 'image_fallback_url', 'bg_color'),
             'description': 'Used when mode is set to Full Image.',
             'classes': ('collapse',),
         }),

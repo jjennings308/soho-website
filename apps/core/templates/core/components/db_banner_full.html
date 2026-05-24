@@ -4,8 +4,8 @@
 
     {% if banner.image %}
     <div class="absolute inset-0 overflow-hidden">
-        <img src="{{ banner.image.file.url }}"
-            alt="{{ banner.image.alt_text|default:'' }}"
+        <img src="{{ banner.image.url }}"
+            alt="{{ banner.image_alt|default:'' }}"
             class="w-full h-full object-cover transition-transform duration-700 ease-in-out hover:scale-110"
             style="opacity: {{ banner.image_opacity|default:'0.4' }};">
     </div>

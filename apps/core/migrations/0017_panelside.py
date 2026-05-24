@@ -9,7 +9,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('content', '0001_initial'),
         ('core', '0016_alter_banner_bg_color_alter_banner_text_color_and_more'),
-        ('media_manager', '0001_initial'),
     ]
 
     operations = [
@@ -30,7 +29,8 @@ class Migration(migrations.Migration):
                 ('image_fallback_url', models.CharField(blank=True, help_text="Static fallback path if no media manager image is set, e.g. '/static/img/front_door.webp'.", max_length=500)),
                 ('is_active', models.BooleanField(default=True)),
                 ('content_slot', models.ForeignKey(blank=True, help_text='Optional ContentSlot for body copy. Active block is resolved at render time.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='panel_sides', to='content.contentslot')),
-                ('image', models.ForeignKey(blank=True, help_text="Full-bleed image. Used when mode is 'image'.", null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='panel_sides', to='media_manager.media')),
+                ('image', models.ImageField(blank=True, null=True, upload_to='panels/')),
+                ('image_alt', models.CharField(blank=True, max_length=255)),
             ],
             options={
                 'verbose_name': 'Panel Side',

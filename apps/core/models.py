@@ -275,14 +275,12 @@ class Banner(TimeStampedModel):
         choices=BANNER_COLOR_CHOICES,
         default='text-primary',
     )
-    image = models.ForeignKey(
-        'media_manager.Media',
+    image = models.ImageField(
+        upload_to='banners/',
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,
-        related_name='banners',
-        help_text="Background image pulled from the media manager."
     )
+    image_alt = models.CharField(max_length=255, blank=True)
     image_opacity = models.DecimalField(
         max_digits=3,
         decimal_places=2,
@@ -438,18 +436,16 @@ class PanelSide(TimeStampedModel):
     )
 
     # ── Image mode fields ─────────────────────────────────────────────────────
-    image = models.ForeignKey(
-        'media_manager.Media',
+    image = models.ImageField(
+        upload_to='panels/',
         null=True,
         blank=True,
-        on_delete=models.SET_NULL,
-        related_name='panel_sides',
-        help_text="Full-bleed image. Used when mode is 'image'."
     )
+    image_alt = models.CharField(max_length=255, blank=True)
     image_fallback_url = models.CharField(
         max_length=500,
         blank=True,
-        help_text="Static fallback path if no media manager image is set, e.g. '/static/img/front_door.webp'."
+        help_text="Static fallback path, e.g. '/static/img/front_door.webp'."
     )
 
     # ── Horizontal Align fields ─────────────────────────────────────────────────────

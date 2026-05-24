@@ -3,7 +3,6 @@ from django.core.validators import MinValueValidator
 from django.utils import timezone
 from decimal import Decimal
 from django_ckeditor_5.fields import CKEditor5Field
-from django.contrib.contenttypes.fields import GenericRelation
 from apps.core.models import ColorScheme, TimeStampedModel, ScheduledModel, RecurrenceMixin
 
 
@@ -54,11 +53,6 @@ class MenuCategory(TimeStampedModel):
     show_disclaimer = models.BooleanField(
         default=False,
         help_text="Show the menu footer disclaimer at the bottom of this category section."
-    )
-
-    media = GenericRelation(
-        'media_manager.Media',
-        related_query_name='menu_category',
     )
 
     class Meta:
@@ -241,10 +235,8 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
         help_text="Time of day this item stops being available (e.g. 16:00 for 4pm). Leave blank for no restriction."
     )
     
-    media = GenericRelation(
-        'media_manager.Media',
-        related_query_name='menu_item',
-    )
+    image = models.ImageField(upload_to='menu_items/', null=True, blank=True)
+    image_alt = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ['name']
@@ -504,11 +496,6 @@ class Menu(RecurrenceMixin, ScheduledModel):
         through='MenuCategoryAssignment',
         related_name='menus',
         blank=True,
-    )
-
-    media = GenericRelation(
-        'media_manager.Media',
-        related_query_name='menu',
     )
 
     class Meta:

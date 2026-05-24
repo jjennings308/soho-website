@@ -8,7 +8,6 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('core', '0013_alter_sitesettings_active_theme_and_more'),
-        ('media_manager', '0001_initial'),
     ]
 
     operations = [
@@ -40,7 +39,8 @@ class Migration(migrations.Migration):
                 ('image_opacity', models.DecimalField(decimal_places=2, default=0.4, help_text='0.00 = invisible, 1.00 = full opacity.', max_digits=3)),
                 ('image_only', models.BooleanField(default=False, help_text='When checked, all text and buttons are hidden — image background only.')),
                 ('is_active', models.BooleanField(default=True)),
-                ('image', models.ForeignKey(blank=True, help_text='Background image pulled from the media manager.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='banners', to='media_manager.media')),
+                ('image', models.ImageField(blank=True, null=True, upload_to='banners/')),
+                ('image_alt', models.CharField(blank=True, max_length=255)),
             ],
             options={
                 'verbose_name': 'Banner',

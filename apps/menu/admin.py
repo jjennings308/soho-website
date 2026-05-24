@@ -1,7 +1,5 @@
 from django.contrib import admin
-from django.contrib.contenttypes.admin import GenericTabularInline
 from django.utils.html import format_html, mark_safe
-from media_manager.models import Media
 from apps.core.forms import DaysOfWeekField
 from django import forms
 from apps.core.models import ColorScheme
@@ -12,29 +10,6 @@ from .models import (
     Menu, MenuCategoryAssignment,
     PromoSettings,
 )
-
-
-# =============================================================================
-# SHARED HELPERS
-# =============================================================================
-
-class MenuMediaInline(GenericTabularInline):
-    model = Media
-    ct_field = 'content_type'
-    ct_fk_field = 'object_id'
-    extra = 1
-    fields = ['file', 'title', 'alt_text', 'is_featured', 'display_order', 'category']
-
-
-def _save_media_formset(request, formset):
-    """Shared helper — stamps uploaded_by on new Media instances."""
-    instances = formset.save(commit=False)
-    for instance in instances:
-        if isinstance(instance, Media) and not instance.pk:
-            instance.uploaded_by = request.user
-            instance.is_user_generated = False
-        instance.save()
-    formset.save_m2m()
 
 
 def _color_swatch(hex_value):
@@ -121,10 +96,7 @@ class MenuCategoryAdmin(admin.ModelAdmin):
     list_filter   = ['category_type', 'is_active']
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
-    inlines = [CategoryItemAssignmentInline, MenuMediaInline]
-
-    def save_formset(self, request, form, formset, change):
-        _save_media_formset(request, formset)
+    inlines = [CategoryItemAssignmentInline]
 
     @admin.display(description='Menus using this')
     def assigned_menu_count(self, obj):
@@ -206,15 +178,14 @@ class MenuItemAdmin(admin.ModelAdmin):
         MenuItemVariationInline,
         MenuItemAddonInline,
         MenuItemCategoryAssignmentInline,
-        MenuMediaInline,
     ]
-
-    def save_formset(self, request, form, formset, change):
-        _save_media_formset(request, formset)
 
     fieldsets = (
         ('Identity', {
             'fields': ('name', 'slug', 'short_description', 'description'),
+        }),
+        ('Image', {
+            'fields': ('image', 'image_alt'),
         }),
         ('Pricing', {
             'fields': ('price_display', 'price', 'sale_price', 'has_variations', 'has_addons'),
@@ -419,10 +390,7 @@ class MenuAdmin(admin.ModelAdmin):
     search_fields = ['title']
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ['resolved_palette_preview']
-    inlines = [MenuCategoryAssignmentInline, MenuMediaInline]
-
-    def save_formset(self, request, form, formset, change):
-        _save_media_formset(request, formset)
+    inlines = [MenuCategoryAssignmentInline]
 
     fieldsets = (
         ('Identity', {

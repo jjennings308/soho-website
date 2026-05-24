@@ -39,9 +39,6 @@ INSTALLED_APPS = [
     'easy_thumbnails',
     'taggit',
     
-    # My Repo
-    'media_manager',
-
     # Local apps
     'apps.core',
     'apps.menu',
