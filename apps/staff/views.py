@@ -292,6 +292,16 @@ class NewsletterSendView(StaffRequiredMixin, View):
         return redirect('staff:newsletter_detail', pk=pk)
 
 
+class NewsletterCopyView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        original = get_object_or_404(Newsletter, pk=pk)
+        copy = Newsletter.objects.create(
+            subject=f'Copy of {original.subject}',
+            body=original.body,
+        )
+        return redirect('staff:newsletter_edit', pk=copy.pk)
+
+
 class NewsletterDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
         newsletter = get_object_or_404(Newsletter, pk=pk, sent_at__isnull=True)

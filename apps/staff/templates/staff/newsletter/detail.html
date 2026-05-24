@@ -27,8 +27,12 @@
       {% if newsletter.is_draft %}
         <span class="sp-pill sp-pill--gray">Draft</span>
         <span style="font-size:0.875rem;color:#888;">{{ subscriber_count }} subscriber{{ subscriber_count|pluralize }} will receive this.</span>
-        <div style="display:flex;gap:0.75rem;margin-left:auto;">
+        <div style="display:flex;gap:0.75rem;margin-left:auto;align-items:center;">
           <a href="{% url 'staff:newsletter_edit' newsletter.pk %}" class="sp-btn sp-btn--outline sp-btn--sm">Edit</a>
+          <form method="post" action="{% url 'staff:newsletter_copy' newsletter.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="sp-btn sp-btn--outline sp-btn--sm">Duplicate</button>
+          </form>
           <form method="post" action="{% url 'staff:newsletter_send' newsletter.pk %}"
                 onsubmit="return confirm('Send this newsletter to {{ subscriber_count }} subscriber{{ subscriber_count|pluralize }}?')">
             {% csrf_token %}
@@ -41,6 +45,10 @@
           Sent {{ newsletter.sent_at|date:"M j, Y g:i A" }} to {{ newsletter.recipient_count }} subscriber{{ newsletter.recipient_count|pluralize }}
           {% if newsletter.sent_by %}by {{ newsletter.sent_by.get_full_name|default:newsletter.sent_by.username }}{% endif %}.
         </span>
+        <form method="post" action="{% url 'staff:newsletter_copy' newsletter.pk %}" style="margin-left:auto;">
+          {% csrf_token %}
+          <button type="submit" class="sp-btn sp-btn--outline sp-btn--sm">Duplicate</button>
+        </form>
       {% endif %}
     </div>
   </div>
