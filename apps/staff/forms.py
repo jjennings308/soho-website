@@ -28,6 +28,15 @@ class GalleryUploadForm(forms.ModelForm):
         fields = ['image', 'caption', 'category', 'menu_item', 'display_order']
 
 
+class GalleryEditForm(forms.ModelForm):
+    class Meta:
+        model = GalleryItem
+        fields = ['caption', 'category', 'menu_item', 'display_order', 'is_published']
+        widgets = {
+            'display_order': forms.NumberInput(attrs={'min': 0}),
+        }
+
+
 class NewsletterForm(forms.ModelForm):
     class Meta:
         model = Newsletter

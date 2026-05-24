@@ -1,0 +1,83 @@
+{% extends "staff/base.html" %}
+{% block title %}Edit Photo{% endblock %}
+{% block page_title %}Edit Photo{% endblock %}
+{% block topbar_actions %}
+  <a href="{% url 'staff:gallery' %}" class="sp-btn sp-btn--outline">← Back to Gallery</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;">
+  <div class="sp-card">
+
+    {# Thumbnail preview #}
+    {% if item.image %}
+    <div style="margin-bottom:1.5rem;">
+      <img src="{{ item.image.url }}" alt="{{ item.effective_caption }}"
+           style="width:100%;max-height:280px;object-fit:cover;border-radius:4px;">
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="sp-field">
+        <label class="sp-label">Caption</label>
+        <input class="sp-input" type="text" name="caption"
+               value="{{ form.caption.value|default:'' }}"
+               placeholder="Optional caption shown in the lightbox">
+        {% if form.caption.errors %}<div class="sp-field-error">{{ form.caption.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="sp-grid-2">
+        <div class="sp-field">
+          <label class="sp-label">Category</label>
+          <select class="sp-select" name="category">
+            <option value="">— None —</option>
+            {% for cat in form.fields.category.queryset %}
+              <option value="{{ cat.pk }}" {% if form.category.value|stringformat:"s" == cat.pk|stringformat:"s" %}selected{% endif %}>
+                {{ cat.name }}
+              </option>
+            {% endfor %}
+          </select>
+          {% if form.category.errors %}<div class="sp-field-error">{{ form.category.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="sp-field">
+          <label class="sp-label">Display Order</label>
+          <input class="sp-input" type="number" name="display_order" min="0"
+                 value="{{ form.display_order.value|default:'0' }}" style="max-width:120px;">
+          {% if form.display_order.errors %}<div class="sp-field-error">{{ form.display_order.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Linked Menu Item <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+        <select class="sp-select" name="menu_item">
+          <option value="">— None —</option>
+          {% for mi in form.fields.menu_item.queryset %}
+            <option value="{{ mi.pk }}" {% if form.menu_item.value|stringformat:"s" == mi.pk|stringformat:"s" %}selected{% endif %}>
+              {{ mi.name }}
+            </option>
+          {% endfor %}
+        </select>
+        {% if form.menu_item.errors %}<div class="sp-field-error">{{ form.menu_item.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="sp-field">
+        <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
+          <input type="checkbox" name="is_published"
+                 {% if form.is_published.value %}checked{% endif %}
+                 style="width:16px;height:16px;accent-color:#c9972a;">
+          <span class="sp-label" style="margin:0;">Published (visible on site)</span>
+        </label>
+        {% if form.is_published.errors %}<div class="sp-field-error">{{ form.is_published.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button type="submit" class="sp-btn sp-btn--primary">Save</button>
+        <a href="{% url 'staff:gallery' %}" class="sp-btn sp-btn--outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

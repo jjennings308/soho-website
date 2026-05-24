@@ -28,6 +28,7 @@ urlpatterns = [
     path('gallery/', views.GalleryListView.as_view(), name='gallery'),
     path('gallery/upload/', views.GalleryUploadView.as_view(), name='gallery_upload'),
     path('gallery/import/', views.GalleryImportView.as_view(), name='gallery_import'),
+    path('gallery/<int:pk>/edit/', views.GalleryEditView.as_view(), name='gallery_edit'),
     path('gallery/<int:pk>/toggle/', views.GalleryToggleView.as_view(), name='gallery_toggle'),
     path('gallery/<int:pk>/delete/', views.GalleryDeleteView.as_view(), name='gallery_delete'),
 

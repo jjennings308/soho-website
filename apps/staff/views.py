@@ -44,7 +44,7 @@ from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
 from apps.menu.models import PromoColorScheme
 
-from .forms import ColorSchemeForm, EventForm, GalleryUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
+from .forms import ColorSchemeForm, EventForm, GalleryEditForm, GalleryUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
 
 
 class StaffRequiredMixin(LoginRequiredMixin):
@@ -234,6 +234,24 @@ class GalleryDeleteView(StaffRequiredMixin, View):
         item = get_object_or_404(GalleryItem, pk=pk)
         item.delete()
         return redirect('staff:gallery')
+
+
+class GalleryEditView(StaffRequiredMixin, View):
+    def get(self, request, pk):
+        item = get_object_or_404(GalleryItem, pk=pk)
+        return render(request, 'staff/gallery/edit.html', {
+            'form': GalleryEditForm(instance=item),
+            'item': item,
+        })
+
+    def post(self, request, pk):
+        item = get_object_or_404(GalleryItem, pk=pk)
+        form = GalleryEditForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Photo updated.')
+            return redirect('staff:gallery')
+        return render(request, 'staff/gallery/edit.html', {'form': form, 'item': item})
 
 
 class GalleryImportView(StaffRequiredMixin, View):
