@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
@@ -7,6 +9,31 @@ from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
+
+
+def _prepare_newsletter_html(html, base_url):
+    """Make newsletter HTML safe for email clients."""
+    # Relative media URLs → absolute so email clients can load images
+    html = html.replace('src="/media/', f'src="{base_url}media/')
+    html = html.replace('href="/media/', f'href="{base_url}media/')
+
+    # CKEditor5 wraps resized images in <figure style="width:X%">.
+    # Email clients ignore figure styles, so move width onto the img tag.
+    def unwrap_figure(m):
+        figure_attrs = m.group(1)
+        content = m.group(2)
+        w = re.search(r'width\s*:\s*([\d.]+%)', figure_attrs)
+        width_style = f'width:{w.group(1)};' if w else ''
+        content = re.sub(
+            r'<img\b',
+            f'<img style="{width_style}max-width:100%;height:auto;"',
+            content,
+            count=1,
+        )
+        return content
+
+    html = re.sub(r'<figure\b([^>]*)>(.*?)</figure>', unwrap_figure, html, flags=re.DOTALL | re.IGNORECASE)
+    return html
 
 from apps.core.models import EventInquiry, SiteSettings
 from apps.events.models import EventDay
@@ -276,9 +303,7 @@ class NewsletterSendView(StaffRequiredMixin, View):
                     'member': member,
                     'unsubscribe_url': unsubscribe_url,
                 })
-                # Email clients can't resolve relative URLs — make media links absolute
-                html_body = html_body.replace('src="/media/', f'src="{base_url}media/')
-                html_body = html_body.replace('href="/media/', f'href="{base_url}media/')
+                html_body = _prepare_newsletter_html(html_body, base_url)
                 msg = EmailMessage(
                     subject=newsletter.subject,
                     body=html_body,
