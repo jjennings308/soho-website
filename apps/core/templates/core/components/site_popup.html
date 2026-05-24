@@ -56,7 +56,11 @@
       {% endif %}
 
       {% if site_popup.show_subscribe_form %}
-        <div data-subscribe-widget>
+        <style>
+          #popup-subscribe-widget .flex { flex-direction: column !important; }
+          #popup-subscribe-widget button[type=submit] { width: 100%; }
+        </style>
+        <div id="popup-subscribe-widget" data-subscribe-widget>
           {% include 'members/partials/subscribe_form.html' %}
         </div>
       {% elif site_popup.cta_label and site_popup.cta_url %}
