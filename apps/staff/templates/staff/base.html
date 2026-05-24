@@ -62,12 +62,24 @@
     .sp-nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
     .sp-nav a.active { color: #fff; border-left-color: var(--color-gold-primary, #c9972a); background: rgba(255,255,255,0.07); }
     .sp-nav__section {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
       font-size: 0.6rem;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: rgba(255,255,255,0.3);
-      padding: 1rem 1.25rem 0.4rem;
+      padding: 0.85rem 1.25rem 0.35rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: color 0.15s;
     }
+    .sp-nav__section:hover { color: rgba(255,255,255,0.55); }
+    .sp-nav__section .sp-chevron { font-size: 0.55rem; transition: transform 0.2s; }
+    .sp-nav__section-links a { padding: 0.55rem 1.25rem 0.55rem 1.75rem; }
     .sp-sidebar__footer {
       padding: 1rem 1.25rem;
       border-top: 1px solid rgba(255,255,255,0.08);
@@ -250,41 +262,62 @@
           &#9632; Dashboard
         </a>
 
-        <div class="sp-nav__section">Operations</div>
-        <a href="{% url 'staff:menu_mode' %}" class="{% if 'menu_mode' in request.resolver_match.url_name %}active{% endif %}">
-          &#9670; Menu Mode
-        </a>
-        <a href="{% url 'staff:events' %}" class="{% if 'event' in request.resolver_match.url_name %}active{% endif %}">
-          &#9670; Events
-        </a>
+        {# Operations #}
+        <div x-data="navSection('ops', true)">
+          <button class="sp-nav__section" @click="toggle()">
+            <span>Operations</span>
+            <span class="sp-chevron" :style="open ? '' : 'transform:rotate(-90deg)'">&#9660;</span>
+          </button>
+          <div class="sp-nav__section-links" x-show="open" x-transition x-ref="links">
+            <a href="{% url 'staff:menu_mode' %}" class="{% if 'menu_mode' in request.resolver_match.url_name %}active{% endif %}">
+              &#9670; Menu Mode
+            </a>
+            <a href="{% url 'staff:events' %}" class="{% if 'event' in request.resolver_match.url_name %}active{% endif %}">
+              &#9670; Events
+            </a>
+          </div>
+        </div>
 
-        <div class="sp-nav__section">Content</div>
-        <a href="{% url 'staff:inquiries' %}" class="{% if 'inquir' in request.resolver_match.url_name %}active{% endif %}">
-          &#9670; Inquiries
-        </a>
-        <a href="{% url 'staff:gallery' %}" class="{% if 'gallery' in request.resolver_match.url_name %}active{% endif %}">
-          &#9670; Gallery
-        </a>
-        <a href="{% url 'staff:newsletter' %}" class="{% if 'newsletter' in request.resolver_match.url_name %}active{% endif %}">
-          &#9670; Newsletter
-        </a>
+        {# Content #}
+        <div x-data="navSection('content', true)">
+          <button class="sp-nav__section" @click="toggle()">
+            <span>Content</span>
+            <span class="sp-chevron" :style="open ? '' : 'transform:rotate(-90deg)'">&#9660;</span>
+          </button>
+          <div class="sp-nav__section-links" x-show="open" x-transition x-ref="links">
+            <a href="{% url 'staff:inquiries' %}" class="{% if 'inquir' in request.resolver_match.url_name %}active{% endif %}">
+              &#9670; Inquiries
+            </a>
+            <a href="{% url 'staff:gallery' %}" class="{% if 'gallery' in request.resolver_match.url_name %}active{% endif %}">
+              &#9670; Gallery
+            </a>
+            <a href="{% url 'staff:newsletter' %}" class="{% if 'newsletter' in request.resolver_match.url_name %}active{% endif %}">
+              &#9670; Newsletter
+            </a>
+            <a href="{% url 'staff:popups' %}" class="{% if 'popup' in request.resolver_match.url_name %}active{% endif %}">
+              &#9670; Popups
+            </a>
+          </div>
+        </div>
 
-        <a href="{% url 'staff:popups' %}" class="{% if 'popup' in request.resolver_match.url_name %}active{% endif %}">
-          &#9670; Popups
-        </a>
-
-        <div class="sp-nav__section">Tools</div>
-        <a href="https://analytics.tazcomputer.com" target="_blank" rel="noopener">
-          &#9670; Analytics &#8599;
-        </a>
-        <a href="{% url 'core:home' %}" target="_blank" rel="noopener">
-          &#9670; View Site &#8599;
-        </a>
-
-        <div class="sp-nav__section">Admin</div>
-        <a href="{% url 'staff:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
-          &#9670; Settings
-        </a>
+        {# Tools #}
+        <div x-data="navSection('tools', true)">
+          <button class="sp-nav__section" @click="toggle()">
+            <span>Tools</span>
+            <span class="sp-chevron" :style="open ? '' : 'transform:rotate(-90deg)'">&#9660;</span>
+          </button>
+          <div class="sp-nav__section-links" x-show="open" x-transition x-ref="links">
+            <a href="https://analytics.tazcomputer.com" target="_blank" rel="noopener">
+              &#9670; Analytics &#8599;
+            </a>
+            <a href="{% url 'core:home' %}" target="_blank" rel="noopener">
+              &#9670; View Site &#8599;
+            </a>
+            <a href="{% url 'staff:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+              &#9670; Settings
+            </a>
+          </div>
+        </div>
       </div>
 
       <div class="sp-sidebar__footer">
@@ -321,6 +354,23 @@
 
   </div>
 
+  <script>
+  function navSection(key, defaultOpen) {
+    return {
+      open: true,
+      init() {
+        const stored = localStorage.getItem('nav_' + key);
+        const hasActive = this.$el.querySelector('a.active') !== null;
+        // Always open the section containing the current page; otherwise use stored or default.
+        this.open = hasActive ? true : (stored !== null ? stored === '1' : defaultOpen);
+      },
+      toggle() {
+        this.open = !this.open;
+        localStorage.setItem('nav_' + key, this.open ? '1' : '0');
+      },
+    };
+  }
+  </script>
   <script src="{% static 'js/alpine.min.js' %}" defer></script>
   {% block extra_js %}{% endblock %}
 </body>
