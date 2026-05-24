@@ -24,7 +24,10 @@
       {% if hero_banner and hero_banner.image %}
         <img src="{{ hero_banner.image.file.url }}"
              alt="{{ hero_banner.image.alt_text|default:'' }}"
-             style="max-width:100%;height:auto;display:block;margin-bottom:1rem;">
+             style="max-width:100%;height:auto;display:block;margin-bottom:1rem;
+                    transition:transform 0.5s ease;"
+             onmouseover="this.style.transform='scale(1.08)'"
+             onmouseout="this.style.transform='scale(1)'">
       {% endif %}
       {% if hero_banner.title %}
         <h1 class="text-4xl font-bold mb-4"
