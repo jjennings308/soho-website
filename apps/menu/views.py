@@ -63,7 +63,6 @@ def _item_assignment_qs(limited_menu=False):
                 is_available=True
             ).order_by('order', 'price'),
         ),
-        'menu_item__media',
     ).order_by('subcategory__order', 'order')
 
     if limited_menu:

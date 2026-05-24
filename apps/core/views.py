@@ -64,7 +64,6 @@ def _build_promo_grid(menu):
                 menu_item__is_available=True,
             )
             .select_related('menu_item', 'subcategory')
-            .prefetch_related('menu_item__media')
             .order_by('subcategory__order', 'order')[:remaining]
         )
 
@@ -95,7 +94,6 @@ def _get_random_promo_item(menu):
             menu_item__is_available=True,
         )
         .select_related('menu_item', 'category')
-        .prefetch_related('menu_item__media')
         .order_by('?')
     )
     return qs.first()
