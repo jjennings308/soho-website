@@ -9,7 +9,7 @@ from .models import (
     MenuItem, MenuItemVariation, MenuItemAddon,
     MenuItemCategoryAssignment,
     Menu, MenuCategoryAssignment,
-    PromoColorScheme, PromoSettings,
+    ColorScheme, PromoSettings,
 )
 
 
@@ -256,8 +256,8 @@ class MenuItemAdmin(admin.ModelAdmin):
 # COLOR SCHEME
 # =============================================================================
 
-@admin.register(PromoColorScheme)
-class PromoColorSchemeAdmin(admin.ModelAdmin):
+@admin.register(ColorScheme)
+class ColorSchemeAdmin(admin.ModelAdmin):
     list_display  = ['name', 'palette_preview', 'is_default', 'menu_count', 'updated_at']
     list_editable = ['is_default']
     readonly_fields = ['palette_detail', 'created_at', 'updated_at']
@@ -461,7 +461,7 @@ class MenuAdmin(admin.ModelAdmin):
     def scheme_preview(self, obj):
         scheme = obj.color_scheme
         if scheme is None:
-            scheme = PromoColorScheme.objects.filter(is_default=True).first()
+            scheme = ColorScheme.objects.filter(is_default=True).first()
         if scheme is None:
             return '—'
         preview = _palette_preview(
@@ -480,7 +480,7 @@ class MenuAdmin(admin.ModelAdmin):
         if obj.color_scheme_id:
             source = obj.color_scheme.name
         else:
-            default_scheme = PromoColorScheme.objects.filter(is_default=True).first()
+            default_scheme = ColorScheme.objects.filter(is_default=True).first()
             source = (
                 f"{default_scheme.name} (default)"
                 if default_scheme else

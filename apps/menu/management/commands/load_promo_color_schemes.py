@@ -1,6 +1,6 @@
 """
 Management command: load_promo_color_schemes
-Seeds PromoColorScheme records for SoHo Pittsburgh.
+Seeds ColorScheme records for SoHo Pittsburgh.
 
 Usage:
     python manage.py load_promo_color_schemes
@@ -10,7 +10,7 @@ The default scheme (SoHo Black & Gold) is always enforced on every run.
 """
 
 from django.core.management.base import BaseCommand
-from apps.menu.models import PromoColorScheme
+from apps.menu.models import ColorScheme
 
 
 SCHEMES = [
@@ -155,7 +155,7 @@ SCHEMES = [
 
 
 class Command(BaseCommand):
-    help = 'Seeds PromoColorScheme records for SoHo Pittsburgh.'
+    help = 'Seeds ColorScheme records for SoHo Pittsburgh.'
 
     def handle(self, *args, **options):
         created_count = 0
@@ -163,7 +163,7 @@ class Command(BaseCommand):
 
         for data in SCHEMES:
             is_default = data.pop('is_default')
-            obj, created = PromoColorScheme.objects.get_or_create(
+            obj, created = ColorScheme.objects.get_or_create(
                 name=data['name'],
                 defaults={**data, 'is_default': is_default},
             )

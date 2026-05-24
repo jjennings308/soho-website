@@ -384,7 +384,7 @@ class MenuItemAddon(TimeStampedModel):
 # COLOR SCHEME  (unchanged — applies to any Menu)
 # =============================================================================
 
-class PromoColorScheme(TimeStampedModel):
+class ColorScheme(TimeStampedModel):
     """
     A named, reusable color palette assignable to any Menu.
     One scheme may be flagged as the default fallback.
@@ -430,7 +430,7 @@ class PromoColorScheme(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         if self.is_default:
-            PromoColorScheme.objects.exclude(pk=self.pk).filter(
+            ColorScheme.objects.exclude(pk=self.pk).filter(
                 is_default=True
             ).update(is_default=False)
         super().save(*args, **kwargs)
@@ -498,7 +498,7 @@ class Menu(RecurrenceMixin, ScheduledModel):
 
     Color resolution for non-default menus (resolve_colors()):
         1. This menu's assigned color_scheme FK
-        2. PromoColorScheme flagged is_default
+        2. ColorScheme flagged is_default
         3. PromoSettings singleton (legacy fallback)
     """
 
@@ -536,7 +536,7 @@ class Menu(RecurrenceMixin, ScheduledModel):
 
     # ── Color scheme (promos) ─────────────────────────────────────────────────
     color_scheme = models.ForeignKey(
-        PromoColorScheme,
+        ColorScheme,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -592,12 +592,12 @@ class Menu(RecurrenceMixin, ScheduledModel):
 
         Resolution order:
             1. This menu's assigned color_scheme FK
-            2. PromoColorScheme flagged is_default
+            2. ColorScheme flagged is_default
             3. PromoSettings singleton (legacy fallback)
         """
         scheme = self.color_scheme
         if scheme is None:
-            scheme = PromoColorScheme.objects.filter(is_default=True).first()
+            scheme = ColorScheme.objects.filter(is_default=True).first()
         if scheme is not None:
             return scheme.as_dict()
         defaults = PromoSettings.load()
