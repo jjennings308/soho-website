@@ -84,7 +84,7 @@ function sitePopup(id, delay) {
   return {
     open: false,
     init() {
-      if (!sessionStorage.getItem('popup_dismissed_' + id)) {
+      if (!localStorage.getItem('soho_subscribed') && !sessionStorage.getItem('popup_dismissed_' + id)) {
         setTimeout(() => { this.open = true; }, delay * 1000);
       }
     },

@@ -1,11 +1,11 @@
 {% if success %}
-  <div class="text-center py-6">
+  <div class="text-center py-6" data-subscribed="true">
     <p class="text-lg font-semibold text-brand-primary">Almost there!</p>
     <p class="mt-2 text-text-secondary">Check your email and click the confirmation link to complete your subscription.</p>
   </div>
 
 {% elif already_subscribed %}
-  <div class="text-center py-6">
+  <div class="text-center py-6" data-subscribed="true">
     <p class="text-text-secondary">You're already subscribed. Thanks for being part of the SoHo family!</p>
   </div>
 
@@ -14,9 +14,15 @@
         x-data="{ loading: false }"
         @submit.prevent="
           loading = true;
+          const widget = $el.closest('[data-subscribe-widget]');
           fetch($el.action, { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }, body: new FormData($el) })
             .then(r => r.text())
-            .then(html => { $el.closest('[data-subscribe-widget]').innerHTML = html; })
+            .then(html => {
+              widget.innerHTML = html;
+              if (widget.querySelector('[data-subscribed]')) {
+                localStorage.setItem('soho_subscribed', '1');
+              }
+            })
             .finally(() => { loading = false; });
         ">
     {% csrf_token %}
