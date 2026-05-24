@@ -280,6 +280,11 @@
         <a href="{% url 'core:home' %}" target="_blank" rel="noopener">
           &#9670; View Site &#8599;
         </a>
+
+        <div class="sp-nav__section">Admin</div>
+        <a href="{% url 'staff:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+          &#9670; Settings
+        </a>
       </div>
 
       <div class="sp-sidebar__footer">

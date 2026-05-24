@@ -1,0 +1,62 @@
+{% extends "staff/base.html" %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div style="max-width:600px;">
+  <div class="sp-card">
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="sp-card__label" style="margin-bottom:1.25rem;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#888;">
+        Notifications
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">{{ form.notification_email.label }}</label>
+        <input class="sp-input" type="email" name="notification_email"
+               value="{{ form.notification_email.value|default:'' }}"
+               placeholder="e.g. manager@sohopittsburgh.com">
+        <div style="font-size:0.75rem;color:#888;margin-top:0.3rem;">{{ form.fields.notification_email.help_text }}</div>
+        {% if form.notification_email.errors %}<div class="sp-field-error">{{ form.notification_email.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="border-top:1px solid #f0ede8;margin:1.5rem 0;"></div>
+
+      <div class="sp-card__label" style="margin-bottom:1.25rem;font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;color:#888;">
+        Contact &amp; Reservations
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">{{ form.email.label }}</label>
+        <input class="sp-input" type="email" name="email"
+               value="{{ form.email.value|default:'' }}"
+               placeholder="e.g. info@sohopittsburgh.com">
+        <div style="font-size:0.75rem;color:#888;margin-top:0.3rem;">{{ form.fields.email.help_text }}</div>
+        {% if form.email.errors %}<div class="sp-field-error">{{ form.email.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">{{ form.phone.label }}</label>
+        <input class="sp-input" type="text" name="phone"
+               value="{{ form.phone.value|default:'' }}"
+               placeholder="e.g. (412) 321-7646">
+        {% if form.phone.errors %}<div class="sp-field-error">{{ form.phone.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">{{ form.reservations_url.label }}</label>
+        <input class="sp-input" type="url" name="reservations_url"
+               value="{{ form.reservations_url.value|default:'' }}"
+               placeholder="https://…">
+        <div style="font-size:0.75rem;color:#888;margin-top:0.3rem;">{{ form.fields.reservations_url.help_text }}</div>
+        {% if form.reservations_url.errors %}<div class="sp-field-error">{{ form.reservations_url.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button type="submit" class="sp-btn sp-btn--primary">Save Settings</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

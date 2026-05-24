@@ -9,6 +9,7 @@ urlpatterns = [
     path('login/', views.StaffLoginView.as_view(), name='login'),
     path('logout/', views.StaffLogoutView.as_view(), name='logout'),
     path('', views.DashboardView.as_view(), name='dashboard'),
+    path('settings/', views.StaffSettingsView.as_view(), name='settings'),
 
     # Menu mode
     path('menu-mode/', views.MenuModeView.as_view(), name='menu_mode'),

@@ -41,7 +41,7 @@ from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
 from apps.menu.models import PromoColorScheme
 
-from .forms import EventForm, GalleryUploadForm, NewsletterForm, PopupForm
+from .forms import EventForm, GalleryUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
 
 
 class StaffRequiredMixin(LoginRequiredMixin):
@@ -380,6 +380,25 @@ class InquiryDeleteView(StaffRequiredMixin, View):
 
 
 # ── Popups ────────────────────────────────────────────────────────────────────
+
+class StaffSettingsView(StaffRequiredMixin, View):
+    def _get_settings(self):
+        return SiteSettings.objects.first()
+
+    def get(self, request):
+        site = self._get_settings()
+        return render(request, 'staff/settings.html', {'form': SiteSettingsForm(instance=site)})
+
+    def post(self, request):
+        site = self._get_settings()
+        form = SiteSettingsForm(request.POST, instance=site)
+        if form.is_valid():
+            form.save()
+            from django.contrib import messages
+            messages.success(request, 'Settings saved.')
+            return redirect('staff:settings')
+        return render(request, 'staff/settings.html', {'form': form})
+
 
 class PopupListView(StaffRequiredMixin, View):
     def get(self, request):

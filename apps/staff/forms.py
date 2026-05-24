@@ -1,7 +1,7 @@
 from django import forms
 from django_ckeditor_5.widgets import CKEditor5Widget
 
-from apps.core.models import SitePopup
+from apps.core.models import SitePopup, SiteSettings
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter
@@ -33,6 +33,28 @@ class NewsletterForm(forms.ModelForm):
         fields = ['subject', 'body']
         widgets = {
             'body': CKEditor5Widget(config_name='newsletter', attrs={'required': True}),
+        }
+
+
+class SiteSettingsForm(forms.ModelForm):
+    class Meta:
+        model = SiteSettings
+        fields = [
+            'notification_email',
+            'email',
+            'phone',
+            'reservations_url',
+        ]
+        labels = {
+            'notification_email': 'Internal notification email',
+            'email':              'Public contact email',
+            'phone':              'Phone number',
+            'reservations_url':   'Reservations URL',
+        }
+        help_texts = {
+            'notification_email': 'Where inquiry and contact-form alerts are sent (staff only — not shown on site).',
+            'email':              'Displayed on the site and in the footer.',
+            'reservations_url':   'Link shown on the homepage reservation bar.',
         }
 
 
