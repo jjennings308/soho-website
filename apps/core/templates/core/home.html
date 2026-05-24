@@ -95,12 +95,9 @@
              color: var(--color-promo-text);
            ">
     <div class="max-w-6xl mx-auto">
-      <h2 class="text-2xl font-bold mb-2" style="color: var(--color-promo-primary);">
-        {{ promo_slot_1.title }}
+      <h2 class="text-2xl font-bold mb-6" style="color: var(--color-promo-primary);">
+        {{ promo_slot_1.title }}{% if promo_slot_1.description %} — {{ promo_slot_1.description }}{% endif %}
       </h2>
-      {% if promo_slot_1.description %}
-        <p class="mb-6 opacity-80">{{ promo_slot_1.description }}</p>
-      {% endif %}
 
       {% for group in promo_slot_1_grid %}
         <h3 class="text-sm font-semibold uppercase tracking-widest mt-6 mb-3"
@@ -143,12 +140,9 @@
              color: var(--color-promo-text);
            ">
     <div class="max-w-6xl mx-auto">
-      <h2 class="text-2xl font-bold mb-2" style="color: var(--color-promo-primary);">
-        {{ promo_slot_2.title }}
+      <h2 class="text-2xl font-bold mb-6" style="color: var(--color-promo-primary);">
+        {{ promo_slot_2.title }}{% if promo_slot_2.description %} — {{ promo_slot_2.description }}{% endif %}
       </h2>
-      {% if promo_slot_2.description %}
-        <p class="mb-6 opacity-80">{{ promo_slot_2.description }}</p>
-      {% endif %}
 
       {% for group in promo_slot_2_grid %}
         <h3 class="text-sm font-semibold uppercase tracking-widest mt-6 mb-3"
