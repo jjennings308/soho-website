@@ -1,34 +1,29 @@
 {% extends "base.html" %}
-
-{% block title %}Page Not Found | SoHo Pittsburgh{% endblock %}
+{% block title %}Page Not Found — {{ site_settings.restaurant_name|default:"SoHo Pittsburgh" }}{% endblock %}
 
 {% block content %}
-<section class="surface-dark min-h-[60vh] flex items-center justify-center px-6 py-24">
-  <div class="text-center max-w-lg mx-auto">
+<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;padding:6rem 1.5rem;background-color:var(--color-bg-primary);">
+  <div style="text-align:center;max-width:36rem;">
 
-    <p class="t-accent font-semibold tracking-widest uppercase text-sm mb-4">404</p>
+    <p style="font-family:var(--font-accent);font-size:0.75rem;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-accent);margin-bottom:1rem;">404</p>
 
-    <h1 class="t-heading text-5xl md:text-6xl font-bold mb-6 leading-tight">
+    <h1 style="font-family:var(--font-primary);font-size:clamp(2.5rem,6vw,4rem);font-weight:700;line-height:1.15;color:var(--color-text-heading);margin-bottom:1.5rem;">
       Lost in the Strip?
     </h1>
 
-    <p class="t-body text-lg mb-10 leading-relaxed opacity-80">
+    <div style="width:3rem;height:2px;background:var(--color-text-accent);margin:0 auto 2rem;"></div>
+
+    <p style="font-size:1.05rem;line-height:1.75;color:var(--color-text-secondary);margin-bottom:2.5rem;">
       We couldn't find the page you were looking for. It may have moved,
       been renamed, or never existed. Head back and we'll pour you something
       to take the edge off.
     </p>
 
-    <div class="flex flex-col sm:flex-row gap-4 justify-center">
-      <a href="{% url 'core:home' %}"
-         class="t-btn-primary inline-block px-8 py-3 font-semibold tracking-wide uppercase text-sm transition">
-        Back to Home
-      </a>
-      <a href="{% url 'menu:full' %}?type=Food"
-         class="t-btn-secondary inline-block px-8 py-3 font-semibold tracking-wide uppercase text-sm transition">
-        View the Food Menu
-      </a>
+    <div style="display:flex;flex-wrap:wrap;gap:1rem;justify-content:center;">
+      <a href="{% url 'core:home' %}" class="btn btn-primary">Back to Home</a>
+      <a href="{% url 'menu:full' %}?type=food" class="btn btn-outline">View the Menu</a>
     </div>
 
   </div>
-</section>
+</div>
 {% endblock %}
