@@ -65,25 +65,14 @@
   {% endif %}
   <title>{% block title %}{{ site_settings.restaurant_name}} - {% get_active_block 'site_tagline' as b %}{{ b.body|safe }}{% endblock %}</title>
 
-  {# ── Favicon ──────────────────────────────────────────────────────────── #}
+  {# ── Favicon + Apple Touch Icon ───────────────────────────────────────── #}
 {% if site_settings.favicon %}
-  <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.png' %}">
+  <link rel="icon" href="{{ site_settings.favicon.url }}">
+  <link rel="apple-touch-icon" href="{{ site_settings.favicon.url }}">
 {% else %}
-  <link rel="icon" type="image/png" sizes="16x16" href="{% static 'img/favicon.png' %}">
-  <link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon.png' %}">
-  <link rel="icon" type="image/png" sizes="48x48" href="{% static 'img/favicon.png' %}">
-  <link rel="icon" type="image/png" sizes="64x64" href="{% static 'img/favicon.png' %}">
+  <link rel="icon" href="{% static 'img/favicon.png' %}">
+  <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
 {% endif %}
-
-{# ── Apple Touch Icons ────────────────────────────────────────────────── #}
-<link rel="apple-touch-icon" sizes="57x57"   href="{% static 'img/apple-touch-icon.png' %}">
-<link rel="apple-touch-icon" sizes="60x60"   href="{% static 'img/apple-touch-icon.png' %}">
-<link rel="apple-touch-icon" sizes="72x72"   href="{% static 'img/apple-touch-icon.png' %}">
-<link rel="apple-touch-icon" sizes="114x114" href="{% static 'img/apple-touch-icon.png' %}">
-<link rel="apple-touch-icon" sizes="120x120" href="{% static 'img/apple-touch-icon.png' %}">
-<link rel="apple-touch-icon" sizes="144x144" href="{% static 'img/apple-touch-icon.png' %}">
-<link rel="apple-touch-icon" sizes="152x152" href="{% static 'img/apple-touch-icon.png' %}">
-<link rel="apple-touch-icon" sizes="180x180" href="{% static 'img/apple-touch-icon.png' %}">
 
     {# ── Base Theme CSS ───────────────────────────────────────────────────── #}
   {# Contains all :root defaults. Dynamic vars below override as needed.    #}
