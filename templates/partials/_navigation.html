@@ -69,12 +69,12 @@
           left:50%;
           transform:translateX(-50%);
           min-width:160px;
-          background:#0a0a0a;
+          background:var(--color-nav-dropdown-bg);
           border:1px solid var(--color-gold-deep);
           border-radius:3px;
           padding:0.5rem 0;
           z-index:300;
-          box-shadow:0 8px 24px rgba(0,0,0,0.5);
+          box-shadow:var(--shadow-md);
         "
       >
         <a href="{% url 'menu:full' %}?type=food" class="nav-dropdown__link">Food</a>
@@ -110,27 +110,27 @@
       top:100%;
       left:0;
       right:0;
-      background:rgba(200,200,200,0.98);
+      background:var(--color-nav-mobile-bg);
       border-top: 1px solid var(--color-gold-deep);
       padding: 1.5rem 2rem;
       z-index:99;
     "
   >
     <ul style="list-style:none;display:flex;flex-direction:column;gap:1.25rem;">
-      <li><a href="{% url 'core:about' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">About Us</a></li>
+      <li><a href="{% url 'core:about' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">About Us</a></li>
 
       {# Mobile Menu sub-links #}
       <li>
-        <span style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">Menu</span>
+        <span style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">Menu</span>
         <ul style="list-style:none;display:flex;flex-direction:column;gap:0.75rem;margin-top:0.75rem;padding-left:1rem;border-left:1px solid var(--color-gold-deep);">
           <li><a href="{% url 'menu:full' %}?type=food" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Food</a></li>
           <li><a href="{% url 'menu:full' %}?type=drinks" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Drinks</a></li>
         </ul>
       </li>
 
-      <li><a href="{% url 'events:calendar' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">Events</a></li>
-      <li><a href="{% url 'gallery:index' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">Gallery</a></li>
-      <li><a href="{% url 'core:online_delivery' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:#1a1a1a;">Online Delivery</a></li>
+      <li><a href="{% url 'events:calendar' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">Events</a></li>
+      <li><a href="{% url 'gallery:index' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">Gallery</a></li>
+      <li><a href="{% url 'core:online_delivery' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">Online Delivery</a></li>
     </ul>
     <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-dark-gray);">
       <a href="tel:{{ site_settings.phone|default:'4123217646' }}" class="btn btn-primary" style="width:100%;justify-content:center;">

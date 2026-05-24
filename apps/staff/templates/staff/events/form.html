@@ -28,7 +28,7 @@
       </div>
 
       <div class="sp-field">
-        <label class="sp-label">Label <span style="color:#888;font-weight:400;">(optional — overrides default event name)</span></label>
+        <label class="sp-label">Label <span style="color:var(--color-mid-gray);font-weight:400;">(optional — overrides default event name)</span></label>
         <input class="sp-input" type="text" name="label" value="{{ form.label.value|default:'' }}" placeholder="e.g. Pirates vs. Cubs">
       </div>
 
@@ -54,7 +54,7 @@
       </div>
 
       <div class="sp-field" style="max-width:200px;">
-        <label class="sp-label">Game / Start Time <span style="color:#888;font-weight:400;">(optional)</span></label>
+        <label class="sp-label">Game / Start Time <span style="color:var(--color-mid-gray);font-weight:400;">(optional)</span></label>
         <input class="sp-input" type="time" name="game_time" value="{{ form.game_time.value|default:'' }}">
       </div>
 
@@ -63,7 +63,7 @@
           <input type="checkbox" name="limited_menu" {% if form.limited_menu.value %}checked{% endif %}>
           Activate limited menu for this event
         </label>
-        <div style="font-size:0.78rem;color:#888;margin-top:0.35rem;margin-left:1.4rem;">
+        <div style="font-size:0.78rem;color:var(--color-mid-gray);margin-top:0.35rem;margin-left:1.4rem;">
           Uncheck for events that don't restrict the menu (e.g. live music with full service).
         </div>
       </div>

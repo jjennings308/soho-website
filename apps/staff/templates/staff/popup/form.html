@@ -22,7 +22,7 @@
         <label class="sp-label">Internal Name</label>
         <input class="sp-input" type="text" name="title" value="{{ form.title.value|default:'' }}"
                placeholder="e.g. Christmas Gift Cards 2024" required>
-        <div style="font-size:0.75rem;color:#888;margin-top:0.3rem;">Staff-only label — not shown to visitors.</div>
+        <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.3rem;">Staff-only label — not shown to visitors.</div>
         {% if form.title.errors %}<div class="sp-field-error">{{ form.title.errors.0 }}</div>{% endif %}
       </div>
 
@@ -45,10 +45,10 @@
           <input type="checkbox" id="id_show_subscribe_form" name="show_subscribe_form"
                  {% if form.show_subscribe_form.value %}checked{% endif %}
                  onchange="toggleCtaFields(this.checked); updatePreview();"
-                 style="width:16px;height:16px;accent-color:#c9972a;">
+                 style="width:16px;height:16px;accent-color:var(--color-gold-primary);">
           <span class="sp-label" style="margin:0;">Show email signup form</span>
         </label>
-        <div style="font-size:0.75rem;color:#888;margin-top:0.3rem;margin-left:1.6rem;">
+        <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.3rem;margin-left:1.6rem;">
           Embeds the mailing-list signup form. If checked, the button fields below are ignored.
         </div>
       </div>
@@ -78,7 +78,7 @@
           </div>
         {% endif %}
         <input type="file" name="image" accept="image/*"
-               style="font-size:0.875rem;color:#444;">
+               style="font-size:0.875rem;color:var(--color-text-secondary);">
       </div>
 
       <!-- Color scheme presets (shared ColorScheme palette) -->
@@ -103,10 +103,10 @@
           <div style="display:flex;gap:0.5rem;align-items:center;">
             <input id="id_bg_color" type="color" name="bg_color"
                    value="{{ form.bg_color.value|default:'#1a1a1a' }}"
-                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+                   style="width:48px;height:38px;padding:2px;border:1px solid var(--color-footer-divider);border-radius:4px;cursor:pointer;">
             <input id="id_bg_color_hex" type="text" value="{{ form.bg_color.value|default:'#1a1a1a' }}"
                    oninput="document.getElementById('id_bg_color').value=this.value"
-                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid var(--color-footer-divider);border-radius:4px;font-size:0.9rem;">
           </div>
         </div>
         <div class="sp-field">
@@ -114,32 +114,32 @@
           <div style="display:flex;gap:0.5rem;align-items:center;">
             <input id="id_text_color" type="color" name="text_color"
                    value="{{ form.text_color.value|default:'#ffffff' }}"
-                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+                   style="width:48px;height:38px;padding:2px;border:1px solid var(--color-footer-divider);border-radius:4px;cursor:pointer;">
             <input id="id_text_color_hex" type="text" value="{{ form.text_color.value|default:'#ffffff' }}"
                    oninput="document.getElementById('id_text_color').value=this.value"
-                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid var(--color-footer-divider);border-radius:4px;font-size:0.9rem;">
           </div>
         </div>
         <div class="sp-field">
           <label class="sp-label">Primary / Heading</label>
           <div style="display:flex;gap:0.5rem;align-items:center;">
             <input id="id_primary_color" type="color" name="primary_color"
-                   value="{{ form.primary_color.value|default:'#c9972a' }}"
-                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
-            <input id="id_primary_color_hex" type="text" value="{{ form.primary_color.value|default:'#c9972a' }}"
+                   value="{{ form.primary_color.value|default:'#c9b07a' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid var(--color-footer-divider);border-radius:4px;cursor:pointer;">
+            <input id="id_primary_color_hex" type="text" value="{{ form.primary_color.value|default:'#c9b07a' }}"
                    oninput="document.getElementById('id_primary_color').value=this.value"
-                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid var(--color-footer-divider);border-radius:4px;font-size:0.9rem;">
           </div>
         </div>
         <div class="sp-field">
           <label class="sp-label">Accent / Button</label>
           <div style="display:flex;gap:0.5rem;align-items:center;">
             <input id="id_accent_color" type="color" name="accent_color"
-                   value="{{ form.accent_color.value|default:'#c9972a' }}"
-                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
-            <input id="id_accent_color_hex" type="text" value="{{ form.accent_color.value|default:'#c9972a' }}"
+                   value="{{ form.accent_color.value|default:'#c9b07a' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid var(--color-footer-divider);border-radius:4px;cursor:pointer;">
+            <input id="id_accent_color_hex" type="text" value="{{ form.accent_color.value|default:'#c9b07a' }}"
                    oninput="document.getElementById('id_accent_color').value=this.value"
-                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid var(--color-footer-divider);border-radius:4px;font-size:0.9rem;">
           </div>
         </div>
       </div>
@@ -147,7 +147,7 @@
       <!-- Live preview -->
       <div class="sp-field">
         <label class="sp-label">Preview</label>
-        <div style="background:#e5e2db;padding:1.5rem;border-radius:6px;display:flex;justify-content:center;">
+        <div style="background:var(--color-bg-tertiary);padding:1.5rem;border-radius:6px;display:flex;justify-content:center;">
           <div id="popup-preview" style="width:100%;max-width:400px;border-radius:8px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
             <div id="preview-body" style="padding:1.75rem;">
               <h2 id="preview-heading" style="margin:0 0 0.6rem;font-size:1.3rem;font-family:Georgia,serif;"></h2>

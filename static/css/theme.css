@@ -23,52 +23,75 @@
 
   /* --- Text Colors --------------------------------------------------------- */
   /* Overridden by ThemeStyle.*_text_color                                    */
-  --color-text-primary:   #bdbdbd;   /* silver — main body text */
-  --color-text-secondary: #8a8a8a;   /* muted silver — supporting text */
+  --color-text-primary:   #2a2520;   /* warm near-black — main body text */
+  --color-text-secondary: #5a4e44;   /* warm medium brown — supporting text */
   --color-text-tertiary:  #2c2c2c;   /* dark charcoal — used on light bg sections */
-  --color-text-accent:    #b8920f;   /* gold — prices, highlights, links */
-  --color-text-heading:   #ffffff;   /* h1-h6 */
-  --color-text-nav:       #eccb9c;   /* always light regardless of page theme */
+  --color-text-accent:    #a07820;   /* gold — prices, highlights, links */
+  --color-text-heading:   #1a1510;   /* warm near-black — h1-h6 */
+  --color-text-nav:       #1a1510;   /* dark nav text */
 
   /* --- Background Colors --------------------------------------------------- */
   /* Overridden by ThemeStyle.*_bg_color                                      */
-  --color-bg-primary:   #fafaf8;             /* page background — almost white */
-  --color-bg-secondary: #faf6ef;             /* cards, panels, surfaces — light cream */
-  --color-bg-tertiary:  #f2ebe0;             /* section backgrounds — light linen/beige */
-  --color-bg-accent:    #c9972a;             /* CTA buttons, badges */
-  --color-nav-bg:       rgba(255, 255, 255, 0.80); /* sticky nav */
+  --color-bg-primary:   #fafaf8;             /* page background — near white */
+  --color-bg-secondary: #f2e9d8;             /* cards, panels — warm cream */
+  --color-bg-tertiary:  #e6d9c2;             /* section backgrounds — warm linen */
+  --color-bg-accent:    #c9b07a;             /* CTA buttons, badges — sandy gold */
+  --color-nav-bg:       rgba(255, 255, 255, 0.92); /* sticky nav */
 
   /* --- Surface Colors ------------------------------------------------------ */
-  /* Elevated surfaces (modals, drawers, popovers) that layer over bg-secondary */
-  /* Light enough that --color-text-* vars are readable without overrides.     */
-  --color-bg-surface:              #2a2a2a;   /* dark modal / panel surface     */
-  --color-bg-surface-raised:       #333333;   /* thumbnail strip, nested panels */
+  --color-bg-surface:              #f5efe6;   /* light panel surface            */
+  --color-bg-surface-raised:       #ede4d8;   /* nested panels on light surface */
   --color-bg-surface-light:        #f5efe6;   /* light modal / panel surface    */
   --color-bg-surface-light-raised: #ede4d8;   /* nested elements on light surface */
 
-  /* --- Extended Gold (CSS-only, not overridable via admin) ----------------- */
-  --color-gold-bright: #e8b84b;   /* hover states */
-  --color-gold-deep:   #a07820;   /* borders, subtle dividers */
-  --color-gold-light:  #f4d98a;   /* tints */
+  /* --- Gold Scale (CSS-only, not overridable via admin) -------------------- */
+  --color-gold-primary: #c9b07a;   /* brand sandy gold — matches logo SH */
+  --color-gold-bright:  #d9c898;   /* hover states */
+  --color-gold-deep:    #a07820;   /* borders, subtle dividers */
+  --color-gold-light:   #ede0c0;   /* tints / backgrounds */
+
+  /* --- Red Accent ---------------------------------------------------------- */
+  --color-accent-red:       #e32227;   /* brand red — PITTSBURGH in logo */
+  --color-accent-red-deep:  #b81a1e;   /* hover / borders */
+  --color-accent-red-light: #fce8e8;   /* tint / background */
 
   /* Base colors */
-  --color-white:        #ffffff;
+  --color-white: #ffffff;
 
   /* --- Grays --------------------------------------------------------------- */
-  --color-dark-gray: #2c2c2c;   /* borders */
-  --color-mid-gray:  #555555;   /* placeholder text */
+  --color-dark-gray: #3a3530;   /* borders — warm dark */
+  --color-mid-gray:  #7a6e64;   /* placeholder text — warm mid */
 
-  /* --- Steelers ------------------------------------------------------------ */
+  /* --- Team Colors (unused during rebrand — keep for future promo menus) ---
   --color-steeler-gold:  #ffb612;
   --color-steeler-black: #101820;
 
-  /* --- Pirates ------------------------------------------------------------- */
   --color-pirate-gold:  #fdb827;
   --color-priate-black: #27251f;
 
-  /* --- Pitt ---------------------------------------------------------------- */
   --color-pitt-gold: #ffb81c;
   --color-pitt-blue: #003594;
+  --- */
+
+  /* --- Modals -------------------------------------------------------------- */
+  --color-modal-backdrop: rgba(0,0,0,0.60); /* semi-transparent page overlay */
+  --color-modal-border:   var(--color-footer-divider); /* modal panel border */
+
+  /* --- Navigation ---------------------------------------------------------- */
+  --color-nav-dropdown-bg:    var(--color-bg-primary);   /* desktop dropdown panel */
+  --color-nav-dropdown-text:  var(--color-text-primary); /* dropdown link color */
+  --color-nav-dropdown-hover: var(--color-bg-secondary); /* dropdown link hover bg */
+  --color-nav-mobile-bg:      var(--color-bg-secondary); /* mobile menu panel */
+
+  /* --- Hero ---------------------------------------------------------------- */
+  --color-hero-subtitle: rgba(245, 240, 232, 0.88); /* subtitle over dark overlay */
+
+  /* --- Footer -------------------------------------------------------------- */
+  --color-footer-bg:      #ede8db;   /* warm beige — footer background */
+  --color-footer-text:    #2a2520;   /* matches --color-text-primary */
+  --color-footer-muted:   #5a4e44;   /* matches --color-text-secondary */
+  --color-footer-subtle:  #7a6e64;   /* lighter brown — icons, bottom bar */
+  --color-footer-divider: #d8d0c4;   /* warm gray — horizontal rules */
 
   /* --- Spacing Scale ------------------------------------------------------- */
   --space-1:  0.25rem;
@@ -96,10 +119,10 @@
   --gold-rule-thick: 2px solid var(--color-bg-accent);
 
   /* --- Shadows ------------------------------------------------------------- */
-  --shadow-sm:   0 1px 3px rgba(0,0,0,0.6);
-  --shadow-md:   0 4px 12px rgba(0,0,0,0.5);
-  --shadow-lg:   0 8px 32px rgba(0,0,0,0.6);
-  --shadow-gold: 0 0 20px rgba(201,151,42,0.25);
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md:   0 4px 12px rgba(0,0,0,0.12);
+  --shadow-lg:   0 8px 32px rgba(0,0,0,0.16);
+  --shadow-gold: 0 0 20px rgba(201,176,122,0.30);
 
   /* --- Transitions --------------------------------------------------------- */
   --transition-fast:   150ms ease;

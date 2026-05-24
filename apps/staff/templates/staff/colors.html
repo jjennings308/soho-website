@@ -1,0 +1,95 @@
+{% extends "staff/base.html" %}
+{% block title %}Color Reference{% endblock %}
+{% block page_title %}Color Reference{% endblock %}
+
+{% block content %}
+<style>
+  .cr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:1rem; margin-bottom:2rem; }
+  .cr-swatch { border-radius:6px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.12); }
+  .cr-swatch__color { height:80px; }
+  .cr-swatch__label { padding:0.6rem 0.75rem; background:#fff; }
+  .cr-swatch__name { font-size:0.78rem; font-weight:600; color:#1a1a1a; }
+  .cr-swatch__hex  { font-size:0.72rem; color:var(--color-mid-gray); font-family:monospace; margin-top:0.1rem; }
+  .cr-section-title { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.12em; color:var(--color-mid-gray); margin:1.5rem 0 0.75rem; }
+
+  .cr-text-row { display:flex; align-items:center; gap:1rem; padding:0.6rem 0.75rem; border-bottom:1px solid var(--color-footer-divider); }
+  .cr-text-row__sample { font-size:1rem; min-width:160px; }
+  .cr-text-row__name   { font-size:0.78rem; font-family:monospace; color:var(--color-text-secondary); }
+
+  .cr-combo { border-radius:6px; overflow:hidden; margin-bottom:0.75rem; }
+  .cr-combo__inner { padding:1rem 1.25rem; }
+  .cr-combo__label { font-size:0.7rem; font-family:monospace; color:inherit; opacity:0.6; margin-bottom:0.25rem; }
+  .cr-combo__sample { font-size:0.95rem; font-weight:500; }
+</style>
+
+<p style="font-size:0.85rem;color:var(--color-mid-gray);margin-bottom:1.5rem;">
+  All values come from <code>static/css/theme.css</code>. Change a token there and every reference updates.
+</p>
+
+<!-- ── Background Palette ──────────────────────────────────────────────────── -->
+<div class="cr-section-title">Background Colors</div>
+<div class="cr-grid">
+  {% for bg in backgrounds %}
+  <div class="cr-swatch">
+    <div class="cr-swatch__color" style="background:var({{ bg.var }});border:1px solid var(--color-footer-divider);"></div>
+    <div class="cr-swatch__label">
+      <div class="cr-swatch__name">{{ bg.label }}</div>
+      <div class="cr-swatch__hex">{{ bg.var }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Text Palette ────────────────────────────────────────────────────────── -->
+<div class="cr-section-title">Text Colors</div>
+<div class="sp-card" style="margin-bottom:1.5rem;">
+  {% for t in texts %}
+  <div class="cr-text-row">
+    <span class="cr-text-row__sample" style="color:var({{ t.var }});">The quick brown fox</span>
+    <span class="cr-text-row__name">{{ t.var }}</span>
+    <span style="font-size:0.75rem;color:#aaa;">{{ t.label }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Gold Scale ─────────────────────────────────────────────────────────── -->
+<div class="cr-section-title">Gold Scale</div>
+<div class="cr-grid">
+  {% for g in golds %}
+  <div class="cr-swatch">
+    <div class="cr-swatch__color" style="background:var({{ g.var }});"></div>
+    <div class="cr-swatch__label">
+      <div class="cr-swatch__name">{{ g.label }}</div>
+      <div class="cr-swatch__hex">{{ g.var }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── Footer Tokens ──────────────────────────────────────────────────────── -->
+<div class="cr-section-title">Footer Tokens</div>
+<div class="cr-combo" style="background:var(--color-footer-bg);">
+  <div class="cr-combo__inner">
+    <div class="cr-combo__label" style="color:var(--color-footer-text);">--color-footer-bg</div>
+    <div class="cr-combo__sample" style="color:var(--color-footer-text);">Primary text on footer — <code>--color-footer-text</code></div>
+    <div style="margin-top:0.5rem;font-size:0.875rem;color:var(--color-footer-muted);">Muted / body copy — <code>--color-footer-muted</code></div>
+    <div style="margin-top:0.4rem;font-size:0.8rem;color:var(--color-footer-subtle);">Subtle / icons / bottom bar — <code>--color-footer-subtle</code></div>
+    <div style="margin-top:0.75rem;font-size:0.8rem;color:var(--color-gold-deep);">Gold accent link — <code>--color-gold-deep</code></div>
+    <div style="margin-top:0.75rem;border-top:1px solid var(--color-footer-divider);padding-top:0.6rem;font-size:0.72rem;color:var(--color-footer-subtle);">Divider line above — <code>--color-footer-divider</code></div>
+  </div>
+</div>
+
+<!-- ── Combinations ───────────────────────────────────────────────────────── -->
+<div class="cr-section-title">Common Combinations</div>
+<div class="cr-grid">
+  {% for c in combos %}
+  <div class="cr-combo">
+    <div class="cr-combo__inner" style="background:var({{ c.bg }});min-height:80px;">
+      <div class="cr-combo__label" style="color:var({{ c.text }});">{{ c.bg }} / {{ c.text }}</div>
+      <div class="cr-combo__sample" style="color:var({{ c.text }});">Sample text</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

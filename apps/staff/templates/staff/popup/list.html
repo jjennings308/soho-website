@@ -23,16 +23,16 @@
         {% for popup in popups %}
         <tr>
           <td style="font-weight:500;">{{ popup.title }}</td>
-          <td style="color:#555;">{{ popup.heading }}</td>
+          <td style="color:var(--color-text-secondary);">{{ popup.heading }}</td>
           <td>
             <div style="display:flex;gap:6px;align-items:center;">
-              <span title="Background" style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.bg_color }};border:1px solid #e5e2db;"></span>
-              <span title="Text"       style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.text_color }};border:1px solid #e5e2db;"></span>
-              <span title="Primary"    style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.primary_color }};border:1px solid #e5e2db;"></span>
-              <span title="Accent"     style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.accent_color }};border:1px solid #e5e2db;"></span>
+              <span title="Background" style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.bg_color }};border:1px solid var(--color-footer-divider);"></span>
+              <span title="Text"       style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.text_color }};border:1px solid var(--color-footer-divider);"></span>
+              <span title="Primary"    style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.primary_color }};border:1px solid var(--color-footer-divider);"></span>
+              <span title="Accent"     style="display:inline-block;width:20px;height:20px;border-radius:3px;background:{{ popup.accent_color }};border:1px solid var(--color-footer-divider);"></span>
             </div>
           </td>
-          <td style="color:#888;">{{ popup.show_delay }}s</td>
+          <td style="color:var(--color-mid-gray);">{{ popup.show_delay }}s</td>
           <td>
             {% if popup.is_active %}
               <span class="sp-pill sp-pill--green">Active</span>
@@ -61,7 +61,7 @@
       </tbody>
     </table>
   {% else %}
-    <p style="color:#888;font-size:0.875rem;">No popups yet. <a href="{% url 'staff:popup_add' %}" style="color:#c9972a;">Add one →</a></p>
+    <p style="color:var(--color-mid-gray);font-size:0.875rem;">No popups yet. <a href="{% url 'staff:popup_add' %}" style="color:var(--color-gold-primary);">Add one →</a></p>
   {% endif %}
 </div>
 {% endblock %}

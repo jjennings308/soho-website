@@ -44,6 +44,9 @@ urlpatterns = [
     path('inquiries/<int:pk>/status/', InquiryStatusView.as_view(), name='inquiry_status'),
     path('inquiries/<int:pk>/delete/', InquiryDeleteView.as_view(), name='inquiry_delete'),
 
+    # Color reference
+    path('colors/', views.ColorReferenceView.as_view(), name='colors'),
+
     # Newsletter
     path('newsletter/', views.NewsletterListView.as_view(), name='newsletter'),
     path('newsletter/compose/', views.NewsletterComposeView.as_view(), name='newsletter_compose'),

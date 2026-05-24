@@ -525,3 +525,50 @@ class PopupDeleteView(StaffRequiredMixin, View):
         popup = get_object_or_404(SitePopup, pk=pk)
         popup.delete()
         return redirect('staff:popups')
+
+
+# ── Color Reference ───────────────────────────────────────────────────────────
+
+class ColorReferenceView(StaffRequiredMixin, View):
+    def get(self, request):
+        backgrounds = [
+            {'var': '--color-bg-primary',           'label': 'Page background'},
+            {'var': '--color-bg-secondary',          'label': 'Cards / panels'},
+            {'var': '--color-bg-tertiary',           'label': 'Section backgrounds'},
+            {'var': '--color-bg-accent',             'label': 'CTA / buttons'},
+            {'var': '--color-bg-surface-light',      'label': 'Light surface'},
+            {'var': '--color-bg-surface-light-raised','label': 'Light surface raised'},
+            {'var': '--color-footer-bg',             'label': 'Footer background'},
+        ]
+        texts = [
+            {'var': '--color-text-primary',   'label': 'Main body text'},
+            {'var': '--color-text-secondary', 'label': 'Supporting text'},
+            {'var': '--color-text-tertiary',  'label': 'Text on light bg'},
+            {'var': '--color-text-accent',    'label': 'Links / prices'},
+            {'var': '--color-text-heading',   'label': 'Headings'},
+            {'var': '--color-footer-text',    'label': 'Footer primary'},
+            {'var': '--color-footer-muted',   'label': 'Footer muted'},
+            {'var': '--color-footer-subtle',  'label': 'Footer subtle'},
+        ]
+        golds = [
+            {'var': '--color-gold-primary',  'label': 'Sandy gold (brand)'},
+            {'var': '--color-gold-bright',   'label': 'Gold bright / hover'},
+            {'var': '--color-gold-deep',     'label': 'Gold deep / borders'},
+            {'var': '--color-gold-light',    'label': 'Gold light / tint'},
+            {'var': '--color-accent-red',       'label': 'Brand red'},
+            {'var': '--color-accent-red-deep',  'label': 'Red deep / hover'},
+            {'var': '--color-accent-red-light', 'label': 'Red light / tint'},
+        ]
+        combos = [
+            {'bg': '--color-bg-primary',   'text': '--color-text-primary'},
+            {'bg': '--color-bg-secondary', 'text': '--color-text-primary'},
+            {'bg': '--color-bg-tertiary',  'text': '--color-text-tertiary'},
+            {'bg': '--color-bg-accent',    'text': '--color-text-heading'},
+            {'bg': '--color-footer-bg',    'text': '--color-footer-text'},
+        ]
+        return render(request, 'staff/colors.html', {
+            'backgrounds': backgrounds,
+            'texts': texts,
+            'golds': golds,
+            'combos': combos,
+        })

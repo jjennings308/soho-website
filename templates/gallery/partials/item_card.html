@@ -23,7 +23,7 @@
     opacity:0;
     transition:opacity 0.3s ease;
   " class="gallery-caption">
-    <p style="font-family:var(--font-secondary);font-size:0.78rem;color:#fff;margin:0;line-height:1.3;">
+    <p style="font-family:var(--font-secondary);font-size:0.78rem;color:var(--color-white);margin:0;line-height:1.3;">
       {{ item.effective_caption }}
     </p>
   </div>
@@ -50,7 +50,7 @@
   </div>
   {% if item.effective_caption %}
   <div style="position:absolute;bottom:0;left:0;right:0;padding:0.5rem 0.75rem;background:rgba(0,0,0,0.5);">
-    <p style="font-family:var(--font-secondary);font-size:0.78rem;color:#fff;margin:0;">{{ item.effective_caption }}</p>
+    <p style="font-family:var(--font-secondary);font-size:0.78rem;color:var(--color-white);margin:0;">{{ item.effective_caption }}</p>
   </div>
   {% endif %}
 </a>

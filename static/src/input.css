@@ -155,7 +155,7 @@
   .btn-primary {
     background-color: var(--color-bg-accent);
     border: 1px solid var(--color-bg-accent);
-    color: #0a0a0a;
+    color: var(--color-text-heading);
   }
   .btn-primary:hover {
     background-color: var(--color-gold-bright);
@@ -177,14 +177,14 @@
     @apply -translate-y-px;
   }
 
-  /* White outline (for use on dark hero sections) */
+  /* White outline (for use on dark/image hero sections) */
   .btn-ghost {
     background-color: transparent;
-    color: #ffffff;
+    color: var(--color-white);
     border: 1px solid rgba(255,255,255,0.4);
   }
   .btn-ghost:hover {
-    border-color: #ffffff;
+    border-color: var(--color-white);
   }
 
   /* Deprecated — btn-outline kept for backward compat, maps to btn-secondary */
@@ -198,7 +198,7 @@
   }
   .btn-outline:hover {
     background-color: var(--color-bg-accent);
-    color: #0a0a0a;
+    color: var(--color-text-heading);
   }
 
   /* ── Cards ─────────────────────────────────────────────────────────────── */
@@ -362,7 +362,7 @@
   .nav-dropdown__link {
     display: block;
     font-family: var(--font-accent);
-    color: #ffffff;
+    color: var(--color-nav-dropdown-text);
     font-size: 0.72rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -373,7 +373,7 @@
   }
   .nav-dropdown__link:hover {
     color: var(--color-text-accent);
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--color-nav-dropdown-hover);
   }
 
   /* ── Section Helpers ────────────────────────────────────────────────────── */
@@ -466,21 +466,21 @@
   }
 
   .hero__subtitle {
-    color: rgba(245, 240, 232, 0.85);
+    color: var(--color-hero-subtitle);
     @apply text-lg font-light max-w-lg mx-auto mb-10 leading-relaxed tracking-wide;
   }
 
   /* ── Footer ─────────────────────────────────────────────────────────────── */
   .site-footer {
-    background-color: #060606;
+    background-color: var(--color-footer-bg);
     border-top: var(--gold-rule-thick);
-    color: var(--color-text-secondary);
+    color: var(--color-footer-text);
     @apply pt-0 pb-8;
   }
 
   .site-footer__logo {
     font-family: var(--font-primary);
-    color: var(--color-text-accent);
+    color: var(--color-gold-deep);
     @apply text-3xl uppercase tracking-wide mb-2;
   }
 
@@ -490,16 +490,16 @@
 
   .site-footer__nav a {
     font-family: var(--font-accent);
-    color: var(--color-text-secondary);
+    color: var(--color-footer-muted);
     @apply text-xs uppercase tracking-widest transition-colors duration-150;
   }
   .site-footer__nav a:hover {
-    color: var(--color-text-accent);
+    color: var(--color-gold-deep);
   }
 
   .site-footer__bottom {
-    border-top: 1px solid var(--color-dark-gray);
-    color: var(--color-mid-gray);
+    border-top: 1px solid var(--color-footer-divider);
+    color: var(--color-footer-subtle);
     @apply pt-8 flex flex-wrap items-center justify-between gap-2 text-xs tracking-wide;
   }
 
@@ -645,3 +645,230 @@
     color: var(--color-text-heading);
   }
 }
+
+/* =============================================================================
+   Staff Portal — .sp-* component system
+   Private internal tool. Never used in public site templates.
+   ============================================================================= */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+.sp-shell { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.sp-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 40;
+  transition: transform 0.2s ease;
+}
+.sp-sidebar__logo {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sp-sidebar__logo span {
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--color-gold-primary, #c9b07a);
+  display: block;
+}
+.sp-sidebar__logo strong {
+  font-size: 1rem;
+  color: #fff;
+  display: block;
+  margin-top: 0.15rem;
+}
+.sp-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
+.sp-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.875rem;
+  color: rgba(255,255,255,0.65);
+  text-decoration: none;
+  border-left: 3px solid transparent;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.sp-nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+.sp-nav a.active { color: #fff; border-left-color: var(--color-gold-primary, #c9b07a); background: rgba(255,255,255,0.07); }
+.sp-nav__section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 0.85rem 1.25rem 0.35rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.15s;
+}
+.sp-nav__section:hover { color: rgba(255,255,255,0.55); }
+.sp-nav__section .sp-chevron { font-size: 0.55rem; transition: transform 0.2s; }
+.sp-nav__section-links a { padding: 0.55rem 1.25rem 0.55rem 1.75rem; }
+.sp-sidebar__footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.4);
+}
+.sp-sidebar__footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+.sp-sidebar__footer a:hover { color: #fff; }
+
+/* ── Main ── */
+.sp-main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.sp-topbar {
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-footer-divider);
+  padding: 0.75rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.sp-topbar h1 { font-size: 1.1rem; font-weight: 600; color: var(--color-text-primary); }
+.sp-content { padding: 1.75rem; flex: 1; }
+
+/* ── Cards ── */
+.sp-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-footer-divider);
+  border-radius: 6px;
+  padding: 1.25rem;
+}
+.sp-card__label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-mid-gray);
+  margin-bottom: 0.4rem;
+}
+.sp-card__value { font-size: 1.75rem; font-weight: 700; color: var(--color-text-primary); }
+.sp-card__sub { font-size: 0.8rem; color: var(--color-mid-gray); margin-top: 0.2rem; }
+
+/* ── Status pills ── */
+.sp-pill {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.sp-pill--green  { background: #d1fae5; color: #065f46; }
+.sp-pill--gold   { background: #fef3c7; color: #92400e; }
+.sp-pill--red    { background: #fee2e2; color: #991b1b; }
+.sp-pill--gray   { background: #f3f4f6; color: #374151; }
+
+/* ── Tables ── */
+.sp-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.sp-table th {
+  text-align: left;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-mid-gray);
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--color-footer-divider);
+}
+.sp-table td { padding: 0.75rem 1rem; border-bottom: 1px solid var(--color-bg-tertiary); vertical-align: middle; }
+.sp-table tr:last-child td { border-bottom: none; }
+.sp-table tr:hover td { background: var(--color-bg-secondary); }
+
+/* ── Buttons ── */
+.sp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+.sp-btn:hover { opacity: 0.85; }
+.sp-btn--primary { background: #1a1a1a; color: #fff; }
+.sp-btn--gold    { background: var(--color-gold-primary, #c9b07a); color: #fff; }
+.sp-btn--outline { background: var(--color-white); color: var(--color-text-primary); border: 1px solid var(--color-footer-divider); }
+.sp-btn--danger  { background: var(--color-accent-red-light); color: var(--color-accent-red-deep); }
+.sp-btn--sm { padding: 0.3rem 0.65rem; font-size: 0.8rem; }
+
+/* ── Forms ── */
+.sp-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.35rem;
+}
+.sp-input, .sp-select, .sp-textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-footer-divider);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  background: var(--color-white);
+  color: var(--color-text-primary);
+  transition: border-color 0.15s;
+}
+.sp-input:focus, .sp-select:focus, .sp-textarea:focus {
+  outline: none;
+  border-color: var(--color-gold-primary, #c9b07a);
+}
+.sp-field { margin-bottom: 1.1rem; }
+.sp-field-error { font-size: 0.78rem; color: var(--color-accent-red-deep); margin-top: 0.3rem; }
+.sp-checkbox-row { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; }
+.sp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.sp-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+/* ── Stat grid ── */
+.sp-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+
+/* ── Mobile ── */
+.sp-mobile-topbar {
+  display: none;
+  background: #1a1a1a;
+  padding: 0.75rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.sp-mobile-topbar span { color: #fff; font-weight: 600; font-size: 0.95rem; }
+.sp-hamburger { background: none; border: none; cursor: pointer; color: #fff; font-size: 1.4rem; }
+
+@media (max-width: 768px) {
+  .sp-sidebar { transform: translateX(-100%); }
+  .sp-sidebar.open { transform: translateX(0); }
+  .sp-main { margin-left: 0; }
+  .sp-mobile-topbar { display: flex; }
+  .sp-topbar { display: none; }
+  .sp-content { padding: 1rem; }
+  .sp-grid-2, .sp-grid-3 { grid-template-columns: 1fr; }
+}
+
+.sp-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 35;
+}
+.sp-overlay.open { display: block; }

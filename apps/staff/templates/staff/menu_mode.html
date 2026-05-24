@@ -32,21 +32,21 @@
       {% csrf_token %}
 
       <button type="submit" name="action" value="auto"
-        style="text-align:left;padding:1rem 1.25rem;border-radius:6px;border:2px solid {% if not site.force_full_menu and not site.force_game_day_mode %}#c9972a{% else %}#e5e2db{% endif %};background:{% if not site.force_full_menu and not site.force_game_day_mode %}#fef9f0{% else %}#fff{% endif %};cursor:pointer;">
+        style="text-align:left;padding:1rem 1.25rem;border-radius:6px;border:2px solid {% if not site.force_full_menu and not site.force_game_day_mode %}var(--color-gold-primary){% else %}var(--color-footer-divider){% endif %};background:{% if not site.force_full_menu and not site.force_game_day_mode %}var(--color-gold-light){% else %}var(--color-white){% endif %};cursor:pointer;">
         <div style="font-weight:600;font-size:0.9rem;">Automatic</div>
-        <div style="font-size:0.8rem;color:#666;margin-top:0.2rem;">Follow the event calendar — game days trigger limited menu automatically.</div>
+        <div style="font-size:0.8rem;color:var(--color-mid-gray);margin-top:0.2rem;">Follow the event calendar — game days trigger limited menu automatically.</div>
       </button>
 
       <button type="submit" name="action" value="force_full"
-        style="text-align:left;padding:1rem 1.25rem;border-radius:6px;border:2px solid {% if site.force_full_menu %}#c9972a{% else %}#e5e2db{% endif %};background:{% if site.force_full_menu %}#fef9f0{% else %}#fff{% endif %};cursor:pointer;">
+        style="text-align:left;padding:1rem 1.25rem;border-radius:6px;border:2px solid {% if site.force_full_menu %}var(--color-gold-primary){% else %}var(--color-footer-divider){% endif %};background:{% if site.force_full_menu %}var(--color-gold-light){% else %}var(--color-white){% endif %};cursor:pointer;">
         <div style="font-weight:600;font-size:0.9rem;">Force Full Menu</div>
-        <div style="font-size:0.8rem;color:#666;margin-top:0.2rem;">Show the full menu regardless of today's events. Use if a game was cancelled.</div>
+        <div style="font-size:0.8rem;color:var(--color-mid-gray);margin-top:0.2rem;">Show the full menu regardless of today's events. Use if a game was cancelled.</div>
       </button>
 
       <button type="submit" name="action" value="force_game_day"
-        style="text-align:left;padding:1rem 1.25rem;border-radius:6px;border:2px solid {% if site.force_game_day_mode %}#c9972a{% else %}#e5e2db{% endif %};background:{% if site.force_game_day_mode %}#fef9f0{% else %}#fff{% endif %};cursor:pointer;">
+        style="text-align:left;padding:1rem 1.25rem;border-radius:6px;border:2px solid {% if site.force_game_day_mode %}var(--color-gold-primary){% else %}var(--color-footer-divider){% endif %};background:{% if site.force_game_day_mode %}var(--color-gold-light){% else %}var(--color-white){% endif %};cursor:pointer;">
         <div style="font-weight:600;font-size:0.9rem;">Force Game Day Mode</div>
-        <div style="font-size:0.8rem;color:#666;margin-top:0.2rem;">Show the limited menu now regardless of the calendar. Use for unexpected busy periods.</div>
+        <div style="font-size:0.8rem;color:var(--color-mid-gray);margin-top:0.2rem;">Show the limited menu now regardless of the calendar. Use for unexpected busy periods.</div>
       </button>
 
     </form>

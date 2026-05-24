@@ -30,7 +30,7 @@
             {% endif %}
           </td>
           <td>{% if not nl.is_draft %}{{ nl.recipient_count }}{% else %}&mdash;{% endif %}</td>
-          <td style="white-space:nowrap;color:#888;">
+          <td style="white-space:nowrap;color:var(--color-mid-gray);">
             {% if nl.is_draft %}
               Created {{ nl.created_at|date:"M j, Y" }}
             {% else %}
@@ -54,7 +54,7 @@
       </tbody>
     </table>
   {% else %}
-    <p style="color:#888;font-size:0.875rem;">No newsletters yet. <a href="{% url 'staff:newsletter_compose' %}" style="color:#c9972a;">Write one &rarr;</a></p>
+    <p style="color:var(--color-mid-gray);font-size:0.875rem;">No newsletters yet. <a href="{% url 'staff:newsletter_compose' %}" style="color:var(--color-gold-primary);">Write one &rarr;</a></p>
   {% endif %}
 </div>
 {% endblock %}

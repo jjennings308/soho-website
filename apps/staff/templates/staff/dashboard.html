@@ -15,7 +15,7 @@
       {% endif %}
     </div>
     <div class="sp-card__sub" style="margin-top:0.5rem;">
-      <a href="{% url 'staff:menu_mode' %}" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">Change &rarr;</a>
+      <a href="{% url 'staff:menu_mode' %}" style="color:var(--color-gold-primary);text-decoration:none;font-size:0.8rem;">Change &rarr;</a>
     </div>
   </div>
 
@@ -29,7 +29,7 @@
     <div class="sp-card__label">Draft Newsletters</div>
     <div class="sp-card__value">{{ draft_count }}</div>
     <div class="sp-card__sub">
-      <a href="{% url 'staff:newsletter' %}" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">View &rarr;</a>
+      <a href="{% url 'staff:newsletter' %}" style="color:var(--color-gold-primary);text-decoration:none;font-size:0.8rem;">View &rarr;</a>
     </div>
   </div>
 
@@ -37,7 +37,7 @@
     <div class="sp-card__label">Unpublished Photos</div>
     <div class="sp-card__value">{{ unpublished_count }}</div>
     <div class="sp-card__sub">
-      <a href="{% url 'staff:gallery' %}" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">View &rarr;</a>
+      <a href="{% url 'staff:gallery' %}" style="color:var(--color-gold-primary);text-decoration:none;font-size:0.8rem;">View &rarr;</a>
     </div>
   </div>
 
@@ -46,21 +46,21 @@
     <div style="margin-top:0.25rem;">
       {% if active_popup %}
         <span class="sp-pill sp-pill--green">Active</span>
-        <div style="font-size:0.78rem;color:#555;margin-top:0.4rem;">{{ active_popup.title }}</div>
+        <div style="font-size:0.78rem;color:var(--color-text-secondary);margin-top:0.4rem;">{{ active_popup.title }}</div>
       {% else %}
         <span class="sp-pill sp-pill--gray">Off</span>
       {% endif %}
     </div>
     <div class="sp-card__sub" style="margin-top:0.5rem;">
-      <a href="{% url 'staff:popups' %}" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">Manage &rarr;</a>
+      <a href="{% url 'staff:popups' %}" style="color:var(--color-gold-primary);text-decoration:none;font-size:0.8rem;">Manage &rarr;</a>
     </div>
   </div>
 
   <div class="sp-card">
     <div class="sp-card__label">New Inquiries</div>
-    <div class="sp-card__value" style="{% if new_inquiry_count %}color:#c9972a;{% endif %}">{{ new_inquiry_count }}</div>
+    <div class="sp-card__value" style="{% if new_inquiry_count %}color:var(--color-gold-primary);{% endif %}">{{ new_inquiry_count }}</div>
     <div class="sp-card__sub">
-      <a href="{% url 'staff:inquiries' %}?status=new" style="color:#c9972a;text-decoration:none;font-size:0.8rem;">View &rarr;</a>
+      <a href="{% url 'staff:inquiries' %}?status=new" style="color:var(--color-gold-primary);text-decoration:none;font-size:0.8rem;">View &rarr;</a>
     </div>
   </div>
 </div>
@@ -71,13 +71,13 @@
   <div class="sp-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
       <h2 style="font-size:0.9rem;font-weight:600;">Today's Events</h2>
-      <a href="{% url 'staff:events' %}" style="font-size:0.8rem;color:#c9972a;text-decoration:none;">All events &rarr;</a>
+      <a href="{% url 'staff:events' %}" style="font-size:0.8rem;color:var(--color-gold-primary);text-decoration:none;">All events &rarr;</a>
     </div>
     {% if today_events %}
       {% for event in today_events %}
-        <div style="padding:0.6rem 0;border-bottom:1px solid #f0ede8;">
+        <div style="padding:0.6rem 0;border-bottom:1px solid var(--color-bg-tertiary);">
           <div style="font-size:0.875rem;font-weight:500;">{{ event.display_label }}</div>
-          <div style="font-size:0.78rem;color:#888;">
+          <div style="font-size:0.78rem;color:var(--color-mid-gray);">
             {{ event.get_event_type_display }}
             {% if event.game_time %} · {{ event.game_time|time:"g:i A" }}{% endif %}
             {% if event.limited_menu %}<span style="margin-left:0.5rem;" class="sp-pill sp-pill--gold">Limited Menu</span>{% endif %}
@@ -85,7 +85,7 @@
         </div>
       {% endfor %}
     {% else %}
-      <p style="font-size:0.875rem;color:#888;">No events today.</p>
+      <p style="font-size:0.875rem;color:var(--color-mid-gray);">No events today.</p>
     {% endif %}
   </div>
 
@@ -93,20 +93,20 @@
   <div class="sp-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
       <h2 style="font-size:0.9rem;font-weight:600;">Upcoming Events</h2>
-      <a href="{% url 'staff:event_add' %}" style="font-size:0.8rem;color:#c9972a;text-decoration:none;">+ Add event</a>
+      <a href="{% url 'staff:event_add' %}" style="font-size:0.8rem;color:var(--color-gold-primary);text-decoration:none;">+ Add event</a>
     </div>
     {% if upcoming %}
       {% for event in upcoming %}
-        <div style="padding:0.6rem 0;border-bottom:1px solid #f0ede8;display:flex;justify-content:space-between;align-items:center;">
+        <div style="padding:0.6rem 0;border-bottom:1px solid var(--color-bg-tertiary);display:flex;justify-content:space-between;align-items:center;">
           <div>
             <div style="font-size:0.875rem;font-weight:500;">{{ event.display_label }}</div>
-            <div style="font-size:0.78rem;color:#888;">{{ event.date|date:"M j" }}{% if event.game_time %} · {{ event.game_time|time:"g:i A" }}{% endif %}</div>
+            <div style="font-size:0.78rem;color:var(--color-mid-gray);">{{ event.date|date:"M j" }}{% if event.game_time %} · {{ event.game_time|time:"g:i A" }}{% endif %}</div>
           </div>
           {% if not event.is_active %}<span class="sp-pill sp-pill--gray">Off</span>{% endif %}
         </div>
       {% endfor %}
     {% else %}
-      <p style="font-size:0.875rem;color:#888;">No upcoming events.</p>
+      <p style="font-size:0.875rem;color:var(--color-mid-gray);">No upcoming events.</p>
     {% endif %}
   </div>
 
@@ -114,11 +114,11 @@
   <div class="sp-card">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
       <h2 style="font-size:0.9rem;font-weight:600;">Promo Menus</h2>
-      <a href="/admin/menu/menu/?menu_type__exact=promo" style="font-size:0.8rem;color:#c9972a;text-decoration:none;">Manage &rarr;</a>
+      <a href="/admin/menu/menu/?menu_type__exact=promo" style="font-size:0.8rem;color:var(--color-gold-primary);text-decoration:none;">Manage &rarr;</a>
     </div>
     {% if promo_menus %}
       {% for menu in promo_menus %}
-        <div style="padding:0.6rem 0;border-bottom:1px solid #f0ede8;">
+        <div style="padding:0.6rem 0;border-bottom:1px solid var(--color-bg-tertiary);">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
             <div style="display:flex;align-items:center;gap:0.5rem;min-width:0;">
               {% if menu.color_scheme %}
@@ -135,14 +135,14 @@
             {% endif %}
           </div>
           {% if menu.active_from or menu.active_until %}
-            <div style="font-size:0.75rem;color:#888;margin-top:0.25rem;padding-left:{% if menu.color_scheme %}1.25rem{% else %}0{% endif %};">
+            <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.25rem;padding-left:{% if menu.color_scheme %}1.25rem{% else %}0{% endif %};">
               {% if menu.active_from %}From {{ menu.active_from|date:"M j" }}{% endif %}{% if menu.active_from and menu.active_until %} – {% endif %}{% if menu.active_until %}Until {{ menu.active_until|date:"M j" }}{% endif %}
             </div>
           {% endif %}
         </div>
       {% endfor %}
     {% else %}
-      <p style="font-size:0.875rem;color:#888;">No promo menus yet.</p>
+      <p style="font-size:0.875rem;color:var(--color-mid-gray);">No promo menus yet.</p>
     {% endif %}
   </div>
 

@@ -8,7 +8,7 @@
 {% block content %}
 
 <div class="sp-card" style="margin-bottom:1.5rem;">
-  <h2 style="font-size:0.85rem;font-weight:600;letter-spacing:0.05em;margin-bottom:1rem;color:#888;text-transform:uppercase;">Upcoming</h2>
+  <h2 style="font-size:0.85rem;font-weight:600;letter-spacing:0.05em;margin-bottom:1rem;color:var(--color-mid-gray);text-transform:uppercase;">Upcoming</h2>
   {% if upcoming %}
     <table class="sp-table">
       <thead>
@@ -62,13 +62,13 @@
       </tbody>
     </table>
   {% else %}
-    <p style="color:#888;font-size:0.875rem;">No upcoming events. <a href="{% url 'staff:event_add' %}" style="color:#c9972a;">Add one &rarr;</a></p>
+    <p style="color:var(--color-mid-gray);font-size:0.875rem;">No upcoming events. <a href="{% url 'staff:event_add' %}" style="color:var(--color-gold-primary);">Add one &rarr;</a></p>
   {% endif %}
 </div>
 
 {% if past %}
 <div class="sp-card">
-  <h2 style="font-size:0.85rem;font-weight:600;letter-spacing:0.05em;margin-bottom:1rem;color:#888;text-transform:uppercase;">Recent Past (last 20)</h2>
+  <h2 style="font-size:0.85rem;font-weight:600;letter-spacing:0.05em;margin-bottom:1rem;color:var(--color-mid-gray);text-transform:uppercase;">Recent Past (last 20)</h2>
   <table class="sp-table">
     <thead>
       <tr><th>Date</th><th>Event</th><th>Type</th><th></th></tr>
@@ -76,9 +76,9 @@
     <tbody>
       {% for event in past %}
       <tr>
-        <td style="color:#888;white-space:nowrap;">{{ event.date|date:"M j, Y" }}</td>
-        <td style="color:#888;">{{ event.display_label }}</td>
-        <td style="color:#888;">{{ event.type_label }}</td>
+        <td style="color:var(--color-mid-gray);white-space:nowrap;">{{ event.date|date:"M j, Y" }}</td>
+        <td style="color:var(--color-mid-gray);">{{ event.display_label }}</td>
+        <td style="color:var(--color-mid-gray);">{{ event.type_label }}</td>
         <td>
           <form method="post" action="{% url 'staff:event_delete' event.pk %}" style="display:inline;"
                 onsubmit="return confirm('Delete this event?')">

@@ -18,7 +18,7 @@
       </div>
 
       <div class="sp-field">
-        <label class="sp-label">Caption <span style="color:#888;font-weight:400;">(optional)</span></label>
+        <label class="sp-label">Caption <span style="color:var(--color-mid-gray);font-weight:400;">(optional)</span></label>
         <input class="sp-input" type="text" name="caption" value="{{ form.caption.value|default:'' }}" placeholder="Short description shown in lightbox">
       </div>
 
@@ -33,7 +33,7 @@
       </div>
 
       <div class="sp-field">
-        <label class="sp-label">Menu Item <span style="color:#888;font-weight:400;">(optional — links photo to a menu item)</span></label>
+        <label class="sp-label">Menu Item <span style="color:var(--color-mid-gray);font-weight:400;">(optional — links photo to a menu item)</span></label>
         <select class="sp-select" name="menu_item">
           <option value="">— None —</option>
           {% for item in form.fields.menu_item.queryset %}

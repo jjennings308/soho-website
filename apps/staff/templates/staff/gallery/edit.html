@@ -51,7 +51,7 @@
       </div>
 
       <div class="sp-field">
-        <label class="sp-label">Linked Menu Item <span style="font-weight:400;color:#aaa;">(optional)</span></label>
+        <label class="sp-label">Linked Menu Item <span style="font-weight:400;color:var(--color-mid-gray);">(optional)</span></label>
         <select class="sp-select" name="menu_item">
           <option value="">— None —</option>
           {% for mi in form.fields.menu_item.queryset %}
@@ -67,7 +67,7 @@
         <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
           <input type="checkbox" name="is_published"
                  {% if form.is_published.value %}checked{% endif %}
-                 style="width:16px;height:16px;accent-color:#c9972a;">
+                 style="width:16px;height:16px;accent-color:var(--color-gold-primary);">
           <span class="sp-label" style="margin:0;">Published (visible on site)</span>
         </label>
         {% if form.is_published.errors %}<div class="sp-field-error">{{ form.is_published.errors.0 }}</div>{% endif %}

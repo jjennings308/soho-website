@@ -32,19 +32,19 @@
           <td>
             <div style="font-weight:500;">{{ inq.name }}</div>
             {% if inq.message %}
-              <div style="font-size:0.75rem;color:#888;margin-top:0.2rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ inq.message }}">
+              <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.2rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ inq.message }}">
                 {{ inq.message }}
               </div>
             {% endif %}
           </td>
           <td>
             <div style="font-size:0.85rem;">
-              <a href="mailto:{{ inq.email }}" style="color:#c9972a;text-decoration:none;">{{ inq.email }}</a>
+              <a href="mailto:{{ inq.email }}" style="color:var(--color-gold-primary);text-decoration:none;">{{ inq.email }}</a>
             </div>
             <div style="font-size:0.85rem;margin-top:0.2rem;">
               <a href="tel:{{ inq.phone }}" style="color:inherit;text-decoration:none;">{{ inq.phone }}</a>
             </div>
-            <div style="font-size:0.75rem;color:#888;margin-top:0.2rem;">Prefers {{ inq.get_preferred_contact_display }}</div>
+            <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.2rem;">Prefers {{ inq.get_preferred_contact_display }}</div>
           </td>
           <td>{{ inq.get_event_type_display }}</td>
           <td style="white-space:nowrap;">{{ inq.preferred_date|default:"—" }}</td>
@@ -54,14 +54,14 @@
             <form method="post" action="{% url 'staff:inquiry_status' inq.pk %}">
               {% csrf_token %}
               <select name="status" onchange="this.form.submit()"
-                      style="padding:0.25rem 0.5rem;border-radius:4px;border:1px solid #d1cfc9;font-size:0.8rem;background:#fff;cursor:pointer;">
+                      style="padding:0.25rem 0.5rem;border-radius:4px;border:1px solid var(--color-footer-divider);font-size:0.8rem;background:var(--color-white);cursor:pointer;">
                 <option value="new" {% if inq.status == 'new' %}selected{% endif %}>New</option>
                 <option value="contacted" {% if inq.status == 'contacted' %}selected{% endif %}>Contacted</option>
                 <option value="closed" {% if inq.status == 'closed' %}selected{% endif %}>Closed</option>
               </select>
             </form>
           </td>
-          <td style="white-space:nowrap;color:#888;font-size:0.8rem;">{{ inq.created_at|date:"M j" }}</td>
+          <td style="white-space:nowrap;color:var(--color-mid-gray);font-size:0.8rem;">{{ inq.created_at|date:"M j" }}</td>
           <td>
             <form method="post" action="{% url 'staff:inquiry_delete' inq.pk %}"
                   onsubmit="return confirm('Delete this inquiry?')">
@@ -74,7 +74,7 @@
       </tbody>
     </table>
   {% else %}
-    <p style="color:#888;font-size:0.875rem;">No inquiries{% if status_filter %} with status "{{ status_filter }}"{% endif %}.</p>
+    <p style="color:var(--color-mid-gray);font-size:0.875rem;">No inquiries{% if status_filter %} with status "{{ status_filter }}"{% endif %}.</p>
   {% endif %}
 </div>
 {% endblock %}
