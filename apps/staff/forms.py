@@ -79,12 +79,13 @@ class PopupForm(forms.ModelForm):
             'show_subscribe_form',
             'cta_label', 'cta_url',
             'image',
-            'bg_color', 'text_color', 'accent_color',
+            'bg_color', 'text_color', 'primary_color', 'accent_color',
             'show_delay',
         ]
         widgets = {
-            'body':         forms.Textarea(attrs={'rows': 4}),
-            'bg_color':     forms.TextInput(attrs={'type': 'color'}),
-            'text_color':   forms.TextInput(attrs={'type': 'color'}),
-            'accent_color': forms.TextInput(attrs={'type': 'color'}),
+            'body':          forms.Textarea(attrs={'rows': 4}),
+            'bg_color':      forms.TextInput(attrs={'type': 'color'}),
+            'text_color':    forms.TextInput(attrs={'type': 'color'}),
+            'primary_color': forms.TextInput(attrs={'type': 'color'}),
+            'accent_color':  forms.TextInput(attrs={'type': 'color'}),
         }

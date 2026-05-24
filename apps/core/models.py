@@ -620,9 +620,10 @@ class SitePopup(TimeStampedModel):
     cta_label   = models.CharField(max_length=100, blank=True, verbose_name="Button label")
     cta_url     = models.URLField(blank=True, verbose_name="Button URL")
     image       = models.ImageField(upload_to='popups/', blank=True, null=True)
-    bg_color    = models.CharField(max_length=20, default='#1a1a1a', verbose_name="Background colour")
-    text_color  = models.CharField(max_length=20, default='#ffffff', verbose_name="Text colour")
-    accent_color = models.CharField(max_length=20, default='#c9972a', verbose_name="Accent/button colour")
+    bg_color      = models.CharField(max_length=20, default='#1a1a1a', verbose_name="Background colour")
+    text_color    = models.CharField(max_length=20, default='#ffffff', verbose_name="Text colour")
+    primary_color = models.CharField(max_length=20, default='#c9972a', verbose_name="Primary/heading colour")
+    accent_color  = models.CharField(max_length=20, default='#c9972a', verbose_name="Accent/button colour")
     show_subscribe_form = models.BooleanField(default=False, verbose_name="Show email signup form",
                                               help_text="Embed the mailing-list signup form instead of the CTA button")
     show_delay  = models.PositiveIntegerField(default=2, help_text="Seconds before the popup appears")

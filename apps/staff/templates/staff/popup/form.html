@@ -97,7 +97,7 @@
       </div>
       {% endif %}
 
-      <div class="sp-grid-3">
+      <div class="sp-grid-2" style="grid-template-columns:1fr 1fr;">
         <div class="sp-field">
           <label class="sp-label">Background</label>
           <div style="display:flex;gap:0.5rem;align-items:center;">
@@ -106,7 +106,7 @@
                    style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
             <input id="id_bg_color_hex" type="text" value="{{ form.bg_color.value|default:'#1a1a1a' }}"
                    oninput="document.getElementById('id_bg_color').value=this.value"
-                   style="flex:1;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
           </div>
         </div>
         <div class="sp-field">
@@ -117,7 +117,18 @@
                    style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
             <input id="id_text_color_hex" type="text" value="{{ form.text_color.value|default:'#ffffff' }}"
                    oninput="document.getElementById('id_text_color').value=this.value"
-                   style="flex:1;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+          </div>
+        </div>
+        <div class="sp-field">
+          <label class="sp-label">Primary / Heading</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input id="id_primary_color" type="color" name="primary_color"
+                   value="{{ form.primary_color.value|default:'#c9972a' }}"
+                   style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
+            <input id="id_primary_color_hex" type="text" value="{{ form.primary_color.value|default:'#c9972a' }}"
+                   oninput="document.getElementById('id_primary_color').value=this.value"
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
           </div>
         </div>
         <div class="sp-field">
@@ -128,7 +139,7 @@
                    style="width:48px;height:38px;padding:2px;border:1px solid #d1cfc9;border-radius:4px;cursor:pointer;">
             <input id="id_accent_color_hex" type="text" value="{{ form.accent_color.value|default:'#c9972a' }}"
                    oninput="document.getElementById('id_accent_color').value=this.value"
-                   style="flex:1;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
+                   style="flex:1;min-width:0;padding:0.5rem 0.75rem;border:1px solid #d1cfc9;border-radius:4px;font-size:0.9rem;">
           </div>
         </div>
       </div>
@@ -171,7 +182,7 @@
 <script>
 const presets = {
   {% for scheme in color_schemes %}
-  '{{ scheme.pk }}': { bg: '{{ scheme.bg_color }}', text: '{{ scheme.text_color }}', accent: '{{ scheme.accent_color }}' },
+  '{{ scheme.pk }}': { bg: '{{ scheme.bg_color }}', text: '{{ scheme.text_color }}', primary: '{{ scheme.primary_color }}', accent: '{{ scheme.accent_color }}' },
   {% endfor %}
 };
 
@@ -180,6 +191,7 @@ function applyPreset(name) {
   if (!p) return;
   setColor('bg_color', p.bg);
   setColor('text_color', p.text);
+  setColor('primary_color', p.primary);
   setColor('accent_color', p.accent);
   updatePreview();
 }
@@ -194,9 +206,10 @@ function toggleCtaFields(subscribeChecked) {
 }
 
 function updatePreview() {
-  const bg     = document.getElementById('id_bg_color').value;
-  const text   = document.getElementById('id_text_color').value;
-  const accent = document.getElementById('id_accent_color').value;
+  const bg      = document.getElementById('id_bg_color').value;
+  const text    = document.getElementById('id_text_color').value;
+  const primary = document.getElementById('id_primary_color').value;
+  const accent  = document.getElementById('id_accent_color').value;
   const heading = document.querySelector('[name=heading]').value;
   const body    = document.querySelector('[name=body]').value;
   const ctaLabel = document.querySelector('[name=cta_label]').value;
@@ -207,7 +220,9 @@ function updatePreview() {
   preview.style.background = bg;
   previewBody.style.color = text;
 
-  document.getElementById('preview-heading').textContent = heading || 'Your Heading Here';
+  const headingEl = document.getElementById('preview-heading');
+  headingEl.textContent = heading || 'Your Heading Here';
+  headingEl.style.color = primary;
   const textEl = document.getElementById('preview-text');
   textEl.textContent = body;
   textEl.style.display = body ? 'block' : 'none';
@@ -231,7 +246,7 @@ function updatePreview() {
 }
 
 // Sync hex inputs ↔ color pickers
-['bg_color', 'text_color', 'accent_color'].forEach(field => {
+['bg_color', 'text_color', 'primary_color', 'accent_color'].forEach(field => {
   const picker = document.getElementById('id_' + field);
   const hex    = document.getElementById('id_' + field + '_hex');
   picker.addEventListener('input', () => { hex.value = picker.value; updatePreview(); });
