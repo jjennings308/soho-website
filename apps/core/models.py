@@ -1,7 +1,24 @@
+import os
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
 from django.core.validators import RegexValidator
+
+
+def _site_upload(fixed_name):
+    """Always writes to site/<fixed_name>.<ext> — no random suffix."""
+    def upload_to(instance, filename):
+        ext = os.path.splitext(filename)[1]
+        return f'site/{fixed_name}{ext}'
+    return upload_to
+
+
+def _slug_upload(folder):
+    """Always writes to <folder>/<slug>.<ext> — one file per record, no suffix."""
+    def upload_to(instance, filename):
+        ext = os.path.splitext(filename)[1]
+        return f'{folder}/{instance.slug}{ext}'
+    return upload_to
 
 
 # =============================================================================
@@ -193,8 +210,8 @@ class SiteSettings(models.Model):
     meta_description = models.TextField(blank=True, max_length=160)
     meta_keywords = models.CharField(max_length=255, blank=True)
 
-    logo = models.ImageField(upload_to='site/', blank=True, null=True)
-    favicon = models.ImageField(upload_to='site/', blank=True, null=True)
+    logo = models.ImageField(upload_to=_site_upload('logo'), blank=True, null=True)
+    favicon = models.ImageField(upload_to=_site_upload('favicon'), blank=True, null=True)
 
     maintenance_mode = models.BooleanField(default=False)
 
@@ -276,7 +293,7 @@ class Banner(TimeStampedModel):
         default='text-primary',
     )
     image = models.ImageField(
-        upload_to='banners/',
+        upload_to=_slug_upload('banners'),
         null=True,
         blank=True,
     )
@@ -437,7 +454,7 @@ class PanelSide(TimeStampedModel):
 
     # ── Image mode fields ─────────────────────────────────────────────────────
     image = models.ImageField(
-        upload_to='panels/',
+        upload_to=_slug_upload('panels'),
         null=True,
         blank=True,
     )

@@ -1,9 +1,15 @@
+import os
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from decimal import Decimal
 from django_ckeditor_5.fields import CKEditor5Field
 from apps.core.models import ColorScheme, TimeStampedModel, ScheduledModel, RecurrenceMixin
+
+
+def _menu_item_upload(instance, filename):
+    ext = os.path.splitext(filename)[1]
+    return f'menu_items/{instance.slug}{ext}'
 
 
 # =============================================================================
@@ -235,7 +241,7 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
         help_text="Time of day this item stops being available (e.g. 16:00 for 4pm). Leave blank for no restriction."
     )
     
-    image = models.ImageField(upload_to='menu_items/', null=True, blank=True)
+    image = models.ImageField(upload_to=_menu_item_upload, null=True, blank=True)
     image_alt = models.CharField(max_length=255, blank=True)
 
     class Meta:
