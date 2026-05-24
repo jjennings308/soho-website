@@ -4,7 +4,7 @@ from django.core.exceptions import PermissionDenied
 from django.core.mail import EmailMessage
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
 
@@ -239,24 +239,31 @@ class NewsletterSendView(StaffRequiredMixin, View):
         if not newsletter.is_draft:
             return redirect('staff:newsletter_detail', pk=pk)
 
-        recipients = list(
+        members = list(
             SoHoMember.objects.filter(is_active=True, is_email_subscribed=True)
-            .values_list('email', flat=True)
         )
 
-        if recipients:
-            html_body = render_to_string('members/emails/newsletter.html', {'newsletter': newsletter})
-            email = EmailMessage(
-                subject=newsletter.subject,
-                body=html_body,
-                from_email=None,
-                bcc=recipients,
-            )
-            email.content_subtype = 'html'
-            email.send()
+        if members:
+            for member in members:
+                unsubscribe_url = request.build_absolute_uri(
+                    reverse('members:unsubscribe', kwargs={'token': member.unsubscribe_token})
+                )
+                html_body = render_to_string('members/emails/newsletter.html', {
+                    'newsletter': newsletter,
+                    'member': member,
+                    'unsubscribe_url': unsubscribe_url,
+                })
+                msg = EmailMessage(
+                    subject=newsletter.subject,
+                    body=html_body,
+                    from_email=None,
+                    to=[member.email],
+                )
+                msg.content_subtype = 'html'
+                msg.send(fail_silently=True)
 
         newsletter.sent_at = timezone.now()
-        newsletter.recipient_count = len(recipients)
+        newsletter.recipient_count = len(members)
         newsletter.sent_by = request.user
         newsletter.save(update_fields=['sent_at', 'recipient_count', 'sent_by'])
 
