@@ -38,11 +38,11 @@ def _prepare_newsletter_html(html, base_url):
     html = re.sub(r'<figure\b([^>]*)>(.*?)</figure>', unwrap_figure, html, flags=re.DOTALL | re.IGNORECASE)
     return html
 
-from apps.core.models import EventInquiry, SitePopup, SiteSettings
+from apps.core.models import ColorScheme, EventInquiry, SitePopup, SiteSettings
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
-from apps.core.models import ColorScheme
+from apps.menu.models import Menu
 
 from .forms import ColorSchemeForm, EventForm, GalleryEditForm, GalleryUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
 
@@ -89,6 +89,7 @@ class DashboardView(StaffRequiredMixin, View):
         unpublished_count = GalleryItem.objects.filter(is_published=False).count()
         new_inquiry_count = EventInquiry.objects.filter(status='new').count()
         active_popup = SitePopup.get_active()
+        promo_menus = Menu.objects.filter(menu_type='promo').select_related('color_scheme').order_by('title')
 
         return render(request, 'staff/dashboard.html', {
             'menu_mode': menu_mode,
@@ -100,6 +101,7 @@ class DashboardView(StaffRequiredMixin, View):
             'unpublished_count': unpublished_count,
             'new_inquiry_count': new_inquiry_count,
             'active_popup': active_popup,
+            'promo_menus': promo_menus,
         })
 
 

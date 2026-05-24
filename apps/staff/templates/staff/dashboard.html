@@ -65,7 +65,7 @@
   </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;">
 
   <!-- Today's Events -->
   <div class="sp-card">
@@ -107,6 +107,42 @@
       {% endfor %}
     {% else %}
       <p style="font-size:0.875rem;color:#888;">No upcoming events.</p>
+    {% endif %}
+  </div>
+
+  <!-- Promo Menus -->
+  <div class="sp-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <h2 style="font-size:0.9rem;font-weight:600;">Promo Menus</h2>
+      <a href="/admin/menu/menu/?menu_type__exact=promo" style="font-size:0.8rem;color:#c9972a;text-decoration:none;">Manage &rarr;</a>
+    </div>
+    {% if promo_menus %}
+      {% for menu in promo_menus %}
+        <div style="padding:0.6rem 0;border-bottom:1px solid #f0ede8;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;min-width:0;">
+              {% if menu.color_scheme %}
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;background:{{ menu.color_scheme.primary_color|default:'#ccc' }};"></span>
+              {% endif %}
+              <span style="font-size:0.875rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ menu.title }}</span>
+            </div>
+            {% if menu.is_currently_active %}
+              <span class="sp-pill sp-pill--green">Active</span>
+            {% elif menu.is_active %}
+              <span class="sp-pill sp-pill--gold">Scheduled</span>
+            {% else %}
+              <span class="sp-pill sp-pill--gray">Off</span>
+            {% endif %}
+          </div>
+          {% if menu.active_from or menu.active_until %}
+            <div style="font-size:0.75rem;color:#888;margin-top:0.25rem;padding-left:{% if menu.color_scheme %}1.25rem{% else %}0{% endif %};">
+              {% if menu.active_from %}From {{ menu.active_from|date:"M j" }}{% endif %}{% if menu.active_from and menu.active_until %} – {% endif %}{% if menu.active_until %}Until {{ menu.active_until|date:"M j" }}{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    {% else %}
+      <p style="font-size:0.875rem;color:#888;">No promo menus yet.</p>
     {% endif %}
   </div>
 
