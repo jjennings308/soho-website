@@ -148,7 +148,7 @@
     @apply inline-flex items-center justify-center gap-2
            text-xs font-semibold uppercase tracking-widest
            px-8 py-3.5 cursor-pointer no-underline
-           transition-all duration-200;
+           rounded-full transition-all duration-200;
   }
 
   /* Gold fill */
@@ -310,11 +310,7 @@
     transform: translateX(-50%);
   }
 
-  .btn-delivery {
-    border-radius: 9999px;
-  }
-
-  .site-nav__logo {
+.site-nav__logo {
     font-family: var(--font-primary);
     color: var(--color-text-accent);
     @apply text-xl font-bold uppercase tracking-wide;
