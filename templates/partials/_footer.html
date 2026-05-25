@@ -11,7 +11,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:3rem;margin-bottom:3rem;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:3rem;margin-bottom:2rem;">
       {# Brand Column #}
       <div>
         <div class="site-footer__logo">
@@ -89,19 +89,18 @@
         {% endif %}
       </div>
 
-      {# Nav Column #}
-      <div>
-        <h4 style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-primary);margin-bottom:1.25rem;">Explore</h4>
-        <ul class="site-footer__nav" style="flex-direction:column;gap:0.75rem;">
-          <li><a href="{% url 'core:home' %}">Home</a></li>
-          <li><a href="{% url 'core:about' %}">About SoHo</a></li>
-          <li><a href="{% url 'menu:full' %}?type=food">Food Menu</a></li>
-          <li><a href="{% url 'menu:full' %}?type=drinks">Drinks Menu</a></li>
-          <li><a href="{% url 'core:contact' %}">Contact</a></li>
-        </ul>
-      </div>
-
     </div>{# /grid #}
+
+    {# Explore Nav — full-width horizontal bar #}
+    <nav style="border-top:1px solid rgba(201,168,76,0.18);border-bottom:1px solid rgba(201,168,76,0.18);padding:1rem 0;margin-bottom:1.75rem;">
+      <ul style="display:flex;flex-wrap:wrap;justify-content:center;gap:0.25rem 0;list-style:none;padding:0;margin:0;">
+        <li><a href="{% url 'core:home' %}" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--color-footer-muted);text-decoration:none;padding:0.25rem 1.25rem;border-right:1px solid rgba(201,168,76,0.25);" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-footer-muted)'">Home</a></li>
+        <li><a href="{% url 'core:about' %}" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--color-footer-muted);text-decoration:none;padding:0.25rem 1.25rem;border-right:1px solid rgba(201,168,76,0.25);" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-footer-muted)'">About SoHo</a></li>
+        <li><a href="{% url 'menu:full' %}?type=food" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--color-footer-muted);text-decoration:none;padding:0.25rem 1.25rem;border-right:1px solid rgba(201,168,76,0.25);" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-footer-muted)'">Food Menu</a></li>
+        <li><a href="{% url 'menu:full' %}?type=drinks" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--color-footer-muted);text-decoration:none;padding:0.25rem 1.25rem;border-right:1px solid rgba(201,168,76,0.25);" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-footer-muted)'">Drinks Menu</a></li>
+        <li><a href="{% url 'core:contact' %}" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--color-footer-muted);text-decoration:none;padding:0.25rem 1.25rem;" onmouseover="this.style.color='var(--color-gold-primary)'" onmouseout="this.style.color='var(--color-footer-muted)'">Contact</a></li>
+      </ul>
+    </nav>
 
     {# Bottom Bar #}
     <div class="site-footer__bottom">
