@@ -26,7 +26,7 @@
                     &#10148; Get Directions
                 </a>
             </div>
-        {% else %}
+        {% elif left %}
             <div style="background-color: var(--color-{{left.bg_color|default:'bg-primary'}}); color: var(--color-{{left.text_color|default:'text-primary'}}); display: flex;
                 min-height: 24rem; align-items: {{ left.vertical_align|default:'center' }}; justify-content: {{ left.horizontal_align|default:'flex-start' }};">
                 <div style="max-width: calc(theme(maxWidth.7xl) / 2); padding: 3rem 2rem; text-align: {{ left.text_align|default:'left' }};">
@@ -67,7 +67,7 @@
                     &#10148; Get Directions
                 </a>
             </div>
-        {% else %}
+        {% elif right %}
             <div style="background-color: var(--color-{{right.bg_color|default:'bg-secondary'}}); color: var(--color-{{right.text_color|default:'text-primary'}}); display: flex;
                 min-height: 24rem; align-items: {{ right.vertical_align|default:'center' }}; justify-content: {{ right.horizontal_align|default:'flex-start' }};">
                 <div style="max-width: calc(theme(maxWidth.7xl) / 2); padding: 3rem 2rem; text-align: {{ right.text_align|default:'left' }};">
