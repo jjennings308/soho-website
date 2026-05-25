@@ -37,7 +37,7 @@ def get_panel_side(slug):
 
     try:
         panel = PanelSide.objects.select_related(
-            'image', 'content_slot'
+            'content_slot'
         ).get(slug=slug, is_active=True)
         return panel.as_dict()
     except PanelSide.DoesNotExist:
