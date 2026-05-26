@@ -149,11 +149,8 @@ def about(request):
 
 
 def contact(request):
-    context = {
-        'left_contact':  get_panel_side('contact-text'),
-        'right_contact': get_panel_side('contact-map'),
-    }
-    return render(request, 'contact.html', context)
+    from django.shortcuts import redirect
+    return redirect('/about/#contact')
 
 def theme_test(request):
     return render(request, 'core/theme_test.html')
