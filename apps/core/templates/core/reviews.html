@@ -19,11 +19,16 @@
         <div style="width: 3rem; height: 2px; background: var(--color-text-accent); margin: 0 auto 2rem;"></div>
 
         {# Leave-a-review buttons #}
-        {% if site_settings.google_review_url or site_settings.opentable_review_url or site_settings.rewardsnetwork_review_url %}
+        {% if site_settings.google_review_url or site_settings.yelp_review_url or site_settings.opentable_review_url or site_settings.rewardsnetwork_review_url %}
         <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-bottom: 0.5rem;">
             {% if site_settings.google_review_url %}
             <a href="{{ site_settings.google_review_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
                 Review on Google
+            </a>
+            {% endif %}
+            {% if site_settings.yelp_review_url %}
+            <a href="{{ site_settings.yelp_review_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+                Review on Yelp
             </a>
             {% endif %}
             {% if site_settings.opentable_review_url %}

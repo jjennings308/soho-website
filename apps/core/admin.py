@@ -41,7 +41,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             ),
         }),
         ('Review Platform Links', {
-            'fields': ('google_review_url', 'opentable_review_url', 'rewardsnetwork_review_url'),
+            'fields': ('google_review_url', 'yelp_review_url', 'opentable_review_url', 'rewardsnetwork_review_url'),
             'classes': ('collapse',),
             'description': 'Links shown on the Reviews page so visitors can leave a review.',
         }),

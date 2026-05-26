@@ -213,6 +213,7 @@ class SiteSettings(models.Model):
     twitter_url = models.URLField(blank=True)
     yelp_url = models.URLField(blank=True)
     google_review_url = models.URLField(blank=True, help_text="Google Maps 'Write a review' link")
+    yelp_review_url = models.URLField(blank=True, help_text="Yelp reviews page link")
     opentable_review_url = models.URLField(blank=True, help_text="OpenTable reviews page link")
     rewardsnetwork_review_url = models.URLField(blank=True, help_text="Rewards Network reviews page link")
     reservations_url = models.URLField(
