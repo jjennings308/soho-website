@@ -14,17 +14,20 @@ from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssig
 def get_content_group(slug):
     """
     Fetch a ContentGroup with all slots and blocks prefetched.
-    Returns None if the group does not exist.
+    Returns None if the group does not exist or has no active blocks.
     Mirrors the template tag but for use in views.
     """
     try:
-        return (
+        group = (
             ContentGroup.objects
             .prefetch_related('slots', 'slots__blocks')
             .get(slug=slug)
         )
     except ContentGroup.DoesNotExist:
         return None
+    if not any(slot.get_active_block() for slot in group.slots.all()):
+        return None
+    return group
 
 def _build_promo_grid(menu):
     """
