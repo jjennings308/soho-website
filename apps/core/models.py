@@ -212,6 +212,9 @@ class SiteSettings(models.Model):
     instagram_url = models.URLField(blank=True)
     twitter_url = models.URLField(blank=True)
     yelp_url = models.URLField(blank=True)
+    google_review_url = models.URLField(blank=True, help_text="Google Maps 'Write a review' link")
+    opentable_review_url = models.URLField(blank=True, help_text="OpenTable reviews page link")
+    rewardsnetwork_review_url = models.URLField(blank=True, help_text="Rewards Network reviews page link")
     reservations_url = models.URLField(
         blank=True,
         help_text="OpenTable or other reservations link. Used for the Reservations button on the homepage."
@@ -726,3 +729,48 @@ class SitePopup(TimeStampedModel):
     @classmethod
     def get_active(cls):
         return cls.objects.filter(is_active=True).first()
+
+
+# =============================================================================
+# REVIEWS
+# =============================================================================
+
+class Review(TimeStampedModel):
+    SOURCE_CHOICES = [
+        ('manual',        'Manual'),
+        ('google',        'Google'),
+        ('yelp',          'Yelp'),
+        ('opentable',     'OpenTable'),
+        ('rewardsnetwork','Rewards Network'),
+    ]
+
+    reviewer_name     = models.CharField(max_length=100)
+    reviewer_location = models.CharField(max_length=100, blank=True)
+    rating            = models.PositiveSmallIntegerField(
+        default=5,
+        choices=[(i, str(i)) for i in range(1, 6)],
+    )
+    body              = models.TextField()
+    source            = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='google')
+    is_featured       = models.BooleanField(
+        default=False,
+        help_text="Show on the homepage sampling (up to 3 featured reviews displayed)."
+    )
+    is_active         = models.BooleanField(default=True)
+    display_order     = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order', '-created_at']
+        verbose_name = 'Review'
+        verbose_name_plural = 'Reviews'
+
+    def __str__(self):
+        return f'{self.reviewer_name} ({self.get_source_display()}, {self.rating}★)'
+
+    @property
+    def star_range(self):
+        return range(self.rating)
+
+    @property
+    def empty_star_range(self):
+        return range(5 - self.rating)

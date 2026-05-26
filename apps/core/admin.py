@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import EventInquiry, SitePopup, SiteSettings, Banner, BannerButton, PanelSide
+from .models import EventInquiry, Review, SitePopup, SiteSettings, Banner, BannerButton, PanelSide
 
 
 @admin.register(SiteSettings)
@@ -39,6 +39,11 @@ class SiteSettingsAdmin(admin.ModelAdmin):
                 'Remember to uncheck these after the situation passes — '
                 'they are not cleared automatically.'
             ),
+        }),
+        ('Review Platform Links', {
+            'fields': ('google_review_url', 'opentable_review_url', 'rewardsnetwork_review_url'),
+            'classes': ('collapse',),
+            'description': 'Links shown on the Reviews page so visitors can leave a review.',
         }),
     )
     
@@ -127,4 +132,13 @@ class EventInquiryAdmin(admin.ModelAdmin):
 class SitePopupAdmin(admin.ModelAdmin):
     list_display = ['title', 'heading', 'is_active', 'show_delay', 'created_at']
     list_filter = ['is_active']
+    readonly_fields = ['created_at', 'updated_at']
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['reviewer_name', 'rating', 'source', 'is_featured', 'is_active', 'display_order', 'created_at']
+    list_editable = ['is_featured', 'is_active', 'display_order']
+    list_filter = ['source', 'is_featured', 'is_active', 'rating']
+    search_fields = ['reviewer_name', 'reviewer_location', 'body']
     readonly_fields = ['created_at', 'updated_at']

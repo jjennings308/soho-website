@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Reviews — {{ site_settings.restaurant_name|default:"SoHo Pittsburgh" }}{% endblock %}
+
+{% block content %}
+
+{# ── Page header ──────────────────────────────────────────────────────────── #}
+<section style="background-color: var(--color-bg-primary); padding: 4rem 1.5rem 3rem;">
+    <div style="max-width: 48rem; margin: 0 auto; text-align: center;">
+
+        <p style="font-family: var(--font-accent); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-text-accent); margin-bottom: 1rem;">
+            What People Are Saying
+        </p>
+
+        <h1 style="font-family: var(--font-primary); font-size: clamp(2.25rem, 5vw, 3.5rem); font-weight: 700; line-height: 1.15; color: var(--color-text-heading); margin-bottom: 1.5rem;">
+            Guest Reviews
+        </h1>
+
+        <div style="width: 3rem; height: 2px; background: var(--color-text-accent); margin: 0 auto 2rem;"></div>
+
+        {# Leave-a-review buttons #}
+        {% if site_settings.google_review_url or site_settings.opentable_review_url or site_settings.rewardsnetwork_review_url %}
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-bottom: 0.5rem;">
+            {% if site_settings.google_review_url %}
+            <a href="{{ site_settings.google_review_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+                Review on Google
+            </a>
+            {% endif %}
+            {% if site_settings.opentable_review_url %}
+            <a href="{{ site_settings.opentable_review_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+                Review on OpenTable
+            </a>
+            {% endif %}
+            {% if site_settings.rewardsnetwork_review_url %}
+            <a href="{{ site_settings.rewardsnetwork_review_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline">
+                Review on Rewards Network
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+
+{# ── Review grid ──────────────────────────────────────────────────────────── #}
+<section style="background-color: var(--color-bg-primary); padding: 0 1.5rem 5rem;">
+    <div style="max-width: 72rem; margin: 0 auto;">
+
+        {% if reviews %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.5rem;">
+            {% for review in reviews %}
+                {% include "core/partials/review_card.html" with review=review %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p style="text-align: center; color: var(--color-text-secondary); opacity: 0.6; padding: 4rem 0;">
+            No reviews yet — check back soon.
+        </p>
+        {% endif %}
+
+    </div>
+</section>
+
+{% endblock %}

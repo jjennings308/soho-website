@@ -5,7 +5,7 @@ from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import TemplateView
 from django.db.models import Prefetch
-from .models import EventInquiry, SitePopup, SiteSettings
+from .models import EventInquiry, Review, SitePopup, SiteSettings
 from .utils import get_banner, get_panel_side
 from apps.content.models import ContentGroup
 from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
@@ -132,6 +132,9 @@ class HomeView(TemplateView):
         context['promo_slot_1_item'] = _get_random_promo_item(promo_slot_1)
         context['promo_slot_2_item'] = _get_random_promo_item(promo_slot_2)
         context['site_popup'] = SitePopup.get_active()
+        context['featured_reviews'] = list(
+            Review.objects.filter(is_active=True, is_featured=True)[:3]
+        )
 
         return context
 
@@ -160,6 +163,15 @@ def gallery(request):
 
 def online_delivery(request):
     return render(request, 'core/online_delivery.html')
+
+
+def reviews(request):
+    all_reviews = Review.objects.filter(is_active=True)
+    context = {
+        'reviews': all_reviews,
+        'site_settings': SiteSettings.load(),
+    }
+    return render(request, 'core/reviews.html', context)
 
 
 def privacy(request):
