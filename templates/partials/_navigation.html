@@ -21,7 +21,7 @@
 
   {# Desktop Links #}
   <ul class="site-nav__links" style="display:none;" id="desktop-nav">
-    <li><a href="{% url 'core:about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">About Us</a></li>
+    <li><a href="{% url 'core:about' %}" class="{% if request.resolver_match.url_name == 'about' %}active{% endif %}">About SoHo</a></li>
 
     {# ── Menu Dropdown ── #}
     <li
@@ -117,7 +117,7 @@
     "
   >
     <ul style="list-style:none;display:flex;flex-direction:column;gap:1.25rem;">
-      <li><a href="{% url 'core:about' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">About Us</a></li>
+      <li><a href="{% url 'core:about' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">About Soho</a></li>
 
       {# Mobile Menu sub-links #}
       <li>
