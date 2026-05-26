@@ -42,27 +42,29 @@ class Command(BaseCommand):
         )
 
         created = skipped = 0
-        for filename in sorted(os.listdir(gallery_dir)):
-            ext = os.path.splitext(filename)[1].lower()
-            if ext not in IMAGE_EXTENSIONS:
-                continue
+        for dirpath, _dirs, files in os.walk(gallery_dir):
+            for filename in sorted(files):
+                ext = os.path.splitext(filename)[1].lower()
+                if ext not in IMAGE_EXTENSIONS:
+                    continue
 
-            relative_path = f'{GALLERY_SUBDIR}/{filename}'
+                abs_path = os.path.join(dirpath, filename)
+                relative_path = os.path.relpath(abs_path, settings.MEDIA_ROOT)
 
-            if relative_path in existing:
-                self.stdout.write(f'  Skipped (already exists): {filename}')
-                skipped += 1
-                continue
+                if relative_path in existing:
+                    self.stdout.write(f'  Skipped (already exists): {relative_path}')
+                    skipped += 1
+                    continue
 
-            GalleryItem.objects.create(
-                image=relative_path,
-                media_type='image',
-                caption='',
-                display_order=0,
-                is_published=publish,
-            )
-            self.stdout.write(f'  Created: {filename}')
-            created += 1
+                GalleryItem.objects.create(
+                    image=relative_path,
+                    media_type='image',
+                    caption='',
+                    display_order=0,
+                    is_published=publish,
+                )
+                self.stdout.write(f'  Created: {relative_path}')
+                created += 1
 
         self.stdout.write(self.style.SUCCESS(
             f'\nDone. {created} created, {skipped} skipped. '
