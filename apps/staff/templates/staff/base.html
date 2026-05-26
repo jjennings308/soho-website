@@ -76,6 +76,9 @@
             <a href="{% url 'staff:popups' %}" class="{% if 'popup' in request.resolver_match.url_name %}active{% endif %}">
               &#9670; Popups
             </a>
+            <a href="{% url 'staff:reviews' %}" class="{% if 'review' in request.resolver_match.url_name %}active{% endif %}">
+              &#9670; Reviews
+            </a>
           </div>
         </div>
 

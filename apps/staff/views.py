@@ -38,7 +38,7 @@ def _prepare_newsletter_html(html, base_url):
     html = re.sub(r'<figure\b([^>]*)>(.*?)</figure>', unwrap_figure, html, flags=re.DOTALL | re.IGNORECASE)
     return html
 
-from apps.core.models import ColorScheme, EventInquiry, SitePopup, SiteSettings
+from apps.core.models import ColorScheme, EventInquiry, Review, SitePopup, SiteSettings
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.members.models import Newsletter, SoHoMember
@@ -572,3 +572,53 @@ class ColorReferenceView(StaffRequiredMixin, View):
             'golds': golds,
             'combos': combos,
         })
+
+
+# ── Reviews ───────────────────────────────────────────────────────────────────
+
+class ReviewListView(StaffRequiredMixin, View):
+    def get(self, request):
+        reviews = Review.objects.order_by('display_order', '-created_at')
+        return render(request, 'staff/reviews/list.html', {'reviews': reviews})
+
+
+class ReviewImportView(StaffRequiredMixin, View):
+    def post(self, request):
+        source = request.POST.get('source', '').strip()
+        if source not in ('google', 'yelp'):
+            messages.error(request, 'Unknown source.')
+            return redirect('staff:reviews')
+
+        out = StringIO()
+        try:
+            call_command('import_reviews', f'--source={source}', stdout=out)
+            lines = [l for l in out.getvalue().strip().splitlines() if l.strip()]
+            messages.success(request, lines[-1] if lines else 'Import complete.')
+        except Exception as e:
+            messages.error(request, f'Import failed: {e}')
+
+        return redirect('staff:reviews')
+
+
+class ReviewToggleView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        review = get_object_or_404(Review, pk=pk)
+        review.is_active = not review.is_active
+        review.save(update_fields=['is_active'])
+        return redirect('staff:reviews')
+
+
+class ReviewFeatureView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        review = get_object_or_404(Review, pk=pk)
+        review.is_featured = not review.is_featured
+        review.save(update_fields=['is_featured'])
+        return redirect('staff:reviews')
+
+
+class ReviewDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        review = get_object_or_404(Review, pk=pk)
+        review.delete()
+        messages.success(request, 'Review deleted.')
+        return redirect('staff:reviews')

@@ -745,6 +745,8 @@ class Review(TimeStampedModel):
         ('rewardsnetwork','Rewards Network'),
     ]
 
+    source_id         = models.CharField(max_length=200, blank=True, db_index=True,
+                          help_text="Platform's own review ID — used to skip duplicates on re-import.")
     reviewer_name     = models.CharField(max_length=100)
     reviewer_location = models.CharField(max_length=100, blank=True)
     rating            = models.PositiveSmallIntegerField(

@@ -1,0 +1,109 @@
+{% extends "staff/base.html" %}
+{% block title %}Reviews{% endblock %}
+{% block page_title %}Reviews{% endblock %}
+
+{% block topbar_actions %}
+  <form method="post" action="{% url 'staff:review_import' %}" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="source" value="google">
+    <button type="submit" class="sp-btn sp-btn--outline"
+            onclick="return confirm('Pull latest reviews from Google Places API?')">
+      Import Google
+    </button>
+  </form>
+  <form method="post" action="{% url 'staff:review_import' %}" style="display:inline;">
+    {% csrf_token %}
+    <input type="hidden" name="source" value="yelp">
+    <button type="submit" class="sp-btn sp-btn--outline"
+            onclick="return confirm('Pull latest reviews from Yelp Fusion API?')">
+      Import Yelp
+    </button>
+  </form>
+{% endblock %}
+
+{% block content %}
+
+{% if messages %}
+  {% for msg in messages %}
+  <div style="margin-bottom:1rem;padding:0.75rem 1rem;border-radius:4px;
+              background:{% if msg.tags == 'error' %}rgba(220,38,38,0.15){% else %}rgba(74,222,128,0.15){% endif %};
+              color:{% if msg.tags == 'error' %}#f87171{% else %}#4ade80{% endif %};
+              font-size:0.875rem;">
+    {{ msg }}
+  </div>
+  {% endfor %}
+{% endif %}
+
+<div style="margin-bottom:1rem;font-size:0.8rem;color:var(--color-mid-gray);">
+  New imports arrive <strong>hidden</strong> — toggle them active once reviewed.
+  Featured reviews appear on the homepage (up to&nbsp;3).
+</div>
+
+<div class="sp-card">
+  {% if reviews %}
+  <table class="sp-table">
+    <thead>
+      <tr>
+        <th>Reviewer</th>
+        <th>Rating</th>
+        <th>Source</th>
+        <th>Excerpt</th>
+        <th>Active</th>
+        <th>Featured</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for review in reviews %}
+      <tr>
+        <td>
+          <div style="font-weight:600;">{{ review.reviewer_name }}</div>
+          {% if review.reviewer_location %}
+          <div style="font-size:0.75rem;color:var(--color-mid-gray);">{{ review.reviewer_location }}</div>
+          {% endif %}
+        </td>
+        <td style="white-space:nowrap;color:var(--color-gold-primary);">
+          {% for _ in review.star_range %}&#9733;{% endfor %}{% for _ in review.empty_star_range %}<span style="opacity:0.3;">&#9733;</span>{% endfor %}
+        </td>
+        <td>
+          <span class="sp-pill sp-pill--gray">{{ review.get_source_display }}</span>
+        </td>
+        <td style="max-width:260px;font-size:0.82rem;color:var(--color-mid-gray);">
+          {{ review.body|truncatechars:100 }}
+        </td>
+        <td>
+          <form method="post" action="{% url 'staff:review_toggle' review.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="sp-btn sp-btn--sm {% if review.is_active %}sp-btn--primary{% else %}sp-btn--outline{% endif %}">
+              {% if review.is_active %}Active{% else %}Hidden{% endif %}
+            </button>
+          </form>
+        </td>
+        <td>
+          <form method="post" action="{% url 'staff:review_feature' review.pk %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="sp-btn sp-btn--sm {% if review.is_featured %}sp-btn--primary{% else %}sp-btn--outline{% endif %}"
+                    title="{% if review.is_featured %}Remove from homepage{% else %}Show on homepage{% endif %}">
+              {% if review.is_featured %}&#9733; Featured{% else %}&#9734; Feature{% endif %}
+            </button>
+          </form>
+        </td>
+        <td style="white-space:nowrap;">
+          <form method="post" action="{% url 'staff:review_delete' review.pk %}" style="display:inline;"
+                onsubmit="return confirm('Delete this review? Cannot be undone.')">
+            {% csrf_token %}
+            <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--color-mid-gray);font-size:0.875rem;">
+    No reviews yet. Use the Import buttons above to pull from Google or Yelp,
+    or add them manually in the Django admin.
+  </p>
+  {% endif %}
+</div>
+{% endblock %}

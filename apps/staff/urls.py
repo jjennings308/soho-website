@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import views
-from .views import InquiryDeleteView, InquiryListView, InquiryStatusView
+from .views import InquiryDeleteView, InquiryListView, InquiryStatusView, ReviewDeleteView, ReviewFeatureView, ReviewImportView, ReviewListView, ReviewToggleView
 
 app_name = 'staff'
 
@@ -43,6 +43,13 @@ urlpatterns = [
     path('inquiries/', InquiryListView.as_view(), name='inquiries'),
     path('inquiries/<int:pk>/status/', InquiryStatusView.as_view(), name='inquiry_status'),
     path('inquiries/<int:pk>/delete/', InquiryDeleteView.as_view(), name='inquiry_delete'),
+
+    # Reviews
+    path('reviews/', ReviewListView.as_view(), name='reviews'),
+    path('reviews/import/', ReviewImportView.as_view(), name='review_import'),
+    path('reviews/<int:pk>/toggle/', ReviewToggleView.as_view(), name='review_toggle'),
+    path('reviews/<int:pk>/feature/', ReviewFeatureView.as_view(), name='review_feature'),
+    path('reviews/<int:pk>/delete/', ReviewDeleteView.as_view(), name='review_delete'),
 
     # Color reference
     path('colors/', views.ColorReferenceView.as_view(), name='colors'),
