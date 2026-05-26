@@ -134,28 +134,51 @@
 </section>
 {% endif %}
 
-{# ── Hours and location — primary ─────────────────────────────────────────── #}
-{% if about_info %}
-<section class="w-full"
-         style="background-color: var(--color-bg-primary);">
-    <div class="max-w-3xl mx-auto px-6 py-12">
+{# ── Info + Map 50/50 ─────────────────────────────────────────────────────── #}
+{% if about_info or right_contact %}
+<section class="w-full" style="background-color: var(--color-bg-primary);">
+    <div class="grid md:grid-cols-2">
 
-        {% for slot in about_info.body_slots %}
-            {% with block=slot.get_active_block %}
-                {% if block %}
-                <div class="prose max-w-none mb-6 info--{{ slot.slug }}"
-                     style="color: var(--color-text-primary);">
-                    {{ block.body|safe }}
-                </div>
-                {% endif %}
-            {% endwith %}
-        {% endfor %}
+        {# Left — about_info body slots #}
+        {% if about_info %}
+        <div style="display:flex;align-items:center;padding:3rem 2.5rem;">
+            <div style="max-width:28rem;">
+                {% for slot in about_info.body_slots %}
+                    {% with block=slot.get_active_block %}
+                        {% if block %}
+                        <div class="prose max-w-none mb-6 info--{{ slot.slug }}"
+                             style="color: var(--color-text-primary);">
+                            {{ block.body|safe }}
+                        </div>
+                        {% endif %}
+                    {% endwith %}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {# Right — Google Maps embed #}
+        {% if right_contact.map %}
+        <div class="relative w-full" style="min-height:24rem;">
+            <iframe
+                src="{{ right_contact.map.embed_url }}"
+                class="absolute inset-0 w-full h-full border-0"
+                allowfullscreen
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+            <a href="{{ right_contact.map.directions_url }}"
+               target="_blank"
+               rel="noopener"
+               class="absolute top-4 left-4 z-10 flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest"
+               style="background-color: var(--color-bg-primary); color: var(--color-text-primary);">
+                &#10148; Get Directions
+            </a>
+        </div>
+        {% endif %}
 
     </div>
 </section>
 {% endif %}
-
-{# ── Location 50/50 — map + address ──────────────────────────────────────── #}
-{% include "core/components/50_50.html" with left=left_contact right=right_contact %}
 
 {% endblock %}
