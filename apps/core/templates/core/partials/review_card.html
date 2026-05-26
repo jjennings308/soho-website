@@ -4,22 +4,16 @@
 
     {# Stars #}
     <div style="display: flex; gap: 0.25rem; color: var(--color-text-accent); font-size: 1.125rem; line-height: 1;" aria-label="{{ review.rating }} out of 5 stars">
-        {% for _ in review.star_range %}
-            &#9733;
-        {% endfor %}
-        {% for _ in review.empty_star_range %}
-            <span style="opacity: 0.25;">&#9733;</span>
-        {% endfor %}
+        {% for _ in review.star_range %}&#9733;{% endfor %}{% for _ in review.empty_star_range %}<span style="opacity:0.25;">&#9733;</span>{% endfor %}
     </div>
 
     {# Body — clamped to 4 lines, expandable #}
     <div style="flex: 1;">
-        <p :style="expanded ? '' : '-webkit-line-clamp:4;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;'"
-           style="font-size: 1rem; line-height: 1.75; color: var(--color-text-secondary); white-space: pre-line;">
-            &ldquo;{{ review.body }}&rdquo;
-        </p>
+        <div :style="expanded ? 'font-size:1rem;line-height:1.75;color:var(--color-text-secondary);' : 'font-size:1rem;line-height:1.75;color:var(--color-text-secondary);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;'">
+            &ldquo;{{ review.body|linebreaksbr }}&rdquo;
+        </div>
         <button @click="expanded = !expanded"
-                style="margin-top: 0.5rem; background: none; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-accent); padding: 0;">
+                style="margin-top:0.5rem;background:none;border:none;cursor:pointer;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:var(--color-text-accent);padding:0;">
             <span x-text="expanded ? 'Show less ▲' : 'Read more ▼'"></span>
         </button>
     </div>
