@@ -47,7 +47,7 @@ class GalleryItem(TimeStampedModel):
         help_text="Link to a menu item to show this photo on the menu card and modal.",
     )
     media_type = models.CharField(max_length=10, choices=MEDIA_CHOICES, default='image')
-    image = models.ImageField(upload_to='gallery/', blank=True)
+    image = models.ImageField(upload_to='gallery/', blank=True, max_length=500)
     video_url = models.URLField(blank=True)
     caption = models.CharField(max_length=255, blank=True)
     display_order = models.PositiveIntegerField(default=0)
