@@ -1,5 +1,6 @@
 {# review_card.html — include with review=<Review instance> #}
-<article style="background-color: var(--color-bg-secondary); border-radius: 0.5rem; padding: 1.75rem; display: flex; flex-direction: column; gap: 1rem;">
+<article x-data="{ expanded: false }"
+         style="background-color: var(--color-bg-secondary); border-radius: 0.5rem; padding: 1.75rem; display: flex; flex-direction: column; gap: 1rem;">
 
     {# Stars #}
     <div style="display: flex; gap: 0.25rem; color: var(--color-text-accent); font-size: 1.125rem; line-height: 1;" aria-label="{{ review.rating }} out of 5 stars">
@@ -11,10 +12,17 @@
         {% endfor %}
     </div>
 
-    {# Body #}
-    <p style="font-size: 1rem; line-height: 1.75; color: var(--color-text-secondary); flex: 1;">
-        &ldquo;{{ review.body }}&rdquo;
-    </p>
+    {# Body — clamped to 4 lines, expandable #}
+    <div style="flex: 1;">
+        <p :style="expanded ? '' : '-webkit-line-clamp:4;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden;'"
+           style="font-size: 1rem; line-height: 1.75; color: var(--color-text-secondary); white-space: pre-line;">
+            &ldquo;{{ review.body }}&rdquo;
+        </p>
+        <button @click="expanded = !expanded"
+                style="margin-top: 0.5rem; background: none; border: none; cursor: pointer; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--color-text-accent); padding: 0;">
+            <span x-text="expanded ? 'Show less ▲' : 'Read more ▼'"></span>
+        </button>
+    </div>
 
     {# Reviewer #}
     <div style="margin-top: auto;">
