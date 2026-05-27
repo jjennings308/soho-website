@@ -6,7 +6,7 @@
 {% block content %}
 
 {% for menu in promo_menus %}
-  {% include "menu/partials/promo_card.html" with menu=menu limited_menu=limited_menu %}
+  {% include "menu/partials/promo_card.html" with menu=menu %}
 {% empty %}
   <section class="py-12 px-12 text-center">
     <p class="opacity-60">No active promotions at this time. Check back soon!</p>

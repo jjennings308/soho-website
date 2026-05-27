@@ -226,22 +226,21 @@ def get_active_menus(menu_type=None, homepage_only=False, limit=None):
 
 
 @register.simple_tag
-def get_category_assignments(category, limited_menu=False):
+def get_category_assignments(category):
     """
     Returns active MenuItemCategoryAssignment records for a category,
     with menu_item, subcategory, and media prefetched.
 
-    Args:
-        category:     MenuCategory instance.
-        limited_menu: If True, only return assignments with available_game_day=True.
+    Item visibility is now controlled entirely by which menu is active
+    (role-based switching via get_active_menus()). No per-item filtering
+    is applied here.
 
     Usage:
         {% get_category_assignments category as assignments %}
-        {% get_category_assignments category limited_menu=True as assignments %}
     """
     from apps.menu.models import MenuItemCategoryAssignment
 
-    qs = MenuItemCategoryAssignment.objects.filter(
+    return MenuItemCategoryAssignment.objects.filter(
         category=category,
         is_active=True,
         menu_item__is_available=True,
@@ -266,11 +265,6 @@ def get_category_assignments(category, limited_menu=False):
             ).order_by('order', 'price'),
         ),
     ).order_by('subcategory__order', 'order')
-
-    if limited_menu:
-        qs = qs.filter(available_game_day=True)
-
-    return qs
 
 
 @register.simple_tag

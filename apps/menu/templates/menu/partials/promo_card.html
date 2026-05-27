@@ -6,8 +6,7 @@
 {# scheme as CSS custom properties.                             #}
 {#                                                              #}
 {# Expects:                                                     #}
-{#   menu         — Menu instance (menu_type='promo')           #}
-{#   limited_menu — bool from EventDay.get_current_menu_mode()  #}
+{#   menu — Menu instance (menu_type='promo')                   #}
 {#                                                              #}
 {# Usage (home page or promotions list):                        #}
 {#   {% for menu in promo_menus %}                              #}
@@ -45,7 +44,7 @@
   {# ── Categories declared for this promo ── #}
   {% for cat_assignment in menu.menu_category_assignments.all %}
     {% with category=cat_assignment.category %}
-      {% get_category_assignments category limited_menu=limited_menu as assignments %}
+      {% get_category_assignments category as assignments %}
 
       {% if assignments %}
         {# Optional: per-category heading when promo has multiple categories #}

@@ -1,0 +1,21 @@
+{# ============================================================ #}
+{# menu/partials/menu_sections.html                             #}
+{#                                                              #}
+{# Renders all category sections for a single Menu instance.   #}
+{# Expects:                                                     #}
+{#   menu           — Menu instance                             #}
+{#   section_offset — integer (optional, default 0) so that    #}
+{#                    bg alternation is correct when food and   #}
+{#                    drinks menus are rendered sequentially    #}
+{# ============================================================ #}
+
+{% load menu_tags %}
+
+{% for cat_assignment in menu.menu_category_assignments.all %}
+  {% with category=cat_assignment.category %}
+    {% get_category_assignments category as assignments %}
+    {% if assignments %}
+      {% include "menu/partials/menu_category_section.html" with category=category assignments=assignments section_index=forloop.counter|add:section_offset %}
+    {% endif %}
+  {% endwith %}
+{% endfor %}

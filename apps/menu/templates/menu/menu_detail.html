@@ -7,13 +7,6 @@
 
 {% block content %}
 
-{# ── Game day notice ── #}
-{% if limited_menu %}
-<div class="menu-game-day-notice text-center py-3 px-6" style="background-color: var(--color-bg-accent); color: var(--color-text-accent);">
-  <strong>Game Day Menu</strong> — We're serving a limited selection today. Full menu returns after the event.
-</div>
-{% endif %}
-
 {# ── Menu detail — renders like a promo card but full-page ── #}
 <div
   class="menu-promo-block py-8 px-6 md:px-12"
@@ -33,7 +26,7 @@
   {# ── Categories ── #}
   {% for cat_assignment in category_assignments %}
     {% with category=cat_assignment.category %}
-      {% get_category_assignments category limited_menu=limited_menu as assignments %}
+      {% get_category_assignments category as assignments %}
       {% if assignments %}
 
         {# Per-category heading when there are multiple categories #}

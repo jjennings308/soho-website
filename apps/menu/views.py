@@ -2,7 +2,6 @@ from django.shortcuts import render, get_object_or_404
 from django.http import Http404, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Prefetch
-from apps.events.models import EventDay
 
 from .models import (
     Menu,
@@ -12,16 +11,12 @@ from .models import (
     MenuItemAddon,
     MenuItem,
 )
+from .utils import get_active_menus
 
 
 # =============================================================================
 # HELPERS
 # =============================================================================
-
-def _get_menu_mode():
-    """Returns 'limited' or 'full' based on EventDay calendar + SiteSettings."""
-    return EventDay.get_current_menu_mode()
-
 
 def _prefetch_category_assignments(menu_qs):
     """
@@ -38,12 +33,12 @@ def _prefetch_category_assignments(menu_qs):
     )
 
 
-def _item_assignment_qs(limited_menu=False):
+def _item_assignment_qs():
     """
     Returns a base MenuItemCategoryAssignment queryset with item data
     fully prefetched. Used by views and template tags.
     """
-    qs = MenuItemCategoryAssignment.objects.filter(
+    return MenuItemCategoryAssignment.objects.filter(
         is_active=True,
         menu_item__is_available=True,
     ).select_related(
@@ -65,11 +60,6 @@ def _item_assignment_qs(limited_menu=False):
         ),
     ).order_by('subcategory__order', 'order')
 
-    if limited_menu:
-        qs = qs.filter(available_game_day=True)
-
-    return qs
-
 
 # =============================================================================
 # MENU VIEWS
@@ -77,62 +67,17 @@ def _item_assignment_qs(limited_menu=False):
 
 def full(request):
     """
-    Renders the default menu. Supports ?type=food or ?type=drinks to filter
-    to a single tab on a combined menu.
+    Renders the main menu page using role-based menu selection.
+    Renders food menu then drinks menu sequentially.
     """
-    active_type = request.GET.get('type')  # 'food', 'drinks', or None
-
-    # Determine which default menu to load
-    if active_type == 'food':
-        menu_type = 'food'
-    elif active_type == 'drinks':
-        menu_type = 'drinks'
-    else:
-        menu_type = 'combined'
-
-    menu = Menu.objects.filter(
-        menu_type=menu_type,
-        is_default=True,
-        is_active=True,
-    ).prefetch_related(
-        Prefetch(
-            'menu_category_assignments',
-            queryset=MenuCategoryAssignment.objects.select_related(
-                'category'
-            ).order_by('display_order'),
-        ),
-    ).first()
-
-    # Fallback: if no combined menu, try food
-    if not menu:
-        menu = Menu.objects.filter(
-            is_default=True,
-            is_active=True,
-        ).prefetch_related(
-            Prefetch(
-                'menu_category_assignments',
-                queryset=MenuCategoryAssignment.objects.select_related(
-                    'category'
-                ).order_by('display_order'),
-            ),
-        ).first()
-
-    limited_menu = (_get_menu_mode() == 'limited')
-
-    titles = {
-        'food':     ' - Food Menu',
-        'drinks':   ' - Drink Menu',
-        'combined': ' - Menu',
-    }
-
+    menus = get_active_menus()
     context = {
-        'menu':               menu,
-        'category_assignments': menu.menu_category_assignments.all() if menu else [],
-        'active_type':        active_type,
-        'limited_menu':       limited_menu,
-        'title':              titles.get(menu_type, ' - Menu'),
+        'food_menu':  menus['food'],
+        'drink_menu': menus['drinks'],
+        'event_mode': menus['event_mode'],
+        'title':      ' - Menu',
     }
-    return render(request,'menu/menu.html', context)
+    return render(request, 'menu/menu.html', context)
 
 
 def menu_detail(request, slug):
@@ -156,23 +101,19 @@ def menu_detail(request, slug):
     if not menu.is_currently_active:
         raise Http404
 
-    limited_menu = (_get_menu_mode() == 'limited')
     colors = menu.resolve_colors()
 
     context = {
-        'menu':               menu,
+        'menu':                 menu,
         'category_assignments': menu.menu_category_assignments.all(),
-        'colors':             colors,
-        'limited_menu':       limited_menu,
-        'title':              f' - {menu.title}',
+        'colors':               colors,
+        'title':                f' - {menu.title}',
     }
     return render(request, 'menu/menu_detail.html', context)
 
 
 def promotions(request):
     """Lists all currently active promotional menus."""
-    limited_menu = (_get_menu_mode() == 'limited')
-
     promo_menus = Menu.objects.filter(
         menu_type='promo',
         is_active=True,
@@ -187,10 +128,12 @@ def promotions(request):
 
     active_promos = [m for m in promo_menus if m.is_currently_active]
 
+    # TODO: add show_in_event_mode boolean to Menu to control promo visibility
+    # during event mode (e.g. hide Happy Hour during game days)
+
     context = {
-        'promo_menus':  active_promos,
-        'limited_menu': limited_menu,
-        'title':        ' - Promotions',
+        'promo_menus': active_promos,
+        'title':       ' - Promotions',
     }
     return render(request, 'menu/promotions.html', context)
 
