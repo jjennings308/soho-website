@@ -252,7 +252,7 @@ class MediaItem(TimeStampedModel):
     @property
     def file_size_display(self):
         """
-        Returns the file size as a human-readable string (e.g. '1.2 MB').
+        Returns the exact file size as a formatted string (e.g. '1,234,567 bytes').
         Returns '' if there is no file or the file is missing on disk.
         """
         if not self.file:
@@ -261,8 +261,4 @@ class MediaItem(TimeStampedModel):
             size = self.file.size  # bytes; raises OSError if file missing
         except (FileNotFoundError, OSError):
             return ''
-        for unit in ('B', 'KB', 'MB', 'GB'):
-            if size < 1024:
-                return f"{size:.0f} {unit}" if unit == 'B' else f"{size:.1f} {unit}"
-            size /= 1024
-        return f"{size:.1f} TB"
+        return f"{size:,} bytes"
