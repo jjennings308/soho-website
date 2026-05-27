@@ -81,6 +81,11 @@ def events_calendar(request):
             seen_legend.add(key)
             legend_items.append({'label': event.type_label, 'color': event.color})
 
+    has_limited_menu = any(
+        e.limited_menu and e.home_away != 'away'
+        for e in events_qs
+    )
+
     context = {
         'current_month': current_month,
         'prev_month': prev_month,
@@ -91,6 +96,7 @@ def events_calendar(request):
         'agenda_events': agenda_events,
         'all_month_events': events_qs,
         'legend_items': legend_items,
+        'has_limited_menu': has_limited_menu,
         'week_headers': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     }
     return render(request, 'events/calendar.html', context)

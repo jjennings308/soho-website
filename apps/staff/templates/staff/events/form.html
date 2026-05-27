@@ -14,7 +14,7 @@
       <div class="sp-grid-2">
         <div class="sp-field">
           <label class="sp-label">Date</label>
-          <input class="sp-input" type="date" name="date" value="{{ form.date.value|default:'' }}" required>
+          {{ form.date }}
           {% if form.date.errors %}<div class="sp-field-error">{{ form.date.errors.0 }}</div>{% endif %}
         </div>
         <div class="sp-field">
@@ -55,7 +55,7 @@
 
       <div class="sp-field" style="max-width:200px;">
         <label class="sp-label">Game / Start Time <span style="color:var(--color-mid-gray);font-weight:400;">(optional)</span></label>
-        <input class="sp-input" type="time" name="game_time" value="{{ form.game_time.value|default:'' }}">
+        {{ form.game_time }}
       </div>
 
       <div class="sp-field">

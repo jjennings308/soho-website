@@ -116,7 +116,7 @@
           {# Event chips #}
           {% for event in day.events %}
           <div
-            title="{{ event.display_label }}{% if event.game_time %} at {{ event.game_time|time:'g:i A' }}{% endif %}"
+            title="{{ event.display_label }}{% if event.game_time %} at {{ event.game_time|time:'g:i A' }}{% endif %}{% if event.limited_menu and event.home_away != 'away' %} · Limited Menu{% endif %}"
             style="
               margin-bottom:0.2rem;
               padding:0.15rem 0.3rem;
@@ -132,7 +132,7 @@
               max-width:100%;
               line-height:1.3;
             "
-          >{{ event.display_label }}</div>
+          >{% if event.limited_menu and event.home_away != 'away' %}<span style="color:var(--color-gold-primary);font-size:0.65rem;">★</span> {% endif %}{{ event.display_label }}</div>
           {% endfor %}
         </div>
         {% endfor %}
@@ -203,8 +203,8 @@
                 {% endif %}
 
                 {% if event.limited_menu and event.home_away != 'away' %}
-                <span style="font-family:var(--font-secondary);font-size:0.72rem;color:var(--color-bg-accent);font-weight:500;">
-                  Game Day Menu{% if not event.game_time %} All Day{% endif %}
+                <span style="font-family:var(--font-secondary);font-size:0.72rem;color:var(--color-gold-primary);font-weight:500;">
+                  ★ Limited Menu{% if not event.game_time %} All Day{% endif %}
                 </span>
                 {% endif %}
               </div>
@@ -234,7 +234,7 @@
     </div>
 
     {# ── Event Type Legend ─────────────────────────────────────────────── #}
-    {% if legend_items %}
+    {% if legend_items or has_limited_menu %}
     <div style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid var(--color-bg-tertiary);display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
       <span style="font-family:var(--font-secondary);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--color-text-secondary);margin-right:0.25rem;">Legend:</span>
       {% for item in legend_items %}
@@ -243,6 +243,12 @@
         {{ item.label }}
       </span>
       {% endfor %}
+      {% if has_limited_menu %}
+      <span style="display:flex;align-items:center;gap:0.35rem;font-family:var(--font-secondary);font-size:0.72rem;color:var(--color-text-secondary);">
+        <span style="color:var(--color-gold-primary);font-size:0.8rem;line-height:1;">★</span>
+        Limited Menu in effect
+      </span>
+      {% endif %}
     </div>
     {% endif %}
 

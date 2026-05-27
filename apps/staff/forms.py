@@ -17,8 +17,8 @@ class EventForm(forms.ModelForm):
             'limited_menu', 'is_active',
         ]
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'game_time': forms.TimeInput(attrs={'type': 'time'}),
+            'date':      forms.DateInput(attrs={'type': 'date', 'class': 'sp-input'}),
+            'game_time': forms.TimeInput(attrs={'type': 'time', 'class': 'sp-input'}),
         }
 
 
