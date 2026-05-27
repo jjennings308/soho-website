@@ -8,6 +8,7 @@ urlpatterns = [
     path('', HomeView.as_view(), name='home'),
     path('about', views.about, name='about'),
     path('contact', views.contact, name='contact'),
+    path('contact-form/', views.ContactFormView.as_view(), name='contact_form'),
     path('test', views.theme_test, name='theme_test'),
     path('online-delivery/', views.online_delivery, name='online_delivery'),
     path('event-inquiry/', EventInquiryView.as_view(), name='event_inquiry'),

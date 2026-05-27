@@ -1,0 +1,103 @@
+{% if success %}
+
+<div style="text-align:center;padding:1.5rem 0;">
+  <div style="font-size:2.5rem;margin-bottom:0.75rem;">✉</div>
+  <p style="font-size:1.1rem;font-weight:600;color:var(--color-gold-primary);">Message sent!</p>
+  <p style="margin-top:0.5rem;color:var(--color-text-secondary);font-size:0.9rem;">
+    Thanks for reaching out — we'll be in touch soon.
+  </p>
+</div>
+
+{% else %}
+
+<form method="post" action="{% url 'core:contact_form' %}"
+      x-data="{ loading: false }"
+      @submit.prevent="
+        loading = true;
+        const container = $el.closest('[data-contact-form]');
+        fetch($el.action, {
+          method: 'POST',
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          body: new FormData($el)
+        })
+        .then(r => r.text())
+        .then(html => { container.innerHTML = html; })
+        .finally(() => { loading = false; });
+      ">
+  {% csrf_token %}
+
+  {# Name #}
+  <div style="margin-bottom:1rem;">
+    <label style="display:block;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;
+                  margin-bottom:0.35rem;color:var(--color-text-primary);">
+      Name <span style="color:#e87;">*</span>
+    </label>
+    <input type="text" name="name" value="{{ data.name|default:'' }}" required
+           style="width:100%;padding:0.6rem 0.9rem;border-radius:4px;
+                  border:1px solid {{ errors.name|yesno:'#e87,var(--color-bg-tertiary)' }};
+                  background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;
+                  box-sizing:border-box;">
+    {% if errors.name %}
+      <p style="font-size:0.75rem;color:#e87;margin-top:0.3rem;">{{ errors.name }}</p>
+    {% endif %}
+  </div>
+
+  {# Email #}
+  <div style="margin-bottom:1rem;">
+    <label style="display:block;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;
+                  margin-bottom:0.35rem;color:var(--color-text-primary);">
+      Email <span style="color:#e87;">*</span>
+    </label>
+    <input type="email" name="email" value="{{ data.email|default:'' }}" required
+           style="width:100%;padding:0.6rem 0.9rem;border-radius:4px;
+                  border:1px solid {{ errors.email|yesno:'#e87,var(--color-bg-tertiary)' }};
+                  background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;
+                  box-sizing:border-box;">
+    {% if errors.email %}
+      <p style="font-size:0.75rem;color:#e87;margin-top:0.3rem;">{{ errors.email }}</p>
+    {% endif %}
+  </div>
+
+  {# Phone #}
+  <div style="margin-bottom:1rem;">
+    <label style="display:block;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;
+                  margin-bottom:0.35rem;color:var(--color-text-primary);">
+      Phone <span style="font-weight:400;color:var(--color-text-secondary);">(optional)</span>
+    </label>
+    <input type="tel" name="phone" value="{{ data.phone|default:'' }}"
+           style="width:100%;padding:0.6rem 0.9rem;border-radius:4px;
+                  border:1px solid var(--color-bg-tertiary);
+                  background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;
+                  box-sizing:border-box;">
+  </div>
+
+  {# Message #}
+  <div style="margin-bottom:1.5rem;">
+    <label style="display:block;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;
+                  margin-bottom:0.35rem;color:var(--color-text-primary);">
+      Message <span style="color:#e87;">*</span>
+    </label>
+    <textarea name="message" rows="4" required
+              style="width:100%;padding:0.6rem 0.9rem;border-radius:4px;
+                     border:1px solid {{ errors.message|yesno:'#e87,var(--color-bg-tertiary)' }};
+                     background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;
+                     resize:vertical;box-sizing:border-box;">{{ data.message|default:'' }}</textarea>
+    {% if errors.message %}
+      <p style="font-size:0.75rem;color:#e87;margin-top:0.3rem;">{{ errors.message }}</p>
+    {% endif %}
+  </div>
+
+  <button type="submit" :disabled="loading"
+          :style="loading ? 'opacity:0.6;cursor:not-allowed;' : ''"
+          style="width:100%;padding:0.7rem 1.5rem;
+                 background:var(--color-gold-primary);color:var(--color-bg-primary);
+                 border:none;border-radius:4px;cursor:pointer;
+                 font-family:var(--font-nav);font-size:0.8rem;letter-spacing:0.12em;
+                 text-transform:uppercase;font-weight:600;">
+    <span x-show="!loading">Send Message</span>
+    <span x-show="loading">Sending&hellip;</span>
+  </button>
+
+</form>
+
+{% endif %}
