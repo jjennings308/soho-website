@@ -93,8 +93,9 @@
       <div style="font-size:0.78rem;font-weight:600;
                   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
            title="{{ item.name }}">{{ item.name }}</div>
-      <div style="font-size:0.7rem;color:var(--color-mid-gray);">
-        {{ item.category.name|default:"— no category —" }}
+      <div style="font-size:0.68rem;color:var(--color-mid-gray);display:flex;gap:0.5rem;">
+        {% if item.file_size_display %}<span>{{ item.file_size_display }}</span>{% endif %}
+        <span>{{ item.category.name|default:"— no category —" }}</span>
       </div>
     </div>
 
