@@ -73,11 +73,11 @@ If `.envrc` is blocked, run `direnv allow` from the project root. With direnv ac
 | `apps.menu` | Menu items, categories, menus, promotions; full/limited menu mode |
 | `apps.content` | Content slot/block CMS system for editable copy |
 | `apps.events` | Event calendar driving limited-menu mode (game days, etc.) |
-| `apps.gallery` | Photo/video gallery with category filtering and lightbox |
+| `apps.media` | Site-wide media library — images and video. Drives the public `/gallery/` page and supplies media to banners, menu items, categories, popups, and any other use point. Replaces `apps.gallery`. |
 | `apps.members` | Mailing list, member accounts, future photo submissions |
 | `apps.staff` | Purpose-built staff portal — no Django admin required for day-to-day ops |
 
-Third-party app `media_manager` is loaded from a private GitHub package (`jjennings308/django-media-manager`).
+`django-media-manager` has been removed from the project — do not reference it.
 
 ### Base models (`apps/core/models.py`)
 
@@ -151,133 +151,16 @@ Captures event booking requests from the public site. Fields: `name`, `email`, `
 
 ---
 
-## Gallery app (`apps/gallery/`)
+## ⚠️ `apps/gallery/` — DEPRECATED, DO NOT EXTEND
 
-### Decision log
-- Self-contained app — does NOT use `django-media-manager` models. The package is present in the project for other uses but the gallery manages its own files via Django's standard `ImageField`. Reason: `media_manager.Media` is user-scoped and carries album/moderation complexity not needed for Phase 1. When Ionos S3 storage is configured, the gallery `ImageField` upload path will point to the same S3 backend via `DEFAULT_FILE_STORAGE`.
-- Lightbox: **GLightbox** (MIT license, ~10KB, no jQuery, mobile swipe support, handles images and video). Loaded via CDN in the gallery template.
-- Grid: 4-column, loads 8 items (2 rows) at a time. "Load more" via simple JS fetch or HTMX if HTMX is added to the project.
-- Hover effect: CSS scale transform via Tailwind (`group` / `group-hover:scale-110 transition-transform`) — no JS required.
-- Category filtering: pill/tab nav at top of gallery page; "All" tab always present. Filtering triggers a page reload or HTMX swap — do NOT construct Tailwind class names dynamically at runtime (use inline `style` with CSS `var()` instead, per project convention).
+`apps.gallery` is being replaced by `apps.media`. Do not add features, models, or views to `apps.gallery`. See the **Media app** section below for the full spec.
 
-### Models
+**Migration status:** `apps.gallery` exists on disk and in the database. The physical image files in `media/gallery/` and subdirectories are the authoritative source — they are kept. The existing `GalleryItem` and `GalleryCategory` database records will be dropped and rebuilt under the new `apps.media` models. The public `/gallery/` URL is preserved — it moves to `apps.media` views.
 
-#### `GalleryCategory`
-Inherits `TimeStampedModel`.
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `name` | CharField(100) | Display name |
-| `slug` | SlugField(unique=True) | Auto-generated; used in URL filter param |
-| `description` | CharField(255, blank=True) | Optional subtitle shown on gallery page |
-| `display_order` | PositiveIntegerField(default=0) | Controls tab order |
-| `is_published` | BooleanField(default=True) | Unpublished = hidden from public; still visible in admin |
-
-Seeded categories (in display order):
-1. `food` — Food
-2. `sides` — Sides
-3. `desserts` — Desserts
-4. `drinks` — Drinks
-5. `interior` — Interior
-6. `exterior` — Exterior
-7. `atmosphere` — Atmosphere
-
-#### `GalleryItem`
-Inherits `TimeStampedModel`.
-
-| Field | Type | Notes |
-|-------|------|-------|
-| `category` | FK → GalleryCategory | `on_delete=SET_NULL, null=True, blank=True` |
-| `media_type` | CharField, choices: `image` / `video` | Default `image` |
-| `image` | ImageField(upload_to='gallery/') | Used when `media_type='image'` |
-| `video_url` | URLField(blank=True) | Used when `media_type='video'`; GLightbox auto-detects YouTube/Vimeo/TikTok/MP4 |
-| `caption` | CharField(255, blank=True) | Shown in lightbox overlay |
-| `display_order` | PositiveIntegerField(default=0) | Order within category |
-| `is_published` | BooleanField(default=True) | Unpublished = hidden from public |
-
-Default ordering: `['category__display_order', 'display_order']`
-
-**Phase 2 fields to add when customer submissions open (see members app):**
-```python
-submitted_by = models.ForeignKey('members.SoHoMember', null=True, blank=True, on_delete=models.SET_NULL)
-is_approved = models.BooleanField(default=False)
-is_flagged = models.BooleanField(default=False)
-flagged_reason = models.TextField(blank=True)
-```
-
-### Admin (`apps/gallery/admin.py`)
-
-- `GalleryCategoryAdmin`: `list_display` = name, slug, display_order, is_published, item count. `list_editable` = display_order, is_published.
-- `GalleryItemAdmin`: `list_display` = thumbnail preview, caption, category, media_type, display_order, is_published. `list_filter` = category, media_type, is_published. `search_fields` = caption. `list_editable` = display_order, is_published. Image thumbnail rendered via `readonly_fields`.
-
-### URL / view
-
-- URL: `/gallery/` with optional `?category=<slug>` filter param
-- View: `GalleryView(ListView)` — filters `GalleryItem.objects.filter(is_published=True)` by category slug if provided; passes all published categories to context for the tab nav
-- Use `select_related('category')` on the queryset
-- Pagination: 8 items per page
-- URL name: `gallery:index`
-
-### Template structure
-
-```
-apps/gallery/templates/gallery/
-    index.html          # main gallery page
-    partials/
-        grid.html       # the photo grid (reused for "load more" if HTMX added)
-        item_card.html  # single photo card with hover effect
-```
-
-### GLightbox integration
-
-Load via CDN in `index.html` (or base template if used elsewhere):
-```html
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
-<script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
-```
-
-Initialize after DOM ready:
-```html
-<script>
-  const lightbox = GLightbox({ selector: '.glightbox' });
-</script>
-```
-
-Each item card anchor:
-```html
-<a href="{{ item.image.url }}"
-   class="glightbox"
-   data-gallery="soho-gallery"
-   data-description="{{ item.caption }}">
-  <img src="{{ item.image.url }}" alt="{{ item.caption }}">
-</a>
-```
-
-For video items, `href` is `item.video_url` — GLightbox auto-detects and renders inline player.
-
-### Management commands
-
-- `python manage.py seed_gallery_categories` — creates the 7 seeded categories if they don't already exist. Safe to re-run.
-- `python manage.py import_gallery_images` — scans the `media/gallery/` directory and creates `GalleryItem` records for any image files not already in the database. Imported items are unpublished by default; staff edit them to set category/caption before publishing. The staff portal has an "Import from Disk" button that calls this command via `call_command()`.
-
-### File deletion
-
-`GalleryItem.image.delete(save=False)` is called before `item.delete()` in the staff delete view to remove the physical file from disk.
-
-### Future: Ionos S3 storage
-
-When Ionos S3 is configured, update `production.py`:
-```python
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-AWS_ACCESS_KEY_ID = env('IONOS_ACCESS_KEY')
-AWS_SECRET_ACCESS_KEY = env('IONOS_SECRET_KEY')
-AWS_STORAGE_BUCKET_NAME = env('IONOS_BUCKET_NAME')
-AWS_S3_ENDPOINT_URL = env('IONOS_S3_ENDPOINT')  # Ionos S3-compatible endpoint
-AWS_S3_FILE_OVERWRITE = False
-AWS_DEFAULT_ACL = 'public-read'
-```
-
-No model changes required — `ImageField` uses `DEFAULT_FILE_STORAGE` automatically.
+**What to do with `apps.gallery` during the build:**
+- Do not delete it until `apps.media` is fully built and verified
+- Run both apps simultaneously during transition
+- Once `apps.media` is live and all files re-imported, delete `apps.gallery` entirely (models, views, urls, templates, migrations)
 
 ---
 
@@ -901,3 +784,310 @@ Document every file and line. Do not proceed until the full list is known.
 **Step 10 — Remove `all` from `menu_type` choices.** Only after confirming no menus use it. Delete the combined menu record from the database. Commit.
 
 **Do not combine steps into a single commit** — each step must be independently revertable.
+
+---
+
+## Media app (`apps/media/`)
+
+### Guiding principle
+
+> **Media is what it is. Gallery is how it's used.**
+
+`MediaItem` is the single source of truth for every image and video on the site. The public `/gallery/` page, menu item images, banner images, category backgrounds, and popups are all consumers of `MediaItem` — none of them own their own files.
+
+### Decision log
+
+- `apps.gallery` is fully replaced by `apps.media` — see deprecation notice above.
+- `django-media-manager` is removed — do not reference it.
+- `MenuItem.image` replaces the reverse FK pattern (`GalleryItem.menu_item`). The canonical direction is `MenuItem → MediaItem`, not the other way around. The old `GalleryItem.menu_item` FK is dropped with `apps.gallery`.
+- Files on disk in `media/gallery/` and subdirectories are preserved exactly as-is. The import command scans these directories to create `MediaItem` records. No files are moved or renamed.
+- `owner_type` separates staff-controlled media from future member submissions at the model level. Staff pickers only ever show `owner_type='staff'` items. Member submissions (`owner_type='member'`) go through a moderation queue before appearing anywhere public.
+- Physical file separation: staff files upload to `media/library/` (or existing `media/gallery/` subdirs for re-imported files). Member submissions upload to `media/submissions/`. This makes S3 bucket policy and filesystem permissions straightforward.
+- GLightbox is retained for the public gallery lightbox — same CDN, same initialisation pattern.
+- `apps.media` is not a Django admin app — all staff interaction is through the staff portal at `/staff/media/`. Django admin registration is for superuser emergency access only.
+
+### Models (`apps/media/models.py`)
+
+All models inherit `TimeStampedModel` from `apps.core.models`.
+
+#### `MediaCategory`
+
+Replaces `GalleryCategory`. Adds `is_gallery_visible` to distinguish public-facing categories from internal library organisation.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | CharField(100) | Display name |
+| `slug` | SlugField(unique=True) | Auto-generated from name on first save |
+| `description` | CharField(255, blank=True) | Shown as subtitle on public gallery page |
+| `display_order` | PositiveIntegerField(default=0) | Controls tab order on public gallery |
+| `is_published` | BooleanField(default=True) | False = hidden from public gallery; still visible in staff portal |
+| `is_gallery_visible` | BooleanField(default=True) | False = internal library category only (e.g. "Banner Images"); never shown as a gallery tab |
+
+```python
+class Meta:
+    ordering = ['display_order', 'name']
+    verbose_name = 'Media Category'
+    verbose_name_plural = 'Media Categories'
+```
+
+Seeded categories (run `python manage.py seed_media_categories`):
+
+| Order | Slug | Name | is_gallery_visible |
+|-------|------|------|--------------------|
+| 1 | starters | Starters | True |
+| 2 | soups-and-salads | Soups & Salads | True |
+| 3 | wraps-and-tacos | Wraps & Tacos | True |
+| 4 | sandwiches | Sandwiches | True |
+| 5 | burgers | Burgers | True |
+| 6 | sides | Sides | True |
+| 7 | pizza | Pizza | True |
+| 8 | kids | Kids | True |
+| 9 | desserts | Desserts | True |
+| 10 | drinks | Drinks | True |
+| 11 | interior | Interior | True |
+| 12 | exterior | Exterior | True |
+| 13 | atmosphere | Atmosphere | True |
+
+#### `MediaItem`
+
+The core model. Every image and video on the site is a `MediaItem`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | CharField(200) | Human-readable library name — staff-entered, renameable. E.g. "Burger Hero Shot Summer 2025". Separate from `caption` which is public-facing. |
+| `slug` | SlugField(unique=True, blank=True) | Auto-generated from `name` on save. Used internally, not in URLs. |
+| `owner_type` | CharField choices: `staff` / `member` | Default `staff`. Controls which pickers can see this item and which moderation rules apply. |
+| `media_type` | CharField choices: `image` / `video` | Default `image`. |
+| `file` | ImageField(upload_to=`media_upload_path`, blank=True, max_length=500) | Used when `media_type='image'`. |
+| `video_url` | URLField(blank=True) | Used when `media_type='video'`. GLightbox auto-detects YouTube / Vimeo / TikTok / MP4. |
+| `alt_text` | CharField(255, blank=True) | Accessibility. Also used as fallback caption. |
+| `caption` | CharField(255, blank=True) | Public-facing caption shown in gallery lightbox. |
+| `category` | FK → MediaCategory (null=True, blank=True, on_delete=SET_NULL) | Primary category for gallery display. |
+| `display_order` | PositiveIntegerField(default=0) | Order within category on public gallery. |
+| `is_published` | BooleanField(default=False) | False = not shown on public gallery. Staff items default False — must be explicitly published. |
+| `uploaded_by` | FK → User (null=True, blank=True, on_delete=SET_NULL) | Staff user who uploaded. Null for imported files. |
+| `member` | FK → `members.SoHoMember` (null=True, blank=True, on_delete=SET_NULL) | Populated for member submissions only. |
+| `is_approved` | BooleanField(default=True) | Staff items: always True. Member submissions: starts False, set True by staff. |
+| `is_flagged` | BooleanField(default=False) | Moderation flag for member submissions. |
+| `flagged_reason` | TextField(blank=True) | |
+
+```python
+def media_upload_path(instance, filename):
+    if instance.owner_type == 'member':
+        return f'media/submissions/{filename}'
+    return f'media/library/{filename}'
+```
+
+**Note on re-imported files:** Files already on disk under `media/gallery/` keep their existing paths when imported — the `file` field stores the relative path as-is. The `media_upload_path` function applies only to new uploads through the staff portal or member submission form.
+
+`save()` auto-generates `slug` from `name` if not set, with collision handling (append `-2`, `-3` etc.).
+
+```python
+class Meta:
+    ordering = ['category__display_order', 'display_order', 'name']
+```
+
+#### Models that reference `MediaItem`
+
+Each of the following gets a nullable FK to `MediaItem`. All use `on_delete=PROTECT` — attempting to delete a `MediaItem` that is referenced raises an error rather than silently breaking the site. Staff must remove assignments before deleting a media item.
+
+All FKs use `limit_choices_to={'owner_type': 'staff'}` — member submissions never appear in staff assignment pickers.
+
+```python
+# apps/core/models.py — Banner
+image = models.ForeignKey(
+    'media.MediaItem', null=True, blank=True,
+    on_delete=models.PROTECT,
+    limit_choices_to={'owner_type': 'staff'},
+    related_name='banners',
+)
+
+# apps/core/models.py — PanelSide
+image = models.ForeignKey(
+    'media.MediaItem', null=True, blank=True,
+    on_delete=models.PROTECT,
+    limit_choices_to={'owner_type': 'staff'},
+    related_name='panels',
+)
+
+# apps/core/models.py — SitePopup
+image = models.ForeignKey(
+    'media.MediaItem', null=True, blank=True,
+    on_delete=models.PROTECT,
+    limit_choices_to={'owner_type': 'staff'},
+    related_name='popups',
+)
+
+# apps/menu/models.py — MenuCategory
+background_image = models.ForeignKey(
+    'media.MediaItem', null=True, blank=True,
+    on_delete=models.PROTECT,
+    limit_choices_to={'owner_type': 'staff'},
+    related_name='menu_category_backgrounds',
+)
+
+# apps/menu/models.py — MenuItem
+image = models.ForeignKey(
+    'media.MediaItem', null=True, blank=True,
+    on_delete=models.PROTECT,
+    limit_choices_to={'owner_type': 'staff'},
+    related_name='menu_items',
+)
+```
+
+Remove the old `GalleryItem.menu_item` reverse FK entirely when `apps.gallery` is deleted.
+
+### Upload path helper
+
+```python
+def media_upload_path(instance, filename):
+    """Route uploads to the correct subdirectory by owner type."""
+    if instance.owner_type == 'member':
+        return f'media/submissions/{filename}'
+    return f'media/library/{filename}'
+```
+
+### Management commands (`apps/media/management/commands/`)
+
+#### `seed_media_categories`
+
+Creates the seeded categories above. Safe to re-run (`get_or_create`). Replaces `seed_gallery_categories`.
+
+```bash
+python manage.py seed_media_categories
+```
+
+#### `import_media_files`
+
+Replaces `import_gallery_images`. Scans `media/gallery/` (and all subdirectories) for image files. Creates a `MediaItem` record for each file not already in the database (dedup by `file` path). Sets `owner_type='staff'`, `is_published=False`, `is_approved=True`. Populates `name` from the filename — strips extension, replaces underscores/hyphens with spaces, title-cases the result. Staff renames from there.
+
+```bash
+python manage.py import_media_files
+python manage.py import_media_files --publish   # set is_published=True immediately
+python manage.py import_media_files --dir=media/gallery/burgers  # single subdir
+```
+
+The staff portal "Import from Disk" button calls this via `call_command('import_media_files')` — same pattern as the existing `GalleryImportView`.
+
+### Public gallery (`/gallery/`)
+
+URL, views, and templates live inside `apps/media/` — not a separate app.
+
+```
+apps/media/templates/media/
+    gallery/
+        index.html          # public gallery page
+        partials/
+            grid.html       # photo grid
+            item_card.html  # single card with hover zoom + GLightbox anchor
+```
+
+**URL:** `/gallery/` with optional `?category=<slug>` filter. URL name: `media:gallery`.
+
+**View:** `GalleryView(ListView)` — filters `MediaItem.objects.filter(is_published=True, owner_type='staff', is_approved=True)` plus category filter. `select_related('category')`. Pagination: 8 items per page (2 rows of 4).
+
+Category tabs: all published `MediaCategory` records where `is_gallery_visible=True`. "All" tab always first.
+
+GLightbox: same CDN and initialisation as before. For images: `href="{{ item.file.url }}"`. For videos: `href="{{ item.video_url }}"`. GLightbox auto-detects.
+
+Hover effect: Tailwind `group` / `group-hover:scale-110 transition-transform` — no JS.
+
+**Future member photo tab:** When member submissions are live, add a second tab section filtered by `owner_type='member', is_approved=True`. Staff and member photos are visually separated — not interleaved. Do not build this now.
+
+### Staff portal — media section (`/staff/media/`)
+
+All views use `StaffRequiredMixin`. The media section of the staff portal has four sub-sections accessible from the left nav:
+
+#### 1. Library (`/staff/media/`)
+
+Grid/list of all `MediaItem` records (`owner_type='staff'`). Each card shows:
+- Thumbnail (larger than Django admin default — at least 200px wide)
+- `name` field (editable inline or via edit view)
+- Category badge
+- Published/unpublished status toggle
+- Usage count — how many banners, menu items, etc. reference this item (annotated query)
+- Edit / Delete buttons
+
+Filters: by category, by `is_published`, by `media_type`. Search by name.
+
+Delete protection: if a `MediaItem` is referenced by any FK (`on_delete=PROTECT`), show a clear error listing what references it rather than a generic 500. Catch `ProtectedError` in the delete view.
+
+#### 2. Upload (`/staff/media/upload/`)
+
+Single or multi-file upload form. Fields:
+- `name` — required, human-readable. For multi-file upload: staff enters a base name; files are named `{base_name} 1`, `{base_name} 2`, etc. Staff renames individually after upload.
+- `category` — optional, select from `MediaCategory`
+- `alt_text` — optional
+- `file(s)` — `<input type="file" multiple accept="image/*,video/*">`
+- `is_published` — checkbox, default unchecked
+
+No client-side preview required for Phase 1 — keep it simple.
+
+After upload: redirect to library with success message showing count of files uploaded.
+
+#### 3. Import from disk (`/staff/media/import/`)
+
+POST-only view. Calls `call_command('import_media_files')`, captures stdout, shows result as a flash message. Redirects to library. Same pattern as existing `GalleryImportView`.
+
+Staff uses SFTP (WinSCP on Windows, Cyberduck on Mac, scp/sftp on Linux) to put files in `media/gallery/` or subdirectories on the server, then clicks "Import from Disk" in the portal. The import command scans and creates records.
+
+#### 4. Assignments (`/staff/media/assign/`)
+
+Per-model assignment views — staff picks which `MediaItem` is assigned to a specific banner, menu item, etc. Each is a simple form with a media picker widget.
+
+**Media picker widget:** A searchable grid of `MediaItem` thumbnails filtered to `owner_type='staff'`. Shows name below each thumbnail. Staff clicks to select. Implemented as an Alpine.js modal — button opens modal, modal shows paginated grid, click selects and closes. Selected item's PK written to a hidden input on the parent form.
+
+This widget is reused wherever a `MediaItem` FK appears in the staff portal.
+
+#### 5. Member submissions (`/staff/media/submissions/`) — Phase 2, do not build yet
+
+Moderation queue for `owner_type='member'` items. Shows pending submissions (`is_approved=False, is_flagged=False`). Staff approves (sets `is_approved=True`, `is_published=True`) or rejects (sets `is_flagged=True`, sends notification email to member). Approved submissions appear in the member photo section of the public gallery.
+
+### Migration sequence — follow this order exactly
+
+**Step 1 — Build `apps.media` alongside `apps.gallery`.** Do not touch `apps.gallery` yet. Create `apps/media/`, define `MediaCategory` and `MediaItem` models, write migrations, `makemigrations media`, `migrate`. Commit.
+
+**Step 2 — Seed categories.** `python manage.py seed_media_categories`. Commit.
+
+**Step 3 — Import files.** `python manage.py import_media_files`. Verify records created. Commit.
+
+**Step 4 — Add FK fields to consumer models.** Add `MediaItem` FKs to `Banner`, `PanelSide`, `SitePopup`, `MenuCategory`, `MenuItem`. All nullable. `makemigrations`, `migrate`. Commit.
+
+**Step 5 — Build staff portal media section.** Library view, upload view, import view, assignment picker. Commit.
+
+**Step 6 — Move public gallery views to `apps.media`.** Update `config/urls.py` to point `/gallery/` at `apps.media` views. Verify public gallery works. Keep `apps.gallery` urls registered temporarily as a fallback. Commit.
+
+**Step 7 — Verify everything.** Public gallery renders. Staff portal library works. Upload works. Import works. Assignment picker works. No references to `apps.gallery` in active code paths.
+
+**Step 8 — Delete `apps.gallery`.** Remove from `INSTALLED_APPS`, delete the app directory, remove URL registration, drop migrations. `makemigrations`, `migrate` to clean up. Commit.
+
+**Step 9 — Remove old `GalleryItem.menu_item` FK references** from any remaining templates or views. These should already be gone after Step 6 but grep to confirm.
+
+**Do not combine steps** — each must be independently revertable.
+
+### Future: Ionos S3 storage
+
+When Ionos S3 is configured, update `production.py`. No model changes required — `ImageField`/`FileField` uses `DEFAULT_FILE_STORAGE` automatically.
+
+```python
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+AWS_ACCESS_KEY_ID = env('IONOS_ACCESS_KEY')
+AWS_SECRET_ACCESS_KEY = env('IONOS_SECRET_KEY')
+AWS_STORAGE_BUCKET_NAME = env('IONOS_BUCKET_NAME')
+AWS_S3_ENDPOINT_URL = env('IONOS_S3_ENDPOINT')
+AWS_S3_FILE_OVERWRITE = False
+AWS_DEFAULT_ACL = 'public-read'
+```
+
+### Member photo submissions — Phase 2 (do not build yet)
+
+When `SoHoMember` gains a Django `User` link and login capability:
+
+- Member logs in, navigates to `/gallery/submit/`
+- Uploads image(s) with optional caption
+- `MediaItem` created with `owner_type='member'`, `member=FK`, `is_approved=False`, `is_published=False`
+- File saved to `media/submissions/`
+- Staff sees submission in `/staff/media/submissions/` moderation queue
+- Approval: `is_approved=True`, `is_published=True` → appears in member photo section of public gallery
+- Rejection: `is_flagged=True` → email notification to member
+- Member submissions never appear in staff assignment pickers (`limit_choices_to={'owner_type': 'staff'}` on all FKs)

@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.content',
     'apps.events',
     'apps.gallery',
+    'apps.media',
     'apps.members',
     'apps.staff',
 ]
