@@ -70,9 +70,6 @@
             <a href="{% url 'staff:media_library' %}" class="{% if 'media' in request.resolver_match.url_name %}active{% endif %}">
               &#9670; Media Library
             </a>
-            <a href="{% url 'staff:gallery' %}" class="{% if 'gallery' in request.resolver_match.url_name %}active{% endif %}">
-              &#9670; Gallery (legacy)
-            </a>
             <a href="{% url 'staff:newsletter' %}" class="{% if 'newsletter' in request.resolver_match.url_name %}active{% endif %}">
               &#9670; Newsletter
             </a>

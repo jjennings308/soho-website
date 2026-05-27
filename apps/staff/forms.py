@@ -4,7 +4,6 @@ from django_ckeditor_5.widgets import CKEditor5Widget
 from apps.core.models import SitePopup, SiteSettings
 from apps.core.models import ColorScheme
 from apps.events.models import EventDay
-from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter
 
@@ -22,20 +21,6 @@ class EventForm(forms.ModelForm):
             'game_time': forms.TimeInput(attrs={'type': 'time', 'class': 'sp-input'}),
         }
 
-
-class GalleryUploadForm(forms.ModelForm):
-    class Meta:
-        model = GalleryItem
-        fields = ['image', 'caption', 'category', 'menu_item', 'display_order']
-
-
-class GalleryEditForm(forms.ModelForm):
-    class Meta:
-        model = GalleryItem
-        fields = ['caption', 'category', 'menu_item', 'display_order', 'is_published']
-        widgets = {
-            'display_order': forms.NumberInput(attrs={'min': 0}),
-        }
 
 
 class NewsletterForm(forms.ModelForm):

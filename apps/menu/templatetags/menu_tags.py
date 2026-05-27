@@ -8,15 +8,6 @@ from django.db.models import Prefetch
 register = template.Library()
 
 
-class _GalleryImageAdapter:
-    """Wraps a GalleryItem to expose .file.url and .alt_text for templates."""
-    def __init__(self, gallery_item):
-        self.file = gallery_item.image  # ImageField — .file.url works
-        self.alt_text = gallery_item.caption or (
-            gallery_item.menu_item.name if gallery_item.menu_item_id else ''
-        )
-
-
 class _ImageFieldAdapter:
     """Wraps a MenuItem ImageField to expose .file.url and .alt_text for templates."""
     def __init__(self, image_field, alt_text=''):
@@ -53,16 +44,12 @@ def _assignment_to_json_data(assignment):
     """
     item = assignment.menu_item
 
-    # Gallery images — item ImageField first, then linked gallery items
+    # Images — media_item FK (MediaItem) takes priority; falls back to legacy ImageField
     gallery = []
-    if item.image:
+    if item.media_item and item.media_item.file:
+        gallery.append({'url': item.media_item.file.url, 'alt': item.media_item.alt_text or item.name})
+    elif item.image:
         gallery.append({'url': item.image.url, 'alt': item.image_alt or item.name})
-    gallery += [
-        {'url': gi.image.url, 'alt': gi.caption or item.name}
-        for gi in item.gallery_items.filter(
-            is_published=True, media_type='image'
-        ).exclude(image='').order_by('display_order')
-    ]
 
     primary_url = gallery[0]['url'] if gallery else None
 
@@ -104,7 +91,7 @@ def _assignment_to_json_data(assignment):
         'description':       item.description or '',
         'short_description': item.short_description or '',
 
-        # Images — media_manager primary, then first gallery item as fallback
+        # Images — media_item FK primary, then legacy ImageField as fallback
         'primary_image':     primary_url,
         'has_image':         bool(primary_url),
         'gallery':           gallery,
@@ -166,8 +153,11 @@ def item_to_json(assignment):
 def get_primary_media(obj):
     """
     Returns the primary image for a MenuItem as an object with .file.url
-    and .alt_text. Checks the item's own ImageField first, then falls back
-    to a linked GalleryItem.
+    and .alt_text.
+
+    Priority:
+      1. media_item FK (MediaItem) — preferred going forward
+      2. legacy image ImageField — fallback while migration is in progress
 
     Usage:
         {% get_primary_media assignment.menu_item as primary_image %}
@@ -175,12 +165,11 @@ def get_primary_media(obj):
             <img src="{{ primary_image.file.url }}" alt="{{ primary_image.alt_text }}">
         {% endif %}
     """
+    if obj.media_item and obj.media_item.file:
+        return obj.media_item  # MediaItem has .file.url and .alt_text natively
     if obj.image:
         return _ImageFieldAdapter(obj.image, obj.image_alt)
-    gi = obj.gallery_items.filter(
-        is_published=True, media_type='image'
-    ).exclude(image='').order_by('display_order').first()
-    return _GalleryImageAdapter(gi) if gi else None
+    return None
 
 
 @register.simple_tag

@@ -25,8 +25,7 @@ urlpatterns = [
     path('', include('apps.core.urls')),
     path('menu/', include('apps.menu.urls')),
     path('events/', include('apps.events.urls')),
-    path('gallery/', include('apps.media.urls')),      # Step 6: moved from apps.gallery
-    path('gallery-legacy/', include('apps.gallery.urls')),  # kept temporarily for reference; remove in Step 8
+    path('gallery/', include('apps.media.urls')),
     path('', include('apps.members.urls')),
     path('staff/', include('apps.staff.urls')),
 ]

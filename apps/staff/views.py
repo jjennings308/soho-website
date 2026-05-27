@@ -40,12 +40,11 @@ def _prepare_newsletter_html(html, base_url):
 
 from apps.core.models import ColorScheme, EventInquiry, Review, SitePopup, SiteSettings
 from apps.events.models import EventDay
-from apps.gallery.models import GalleryCategory, GalleryItem
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter, SoHoMember
 from apps.menu.models import Menu
 
-from .forms import ColorSchemeForm, EventForm, GalleryEditForm, GalleryUploadForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
+from .forms import ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
 
 
 class StaffRequiredMixin(LoginRequiredMixin):
@@ -87,7 +86,7 @@ class DashboardView(StaffRequiredMixin, View):
         site = SiteSettings.load()
         subscriber_count = SoHoMember.objects.filter(is_active=True, is_email_subscribed=True).count()
         draft_count = Newsletter.objects.filter(sent_at__isnull=True).count()
-        unpublished_count = GalleryItem.objects.filter(is_published=False).count()
+        unpublished_count = MediaItem.objects.filter(owner_type='staff', is_published=False).count()
         new_inquiry_count = EventInquiry.objects.filter(status='new').count()
         active_popup = SitePopup.get_active()
         promo_menus = Menu.objects.filter(menu_type='promo').select_related('color_scheme').order_by('title')
@@ -200,72 +199,6 @@ class EventDeleteView(StaffRequiredMixin, View):
         event = get_object_or_404(EventDay, pk=pk)
         event.delete()
         return redirect('staff:events')
-
-
-# ── Gallery ───────────────────────────────────────────────────────────────────
-
-class GalleryListView(StaffRequiredMixin, View):
-    def get(self, request):
-        items = GalleryItem.objects.select_related('category').order_by(
-            'category__display_order', 'display_order'
-        )
-        return render(request, 'staff/gallery/list.html', {'items': items})
-
-
-class GalleryUploadView(StaffRequiredMixin, View):
-    def get(self, request):
-        return render(request, 'staff/gallery/upload.html', {'form': GalleryUploadForm()})
-
-    def post(self, request):
-        form = GalleryUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('staff:gallery')
-        return render(request, 'staff/gallery/upload.html', {'form': form})
-
-
-class GalleryToggleView(StaffRequiredMixin, View):
-    def post(self, request, pk):
-        item = get_object_or_404(GalleryItem, pk=pk)
-        item.is_published = not item.is_published
-        item.save(update_fields=['is_published'])
-        return redirect('staff:gallery')
-
-
-class GalleryDeleteView(StaffRequiredMixin, View):
-    def post(self, request, pk):
-        item = get_object_or_404(GalleryItem, pk=pk)
-        if item.image:
-            item.image.delete(save=False)  # delete file from disk before removing the record
-        item.delete()
-        return redirect('staff:gallery')
-
-
-class GalleryEditView(StaffRequiredMixin, View):
-    def get(self, request, pk):
-        item = get_object_or_404(GalleryItem, pk=pk)
-        return render(request, 'staff/gallery/edit.html', {
-            'form': GalleryEditForm(instance=item),
-            'item': item,
-        })
-
-    def post(self, request, pk):
-        item = get_object_or_404(GalleryItem, pk=pk)
-        form = GalleryEditForm(request.POST, instance=item)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Photo updated.')
-            return redirect('staff:gallery')
-        return render(request, 'staff/gallery/edit.html', {'form': form, 'item': item})
-
-
-class GalleryImportView(StaffRequiredMixin, View):
-    def post(self, request):
-        out = StringIO()
-        call_command('import_gallery_images', stdout=out)
-        lines = [l for l in out.getvalue().strip().splitlines() if l.strip()]
-        messages.success(request, lines[-1] if lines else 'Import complete.')
-        return redirect('staff:gallery')
 
 
 # ── Media Library ─────────────────────────────────────────────────────────────
