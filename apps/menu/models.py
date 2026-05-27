@@ -51,10 +51,13 @@ class MenuCategory(TimeStampedModel):
         )
     )
     description = models.TextField(blank=True)
-    background_image = models.ImageField(
-        upload_to='menu_categories/',
-        blank=True,
+    background_image = models.ForeignKey(
+        'media.MediaItem',
         null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name='menu_category_backgrounds',
+        limit_choices_to={'owner_type': 'staff'},
         help_text=(
             "Optional background image for this category section on the menu page. "
             "When set, the image fills the section with a dark overlay for text "
@@ -257,6 +260,18 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
     
     image = models.ImageField(upload_to=MenuItemUpload(), null=True, blank=True)
     image_alt = models.CharField(max_length=255, blank=True)
+    media_item = models.ForeignKey(
+        'media.MediaItem',
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name='menu_items',
+        limit_choices_to={'owner_type': 'staff'},
+        help_text=(
+            "Link to a media library item. Overrides the direct image upload above. "
+            "Use this for images already in the media library."
+        ),
+    )
 
     class Meta:
         ordering = ['name']

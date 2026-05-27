@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Gallery — {{ restaurant_name }}{% endblock %}
+{% block meta_description %}Photos of food, drinks, and the atmosphere at {{ restaurant_name }} on Pittsburgh's North Shore.{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/glightbox/dist/css/glightbox.min.css">
+<style>
+  .gallery-card:hover .gallery-caption { opacity: 1 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section style="max-width:1100px;margin:0 auto;padding:0rem 1.5rem 5rem;">
+
+  {# ── Page Header ──────────────────────────────────────────────────────── #}
+  <div style="text-align:center;margin-bottom:2.5rem;">
+    <h1 style="font-family:var(--font-primary);color:var(--color-gold-primary);font-size:clamp(2rem,5vw,3rem);letter-spacing:0.02em;margin-bottom:0.5rem;">
+      Gallery
+    </h1>
+    <p style="font-family:var(--font-secondary);color:var(--color-text-secondary);font-size:1rem;">
+      A look inside SOHO Pittsburgh
+    </p>
+  </div>
+
+  {# ── Category Filter Tabs ─────────────────────────────────────────────── #}
+  {% if categories %}
+  <div style="display:flex;flex-wrap:wrap;gap:0.5rem;justify-content:center;margin-bottom:2rem;">
+
+    <a href="{% url 'media:gallery' %}"
+       style="
+         display:inline-block;
+         padding:0.4rem 1.1rem;
+         border-radius:2px;
+         font-family:var(--font-secondary);
+         font-size:0.75rem;
+         letter-spacing:0.1em;
+         text-transform:uppercase;
+         text-decoration:none;
+         border:1px solid {% if not active_category %}var(--color-bg-accent){% else %}var(--color-gold-deep){% endif %};
+         background:{% if not active_category %}var(--color-bg-accent){% else %}transparent{% endif %};
+         color:{% if not active_category %}#fff{% else %}var(--color-gold-deep){% endif %};
+         transition:all 0.15s;
+       "
+    >All</a>
+
+    {% for cat in categories %}
+    <a href="{% url 'media:gallery' %}?category={{ cat.slug }}"
+       style="
+         display:inline-block;
+         padding:0.4rem 1.1rem;
+         border-radius:2px;
+         font-family:var(--font-secondary);
+         font-size:0.75rem;
+         letter-spacing:0.1em;
+         text-transform:uppercase;
+         text-decoration:none;
+         border:1px solid {% if active_category == cat.slug %}var(--color-bg-accent){% else %}var(--color-gold-deep){% endif %};
+         background:{% if active_category == cat.slug %}var(--color-bg-accent){% else %}transparent{% endif %};
+         color:{% if active_category == cat.slug %}#fff{% else %}var(--color-gold-deep){% endif %};
+         transition:all 0.15s;
+       "
+    >{{ cat.name }}</a>
+    {% endfor %}
+
+  </div>
+  {% endif %}
+
+  {# ── Photo Grid ───────────────────────────────────────────────────────── #}
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:0.75rem;">
+    {% include "media/gallery/partials/grid.html" %}
+  </div>
+
+  {# ── Pagination ───────────────────────────────────────────────────────── #}
+  {% if is_paginated %}
+  <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-top:2.5rem;">
+    {% if page_obj.has_previous %}
+    <a href="?{% if active_category %}category={{ active_category }}&{% endif %}page={{ page_obj.previous_page_number }}"
+       style="display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--font-secondary);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-gold-deep);text-decoration:none;border:1px solid var(--color-gold-deep);padding:0.45rem 1rem;border-radius:2px;transition:all 0.15s;"
+       onmouseover="this.style.background='var(--color-bg-accent)';this.style.color='#fff';this.style.borderColor='var(--color-bg-accent)'"
+       onmouseout="this.style.background='';this.style.color='var(--color-gold-deep)';this.style.borderColor='var(--color-gold-deep)'"
+    >&#8249; Prev</a>
+    {% endif %}
+
+    <span style="font-family:var(--font-secondary);font-size:0.78rem;color:var(--color-text-secondary);">
+      Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+    <a href="?{% if active_category %}category={{ active_category }}&{% endif %}page={{ page_obj.next_page_number }}"
+       style="display:inline-flex;align-items:center;gap:0.4rem;font-family:var(--font-secondary);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-gold-deep);text-decoration:none;border:1px solid var(--color-gold-deep);padding:0.45rem 1rem;border-radius:2px;transition:all 0.15s;"
+       onmouseover="this.style.background='var(--color-bg-accent)';this.style.color='#fff';this.style.borderColor='var(--color-bg-accent)'"
+       onmouseout="this.style.background='';this.style.color='var(--color-gold-deep)';this.style.borderColor='var(--color-bg-accent)'"
+    >Next &#8250;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/glightbox/dist/js/glightbox.min.js"></script>
+<script>
+  const lightbox = GLightbox({ selector: '.glightbox' });
+</script>
+
+{# 4-column on md+ screens #}
+<style>
+  @media (min-width: 640px) {
+    section > div[style*="grid-template-columns:repeat(2"] {
+      grid-template-columns: repeat(4, 1fr) !important;
+    }
+  }
+</style>
+{% endblock %}

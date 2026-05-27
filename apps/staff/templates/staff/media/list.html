@@ -1,0 +1,156 @@
+{% extends "staff/base.html" %}
+{% block title %}Media Library{% endblock %}
+{% block page_title %}Media Library{% endblock %}
+
+{% block topbar_actions %}
+  <form method="post" action="{% url 'staff:media_import' %}" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="sp-btn sp-btn--outline"
+            onclick="return confirm('Scan media/gallery/ on disk and import any new image files?')">
+      Import from Disk
+    </button>
+  </form>
+  <a href="{% url 'staff:media_upload' %}" class="sp-btn sp-btn--primary">+ Upload</a>
+{% endblock %}
+
+{% block content %}
+
+{# ── Flash messages ── #}
+{% if messages %}
+  {% for msg in messages %}
+    <div style="margin-bottom:1rem;padding:0.75rem 1rem;border-radius:6px;
+      {% if msg.tags == 'error' %}background:#fef2f2;border:1px solid #fca5a5;color:#991b1b;
+      {% else %}background:#f0fdf4;border:1px solid #86efac;color:#166534;{% endif %}">
+      {{ msg }}
+    </div>
+  {% endfor %}
+{% endif %}
+
+{# ── Filter bar ── #}
+<form method="get" style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center;">
+  <input class="sp-input" type="text" name="q" value="{{ search }}"
+         placeholder="Search by name…" style="max-width:220px;margin:0;">
+
+  <select class="sp-select" name="category" style="max-width:200px;margin:0;">
+    <option value="">All Categories</option>
+    {% for cat in categories %}
+      <option value="{{ cat.slug }}" {% if cat.slug == category_slug %}selected{% endif %}>{{ cat.name }}</option>
+    {% endfor %}
+  </select>
+
+  <select class="sp-select" name="pub" style="max-width:160px;margin:0;">
+    <option value="">All Status</option>
+    <option value="published" {% if pub_filter == 'published' %}selected{% endif %}>Published</option>
+    <option value="hidden"    {% if pub_filter == 'hidden'    %}selected{% endif %}>Hidden</option>
+  </select>
+
+  <button type="submit" class="sp-btn sp-btn--outline">Filter</button>
+  {% if search or category_slug or pub_filter %}
+    <a href="{% url 'staff:media_library' %}" class="sp-btn sp-btn--outline"
+       style="color:var(--color-mid-gray);">Clear</a>
+  {% endif %}
+</form>
+
+{# ── Item count ── #}
+<p style="font-size:0.8rem;color:var(--color-mid-gray);margin-bottom:1rem;">
+  {{ total }} item{{ total|pluralize }}
+  {% if page > 1 or pages > 1 %}— page {{ page }} of {{ pages }}{% endif %}
+</p>
+
+{# ── Grid ── #}
+{% if items %}
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;">
+  {% for item in items %}
+  <div style="background:var(--color-bg-secondary);border-radius:8px;overflow:hidden;
+              border:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;">
+
+    {# Thumbnail #}
+    <div style="position:relative;aspect-ratio:4/3;background:var(--color-bg-tertiary);overflow:hidden;">
+      {% if item.file %}
+        <a href="{% url 'staff:media_edit' item.pk %}">
+          <img src="{{ item.file.url }}" alt="{{ item.alt_text|default:item.name }}"
+               style="width:100%;height:100%;object-fit:cover;display:block;">
+        </a>
+      {% elif item.video_url %}
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+                    font-size:2rem;">▶</div>
+      {% else %}
+        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+                    color:var(--color-mid-gray);font-size:0.7rem;">No file</div>
+      {% endif %}
+
+      {# Published badge #}
+      <span style="position:absolute;top:6px;right:6px;padding:2px 7px;border-radius:10px;
+                   font-size:0.65rem;font-weight:600;letter-spacing:.03em;
+                   {% if item.is_published %}background:#166534;color:#dcfce7;
+                   {% else %}background:#374151;color:#9ca3af;{% endif %}">
+        {% if item.is_published %}Live{% else %}Hidden{% endif %}
+      </span>
+    </div>
+
+    {# Info #}
+    <div style="padding:0.6rem 0.75rem;flex:1;display:flex;flex-direction:column;gap:0.25rem;">
+      <div style="font-size:0.78rem;font-weight:600;
+                  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"
+           title="{{ item.name }}">{{ item.name }}</div>
+      <div style="font-size:0.7rem;color:var(--color-mid-gray);">
+        {{ item.category.name|default:"— no category —" }}
+      </div>
+    </div>
+
+    {# Actions #}
+    <div style="padding:0.5rem 0.75rem;border-top:1px solid rgba(255,255,255,0.06);
+                display:flex;gap:0.4rem;flex-wrap:wrap;">
+      <a href="{% url 'staff:media_edit' item.pk %}"
+         class="sp-btn sp-btn--outline sp-btn--sm" style="flex:1;text-align:center;">Edit</a>
+
+      <form method="post" action="{% url 'staff:media_toggle' item.pk %}" style="flex:1;">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="sp-btn sp-btn--outline sp-btn--sm" style="width:100%;">
+          {% if item.is_published %}Hide{% else %}Show{% endif %}
+        </button>
+      </form>
+
+      <form method="post" action="{% url 'staff:media_delete' item.pk %}"
+            onsubmit="return confirm('Delete \'{{ item.name|escapejs }}\'? This cannot be undone.')">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm">✕</button>
+      </form>
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+
+{# ── Pagination ── #}
+{% if pages > 1 %}
+<div style="display:flex;gap:0.5rem;margin-top:1.5rem;flex-wrap:wrap;align-items:center;">
+  {% if page > 1 %}
+    <a href="?page={{ page|add:'-1' }}&q={{ search }}&category={{ category_slug }}&pub={{ pub_filter }}"
+       class="sp-btn sp-btn--outline sp-btn--sm">← Prev</a>
+  {% endif %}
+  <span style="font-size:0.8rem;color:var(--color-mid-gray);">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}
+    <a href="?page={{ page|add:'1' }}&q={{ search }}&category={{ category_slug }}&pub={{ pub_filter }}"
+       class="sp-btn sp-btn--outline sp-btn--sm">Next →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="sp-card">
+  <p style="color:var(--color-mid-gray);font-size:0.875rem;">
+    No items found.
+    {% if not search and not category_slug and not pub_filter %}
+      <a href="{% url 'staff:media_upload' %}" style="color:var(--color-gold-primary);">Upload one →</a>
+      or use "Import from Disk" to bring in files already on the server.
+    {% else %}
+      <a href="{% url 'staff:media_library' %}" style="color:var(--color-gold-primary);">Clear filters</a>
+    {% endif %}
+  </p>
+</div>
+{% endif %}
+
+{% endblock %}

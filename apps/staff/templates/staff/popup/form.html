@@ -70,16 +70,7 @@
         </div>
       </div>
 
-      <div class="sp-field">
-        <label class="sp-label">Image <span style="font-weight:400;color:#aaa;">(optional)</span></label>
-        {% if popup and popup.image %}
-          <div style="margin-bottom:0.5rem;">
-            <img src="{{ popup.image.url }}" alt="" style="height:80px;border-radius:4px;object-fit:cover;">
-          </div>
-        {% endif %}
-        <input type="file" name="image" accept="image/*"
-               style="font-size:0.875rem;color:var(--color-text-secondary);">
-      </div>
+      {# Image picker will be added here in Step 5 of the media library migration #}
 
       <!-- Color scheme presets (shared ColorScheme palette) -->
       {% if color_schemes %}
