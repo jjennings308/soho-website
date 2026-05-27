@@ -32,7 +32,7 @@
     >
       
       <a  href="{% url 'menu:full' %}"
-        class="{% if 'menu' in request.resolver_match.url_name %}active{% endif %}"
+        class="{% if request.resolver_match.namespace == 'menu' %}active{% endif %}"
         style="display:flex;align-items:center;gap:0.35rem;"
         @click.prevent="open = !open"
       >
