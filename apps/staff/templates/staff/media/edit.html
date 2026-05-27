@@ -77,7 +77,7 @@
           <option value="">— None —</option>
           {% for cat in form.fields.category.queryset %}
             <option value="{{ cat.pk }}"
-              {% if form.category.value == cat.pk|stringformat:"s" %}selected{% endif %}>
+              {% if form.category.value|stringformat:"s" == cat.pk|stringformat:"s" %}selected{% endif %}>
               {{ cat.name }}{% if not cat.is_gallery_visible %} (internal){% endif %}
             </option>
           {% endfor %}
