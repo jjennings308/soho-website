@@ -1,7 +1,11 @@
 from django.urls import path
 
 from . import views
-from .views import InquiryDeleteView, InquiryListView, InquiryStatusView, ReviewDeleteView, ReviewFeatureView, ReviewImportView, ReviewListView, ReviewToggleView
+from .views import (
+    InquiryDeleteView, InquiryListView, InquiryStatusView,
+    MediaDeleteView, MediaEditView, MediaImportView, MediaLibraryView, MediaToggleView, MediaUploadView,
+    ReviewDeleteView, ReviewFeatureView, ReviewImportView, ReviewListView, ReviewToggleView,
+)
 
 app_name = 'staff'
 
@@ -24,7 +28,15 @@ urlpatterns = [
     path('events/<int:pk>/toggle/', views.EventToggleView.as_view(), name='event_toggle'),
     path('events/<int:pk>/delete/', views.EventDeleteView.as_view(), name='event_delete'),
 
-    # Gallery
+    # Media Library (apps.media — replacing apps.gallery)
+    path('media/', MediaLibraryView.as_view(), name='media_library'),
+    path('media/upload/', MediaUploadView.as_view(), name='media_upload'),
+    path('media/import/', MediaImportView.as_view(), name='media_import'),
+    path('media/<int:pk>/edit/', MediaEditView.as_view(), name='media_edit'),
+    path('media/<int:pk>/toggle/', MediaToggleView.as_view(), name='media_toggle'),
+    path('media/<int:pk>/delete/', MediaDeleteView.as_view(), name='media_delete'),
+
+    # Gallery (apps.gallery — deprecated, kept for transition)
     path('gallery/', views.GalleryListView.as_view(), name='gallery'),
     path('gallery/upload/', views.GalleryUploadView.as_view(), name='gallery_upload'),
     path('gallery/import/', views.GalleryImportView.as_view(), name='gallery_import'),

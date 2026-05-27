@@ -1,0 +1,84 @@
+{% extends "staff/base.html" %}
+{% block title %}Upload Media{% endblock %}
+{% block page_title %}Upload to Media Library{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'staff:media_library' %}" class="sp-btn sp-btn--outline">← Back to Library</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:560px;">
+  <div class="sp-card">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="sp-field">
+        <label class="sp-label">Image file <span style="color:#e87;font-size:0.8rem;">required</span></label>
+        <input class="sp-input" type="file" name="file" accept="image/*" required>
+        {% if form.file.errors %}
+          <div class="sp-field-error">{{ form.file.errors.0 }}</div>
+        {% endif %}
+        <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.3rem;">
+          Accepted: JPG, PNG, GIF, WebP, AVIF. File will be saved to <code>media/library/</code>.
+        </div>
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Name <span style="color:#e87;font-size:0.8rem;">required</span></label>
+        <input class="sp-input" type="text" name="name"
+               value="{{ form.name.value|default:'' }}"
+               placeholder="e.g. Burger Hero Shot Summer 2025" required>
+        {% if form.name.errors %}
+          <div class="sp-field-error">{{ form.name.errors.0 }}</div>
+        {% endif %}
+        <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.3rem;">
+          Internal name for the library — not shown publicly.
+        </div>
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Category <span style="color:var(--color-mid-gray);font-weight:400;">(optional)</span></label>
+        <select class="sp-select" name="category">
+          <option value="">— None —</option>
+          {% for cat in form.fields.category.queryset %}
+            <option value="{{ cat.pk }}"
+              {% if form.category.value == cat.pk|stringformat:"s" %}selected{% endif %}>
+              {{ cat.name }}{% if not cat.is_gallery_visible %} (internal){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Alt text <span style="color:var(--color-mid-gray);font-weight:400;">(accessibility)</span></label>
+        <input class="sp-input" type="text" name="alt_text"
+               value="{{ form.alt_text.value|default:'' }}"
+               placeholder="Describe the image for screen readers">
+      </div>
+
+      <div class="sp-field">
+        <label class="sp-label">Caption <span style="color:var(--color-mid-gray);font-weight:400;">(public — shown in gallery lightbox)</span></label>
+        <input class="sp-input" type="text" name="caption"
+               value="{{ form.caption.value|default:'' }}"
+               placeholder="Optional public caption">
+      </div>
+
+      <div class="sp-field">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+          <input type="checkbox" name="is_published"
+                 {% if form.is_published.value %}checked{% endif %}>
+          <span class="sp-label" style="margin:0;">Publish immediately</span>
+        </label>
+        <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.25rem;margin-left:1.5rem;">
+          When checked, the image appears on the public gallery page (if in a gallery-visible category).
+        </div>
+      </div>
+
+      <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
+        <button type="submit" class="sp-btn sp-btn--primary">Upload</button>
+        <a href="{% url 'staff:media_library' %}" class="sp-btn sp-btn--outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

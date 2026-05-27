@@ -41,10 +41,11 @@ def _prepare_newsletter_html(html, base_url):
 from apps.core.models import ColorScheme, EventInquiry, Review, SitePopup, SiteSettings
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
+from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter, SoHoMember
 from apps.menu.models import Menu
 
-from .forms import ColorSchemeForm, EventForm, GalleryEditForm, GalleryUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
+from .forms import ColorSchemeForm, EventForm, GalleryEditForm, GalleryUploadForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
 
 
 class StaffRequiredMixin(LoginRequiredMixin):
@@ -265,6 +266,132 @@ class GalleryImportView(StaffRequiredMixin, View):
         lines = [l for l in out.getvalue().strip().splitlines() if l.strip()]
         messages.success(request, lines[-1] if lines else 'Import complete.')
         return redirect('staff:gallery')
+
+
+# ── Media Library ─────────────────────────────────────────────────────────────
+
+MEDIA_PAGE_SIZE = 48  # items per page in the library grid
+
+
+class MediaLibraryView(StaffRequiredMixin, View):
+    def get(self, request):
+        qs = MediaItem.objects.filter(owner_type='staff').select_related('category')
+
+        # Filters
+        category_slug = request.GET.get('category', '')
+        pub_filter    = request.GET.get('pub', '')
+        search        = request.GET.get('q', '').strip()
+
+        if category_slug:
+            qs = qs.filter(category__slug=category_slug)
+        if pub_filter == 'published':
+            qs = qs.filter(is_published=True)
+        elif pub_filter == 'hidden':
+            qs = qs.filter(is_published=False)
+        if search:
+            qs = qs.filter(name__icontains=search)
+
+        qs = qs.order_by('category__display_order', 'category__name', 'display_order', 'name')
+
+        # Simple pagination
+        try:
+            page = max(1, int(request.GET.get('page', 1)))
+        except (ValueError, TypeError):
+            page = 1
+        total   = qs.count()
+        offset  = (page - 1) * MEDIA_PAGE_SIZE
+        items   = qs[offset: offset + MEDIA_PAGE_SIZE]
+        pages   = max(1, (total + MEDIA_PAGE_SIZE - 1) // MEDIA_PAGE_SIZE)
+
+        categories = MediaCategory.objects.order_by('display_order', 'name')
+
+        return render(request, 'staff/media/list.html', {
+            'items':         items,
+            'categories':    categories,
+            'category_slug': category_slug,
+            'pub_filter':    pub_filter,
+            'search':        search,
+            'page':          page,
+            'pages':         pages,
+            'total':         total,
+        })
+
+
+class MediaUploadView(StaffRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'staff/media/upload.html', {'form': MediaItemUploadForm()})
+
+    def post(self, request):
+        form = MediaItemUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            item = form.save(commit=False)
+            item.owner_type   = 'staff'
+            item.media_type   = 'image'
+            item.is_approved  = True
+            item.uploaded_by  = request.user
+            item.save()
+            messages.success(request, f'"{item.name}" uploaded successfully.')
+            return redirect('staff:media_library')
+        return render(request, 'staff/media/upload.html', {'form': form})
+
+
+class MediaImportView(StaffRequiredMixin, View):
+    def post(self, request):
+        out = StringIO()
+        call_command('import_media_files', stdout=out)
+        lines = [l for l in out.getvalue().strip().splitlines() if l.strip()]
+        messages.success(request, lines[-1] if lines else 'Import complete.')
+        return redirect('staff:media_library')
+
+
+class MediaToggleView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
+        item.is_published = not item.is_published
+        item.save(update_fields=['is_published'])
+        # Return to the same page the user was on
+        next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or reverse('staff:media_library')
+        return redirect(next_url)
+
+
+class MediaDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        from django.db.models import ProtectedError
+        item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
+        try:
+            item.delete()
+            messages.success(request, f'"{item.name}" deleted.')
+        except ProtectedError as exc:
+            # Build a human-readable list of what's referencing this item
+            refs = ', '.join(
+                f"{obj._meta.verbose_name} #{obj.pk}"
+                for obj in list(exc.protected_objects)[:5]
+            )
+            messages.error(
+                request,
+                f'Cannot delete "{item.name}" — it is used by: {refs}. '
+                'Remove those assignments first, then delete.'
+            )
+        next_url = request.POST.get('next') or reverse('staff:media_library')
+        return redirect(next_url)
+
+
+class MediaEditView(StaffRequiredMixin, View):
+    def _ctx(self, form, item):
+        return {'form': form, 'item': item}
+
+    def get(self, request, pk):
+        item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
+        return render(request, 'staff/media/edit.html', self._ctx(MediaItemEditForm(instance=item), item))
+
+    def post(self, request, pk):
+        item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
+        form = MediaItemEditForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'"{item.name}" updated.')
+            return redirect('staff:media_library')
+        return render(request, 'staff/media/edit.html', self._ctx(form, item))
 
 
 # ── Newsletter ────────────────────────────────────────────────────────────────

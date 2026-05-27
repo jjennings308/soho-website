@@ -5,6 +5,7 @@ from apps.core.models import SitePopup, SiteSettings
 from apps.core.models import ColorScheme
 from apps.events.models import EventDay
 from apps.gallery.models import GalleryCategory, GalleryItem
+from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter
 
 
@@ -78,6 +79,47 @@ class ColorSchemeForm(forms.ModelForm):
             'text_color':    forms.TextInput(attrs={'type': 'color'}),
             'bg_color':      forms.TextInput(attrs={'type': 'color'}),
         }
+
+
+class MediaItemUploadForm(forms.ModelForm):
+    """Form for uploading a new image to the media library."""
+    class Meta:
+        model = MediaItem
+        fields = ['file', 'name', 'category', 'alt_text', 'caption', 'is_published']
+        widgets = {
+            'alt_text': forms.TextInput(attrs={'placeholder': 'Describe the image for accessibility'}),
+            'caption':  forms.TextInput(attrs={'placeholder': 'Public caption shown in gallery lightbox'}),
+        }
+        labels = {
+            'file':       'Image file',
+            'is_published': 'Publish immediately',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['category'].queryset = MediaCategory.objects.order_by('display_order', 'name')
+        self.fields['category'].required = False
+        self.fields['alt_text'].required = False
+        self.fields['caption'].required = False
+
+
+class MediaItemEditForm(forms.ModelForm):
+    """Form for editing an existing MediaItem's metadata."""
+    class Meta:
+        model = MediaItem
+        fields = ['name', 'category', 'alt_text', 'caption', 'display_order', 'is_published']
+        widgets = {
+            'alt_text':      forms.TextInput(attrs={'placeholder': 'Describe the image for accessibility'}),
+            'caption':       forms.TextInput(attrs={'placeholder': 'Public caption shown in gallery lightbox'}),
+            'display_order': forms.NumberInput(attrs={'min': 0}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['category'].queryset = MediaCategory.objects.order_by('display_order', 'name')
+        self.fields['category'].required = False
+        self.fields['alt_text'].required = False
+        self.fields['caption'].required = False
 
 
 class PopupForm(forms.ModelForm):
