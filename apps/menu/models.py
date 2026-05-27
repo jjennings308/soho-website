@@ -634,11 +634,10 @@ class MenuItemCategoryAssignment(models.Model):
       and #1 in Happy Hour Food.
     - override_price replaces the item's base price for this placement only.
       The item's own price is never modified.
-    - available_game_day controls whether this placement appears during
-      limited menu mode (game days, busy events). Defaults to False —
-      staff must explicitly opt items into the game day menu.
     - note is a short callout shown on the item in this placement only,
       e.g. 'Limited time!' or 'Half price during Happy Hour'.
+    - Event menu visibility is controlled by role-based menu switching
+      (Menu.role = event_food / event_drinks) — not per-item flags.
     """
     menu_item = models.ForeignKey(
         MenuItem,
@@ -680,13 +679,6 @@ class MenuItemCategoryAssignment(models.Model):
         help_text=(
             "Short callout shown on this item in this placement only, "
             "e.g. 'Half price during Happy Hour' or 'Limited time!'."
-        )
-    )
-    available_game_day = models.BooleanField(
-        default=False,
-        help_text=(
-            "Include this item when the venue is in limited menu mode "
-            "(game days, busy events). Defaults to False — opt in explicitly."
         )
     )
     is_active = models.BooleanField(

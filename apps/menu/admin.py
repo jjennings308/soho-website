@@ -77,7 +77,7 @@ class CategoryItemAssignmentInline(admin.TabularInline):
     extra = 1
     fields = [
         'menu_item', 'subcategory', 'order',
-        'override_price', 'available_game_day', 'note', 'is_active',
+        'override_price', 'note', 'is_active',
     ]
     autocomplete_fields = ['menu_item', 'subcategory']
     ordering = ['subcategory__order', 'order']
@@ -146,7 +146,7 @@ class MenuItemCategoryAssignmentInline(admin.TabularInline):
     extra = 0
     fields = [
         'category', 'subcategory', 'order',
-        'override_price', 'available_game_day', 'note', 'is_active',
+        'override_price', 'note', 'is_active',
     ]
     autocomplete_fields = ['category', 'subcategory']
     verbose_name = 'Category Placement'
@@ -349,13 +349,12 @@ class MenuItemCategoryAssignmentAdmin(admin.ModelAdmin):
     list_display = [
         'menu_item', 'category', 'subcategory',
         'display_price_col', 'override_price',
-        'available_game_day', 'order', 'is_active',
+        'order', 'is_active',
     ]
-    list_editable = ['order', 'available_game_day', 'is_active', 'override_price']
+    list_editable = ['order', 'is_active', 'override_price']
     list_filter   = [
         'category__category_type',
         'category',
-        'available_game_day',
         'is_active',
     ]
     search_fields = ['menu_item__name', 'category__name']

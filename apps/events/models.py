@@ -9,8 +9,8 @@ class EventDay(models.Model):
     holidays, etc.
 
     Limited menu mode:
-        When limited_menu=True, the menu view filters to only items flagged
-        available_game_day=True on their MenuItemCategoryAssignment record.
+        When limited_menu=True, the site switches to the menus with
+        role='event_food' and role='event_drinks' instead of the default menus.
 
     Automatic activation:
         If game_time is set, limited menu mode activates

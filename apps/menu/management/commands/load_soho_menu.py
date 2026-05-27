@@ -164,7 +164,7 @@ class Command(BaseCommand):
     def create_item(
         self, category, name, price, description='',
         subcategory=None, order=0, variations=None,
-        available_game_day=False, note='',
+        note='',
         **item_kwargs
     ):
         """
@@ -178,7 +178,6 @@ class Command(BaseCommand):
             subcategory:       Optional MenuSubCategory instance
             order:             Display order within the category
             variations:        List of variation dicts (name, price, size, quantity)
-            available_game_day: Include on game day limited menu
             note:              Per-placement callout note
             **item_kwargs:     Any additional MenuItem field values
         """
@@ -223,7 +222,6 @@ class Command(BaseCommand):
             defaults={
                 'subcategory':       subcategory,
                 'order':             order,
-                'available_game_day': available_game_day,
                 'note':              note,
                 'is_active':         True,
             }
@@ -353,46 +351,40 @@ class Command(BaseCommand):
         c = self.cat_starters
 
         self.create_item(c, 'Mozzarella Sticks', 16, order=1,
-            description='Eight battered mozzarella sticks served with a side of our homemade marinara',
-            available_game_day=True)
+            description='Eight battered mozzarella sticks served with a side of our homemade marinara')
 
         self.create_item(c, 'Hand-Breaded Fried Zucchini', 12, order=2,
             description='Five planks of our parmesan and panko hand-breaded fried zucchini, served with our homemade marinara')
 
         self.create_item(c, 'Pulled Pork Sliders', 17, order=3,
-            description='Three pulled pork sliders topped with BBQ sauce, our homemade cilantro lime coleslaw, and garlic aioli',
-            available_game_day=True)
+            description='Three pulled pork sliders topped with BBQ sauce, our homemade cilantro lime coleslaw, and garlic aioli')
 
         self.create_item(c, 'SoHo Sliders', 19, order=4,
-            description='Four 100% Angus beef sliders with American cheese and pickles',
-            available_game_day=True)
+            description='Four 100% Angus beef sliders with American cheese and pickles')
 
         self.create_item(c, 'SoHo Sampler', 20, order=5,
             description='Hand-breaded fried zucchini, mozzarella sticks, SoHo sliders, and french fries. Upgrade to SoHo fries +3 | Gravy fries +2',
-            is_featured=True, available_game_day=True)
+            is_featured=True)
 
         self.create_item(c, 'Cheese Quesadilla', 15, order=6,
             description='Grilled peppers & onions with cheddar jack cheese in a flour tortilla served with a side of sour cream, homemade pico de gallo, and jalapeños. Grilled chicken +5 | Pulled pork +6 | Steak +7')
 
         self.create_item(c, 'SoHo Nachos', 18, order=7,
-            description='House-fried tortilla chips topped with queso, jalapeños, black bean salsa, pico de gallo, cheddar jack cheese, lime crema, and a spicy ranch drizzle. Guacamole +2 | Grilled chicken +6 | BBQ pulled pork +6 | Chili +4',
-            available_game_day=True)
+            description='House-fried tortilla chips topped with queso, jalapeños, black bean salsa, pico de gallo, cheddar jack cheese, lime crema, and a spicy ranch drizzle. Guacamole +2 | Grilled chicken +6 | BBQ pulled pork +6 | Chili +4')
 
         self.create_item(c, 'Sautéed Pierogies', 19, order=8,
             description='Four locally sourced pierogies sautéed and topped with caramelized onions, crispy bacon, and a balsamic drizzle',
             is_chef_special=True)
 
         self.create_item(c, 'Bavarian Pretzel', 18, order=9,
-            description='Sixteen salted, warm, soft pretzel bites served with queso and honey mustard',
-            available_game_day=True)
+            description='Sixteen salted, warm, soft pretzel bites served with queso and honey mustard')
 
         self.create_item(c, 'Potstickers', 15, order=10,
-            description='Savory pork and veggie dumplings fried golden brown. Served with a tangy sesame sauce for dipping',
-            available_game_day=True)
+            description='Savory pork and veggie dumplings fried golden brown. Served with a tangy sesame sauce for dipping')
 
         self.create_item(c, 'SoHo Wings', 20, order=11,
             description='Traditional wings tossed with your choice of sauce or dry rub. Served with buttermilk ranch or blue cheese dressing. Sauces: Buffalo, Mango Habanero, Sweet BBQ, Sweet Chili, Garlic Parmesan, Honey Garlic, Cajun Dry Rub, or Old Bay',
-            is_featured=True, available_game_day=True,
+            is_featured=True,
             variations=[
                 {'name': '6 Wings',  'price': 10, 'quantity': 6,  'is_default': False},
                 {'name': '12 Wings', 'price': 18, 'quantity': 12, 'is_default': True},
@@ -400,8 +392,7 @@ class Command(BaseCommand):
             ])
 
         self.create_item(c, 'Chicken Tenders', 17, order=12,
-            description='Chicken tenders tossed in your choice of sauce or dry rub with buttermilk ranch or blue cheese dressing',
-            available_game_day=True)
+            description='Chicken tenders tossed in your choice of sauce or dry rub with buttermilk ranch or blue cheese dressing')
 
         self.create_item(c, 'Spinach Artichoke Dip', 17, order=13,
             description='Our homemade mix of spinach, artichoke hearts, garlic, parmesan, and cream cheese. Served warm with tortilla chips',
@@ -414,8 +405,7 @@ class Command(BaseCommand):
             description='Our signature SoHo chili blended with homemade smoked cheddar cheese queso, and topped with green onion. Served with tortilla chips')
 
         self.create_item(c, 'SoHo Style Fries', 16, order=16,
-            description='Crispy french fries smothered with smoked cheddar cheese queso and SoHo chili. Topped with crumbled bacon, jalapeños, and a spicy ranch drizzle',
-            available_game_day=True)
+            description='Crispy french fries smothered with smoked cheddar cheese queso and SoHo chili. Topped with crumbled bacon, jalapeños, and a spicy ranch drizzle')
 
     def load_soups_and_salads(self):
         self.stdout.write('  Soups and Salads...')
@@ -513,16 +503,14 @@ class Command(BaseCommand):
             is_chef_special=True)
 
         self.create_item(c, 'SoHo Super Dogs', 16, order=10,
-            description="Two Nathan's famous all-beef hot dogs topped with American cheese and sliced bacon. Chili +2",
-            available_game_day=True)
+            description="Two Nathan's famous all-beef hot dogs topped with American cheese and sliced bacon. Chili +2")
 
     def load_burgers(self):
         self.stdout.write('  Burgers...')
         c = self.cat_burgers
 
         self.create_item(c, 'Cheeseburger', 19, order=1,
-            description='Half-pound burger served with your choice of cheese. Topped with lettuce, tomato, onion, and pickle. Bacon +2',
-            available_game_day=True)
+            description='Half-pound burger served with your choice of cheese. Topped with lettuce, tomato, onion, and pickle. Bacon +2')
 
         self.create_item(c, 'Black & Blue Burger', 20, order=2,
             description='Half-pound blackened burger, blue cheese crumbles, and bacon. Topped with lettuce, tomato, and onion')
@@ -535,8 +523,7 @@ class Command(BaseCommand):
             is_featured=True)
 
         self.create_item(c, 'Smash Burger', 19, order=5,
-            description='Two smashed beef patties, topped with white American cheese, dill pickles, caramelized onions, and drizzled with housemade thousand island dressing',
-            available_game_day=True)
+            description='Two smashed beef patties, topped with white American cheese, dill pickles, caramelized onions, and drizzled with housemade thousand island dressing')
 
         self.create_item(c, 'Impossible Burger', 19, order=6,
             description='Impossible burger with caramelized onions. Topped with lettuce, tomato, and pickle. Cheese +2',
@@ -619,7 +606,7 @@ class Command(BaseCommand):
             ('Gravy Fries',               8,  True),
         ]
         for order, (name, price, game_day) in enumerate(sides, start=1):
-            self.create_item(c, name, price, order=order, available_game_day=game_day)
+            self.create_item(c, name, price, order=order_day)
 
     def load_kids_menu(self):
         self.stdout.write('  Kids Menu...')
@@ -635,7 +622,7 @@ class Command(BaseCommand):
         ]
         for order, (name, price, desc, dietary) in enumerate(kids, start=1):
             self.create_item(c, name, price, description=desc, order=order,
-                dietary_type=dietary, available_game_day=True)
+                dietary_type=dietary)
 
     def load_desserts(self):
         self.stdout.write('  Desserts...')
@@ -763,7 +750,7 @@ class Command(BaseCommand):
         ]
         for order, name in enumerate(tap_beers, start=1):
             self.create_item(c, name, 0, order=order,
-                subcategory=self.sub_tap, available_game_day=True)
+                subcategory=self.sub_tap)
 
         ipas = [
             'Dewey Swishy Pants', 'Dogfish Head 60 Minute', 'Lagunitas',
@@ -811,8 +798,7 @@ class Command(BaseCommand):
         c = self.cat_na_beverages
 
         self.create_item(c, 'Unlimited Refill Drinks', 4, order=1,
-            description='Coca-Cola, Diet Coke, Coke Zero, Cherry Coke, Sprite, Dr. Pepper, lemonade, ginger ale, unsweetened iced tea, Arnold Palmer. Unlimited refills.',
-            available_game_day=True)
+            description='Coca-Cola, Diet Coke, Coke Zero, Cherry Coke, Sprite, Dr. Pepper, lemonade, ginger ale, unsweetened iced tea, Arnold Palmer. Unlimited refills.')
 
         self.create_item(c, 'Single Serve Drinks', 0, order=2,
             description='Root beer, coffee, hot tea, milk, apple juice, orange juice, pineapple juice, bottled water, Perrier. Prices vary.')
