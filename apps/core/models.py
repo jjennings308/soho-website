@@ -306,10 +306,14 @@ class Banner(TimeStampedModel):
         choices=BANNER_COLOR_CHOICES,
         default='text-primary',
     )
-    image = models.ImageField(
-        upload_to=SlugUpload('banners'),
+    image = models.ForeignKey(
+        'media.MediaItem',
         null=True,
         blank=True,
+        on_delete=models.PROTECT,
+        related_name='banners',
+        limit_choices_to={'owner_type': 'staff'},
+        help_text="Select from the media library. Set alt text on the media item itself.",
     )
     image_alt = models.CharField(max_length=255, blank=True)
     image_opacity = models.DecimalField(
@@ -467,10 +471,14 @@ class PanelSide(TimeStampedModel):
     )
 
     # ── Image mode fields ─────────────────────────────────────────────────────
-    image = models.ImageField(
-        upload_to=SlugUpload('panels'),
+    image = models.ForeignKey(
+        'media.MediaItem',
         null=True,
         blank=True,
+        on_delete=models.PROTECT,
+        related_name='panels',
+        limit_choices_to={'owner_type': 'staff'},
+        help_text="Select from the media library.",
     )
     image_alt = models.CharField(max_length=255, blank=True)
     image_fallback_url = models.CharField(
@@ -700,7 +708,14 @@ class SitePopup(TimeStampedModel):
     body        = models.TextField(blank=True)
     cta_label   = models.CharField(max_length=100, blank=True, verbose_name="Button label")
     cta_url     = models.URLField(blank=True, verbose_name="Button URL")
-    image       = models.ImageField(upload_to='popups/', blank=True, null=True)
+    image       = models.ForeignKey(
+        'media.MediaItem',
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name='popups',
+        limit_choices_to={'owner_type': 'staff'},
+    )
     bg_color      = models.CharField(max_length=20, default='#1a1a1a', verbose_name="Background colour")
     text_color    = models.CharField(max_length=20, default='#ffffff', verbose_name="Text colour")
     primary_color = models.CharField(max_length=20, default='#c9972a', verbose_name="Primary/heading colour")

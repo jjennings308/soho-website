@@ -87,7 +87,7 @@ class PopupForm(forms.ModelForm):
             'title', 'heading', 'body',
             'show_subscribe_form',
             'cta_label', 'cta_url',
-            'image',
+            # 'image' omitted — will be a media picker in Step 5 of the media migration
             'bg_color', 'text_color', 'primary_color', 'accent_color',
             'show_delay',
         ]
