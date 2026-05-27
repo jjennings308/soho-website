@@ -6,6 +6,17 @@
 
 {% block content %}
 
+{# ── Tab bar ── #}
+<div class="menu-tab-bar flex justify-center gap-4 py-4 sticky top-0 z-10"
+     style="background-color: var(--color-bg-primary);">
+  <a href="?type=food"
+     class="menu-tab {% if active_type == 'food' %}menu-tab--active{% endif %}">Food</a>
+  <a href="?type=drinks"
+     class="menu-tab {% if active_type == 'drinks' %}menu-tab--active{% endif %}">Drinks</a>
+  <a href="?"
+     class="menu-tab {% if not active_type %}menu-tab--active{% endif %}">Full Menu</a>
+</div>
+
 {# ── Event mode notice ── #}
 {% if event_mode %}
 <div class="menu-game-day-notice text-center py-3 px-6"

@@ -70,14 +70,19 @@ def _item_assignment_qs():
 def full(request):
     """
     Renders the main menu page using role-based menu selection.
-    Renders food menu then drinks menu sequentially.
+    ?type=food  — food sections only
+    ?type=drinks — drinks sections only
+    no param    — both food then drinks sequentially
     """
+    active_type = request.GET.get('type')  # 'food', 'drinks', or None
     menus = get_active_menus()
+
     context = {
-        'food_menu':  menus['food'],
-        'drink_menu': menus['drinks'],
-        'event_mode': menus['event_mode'],
-        'title':      ' - Menu',
+        'food_menu':   menus['food']   if active_type in (None, 'food')   else None,
+        'drink_menu':  menus['drinks'] if active_type in (None, 'drinks') else None,
+        'event_mode':  menus['event_mode'],
+        'active_type': active_type,
+        'title':       ' - Menu',
     }
     return render(request, 'menu/menu.html', context)
 
