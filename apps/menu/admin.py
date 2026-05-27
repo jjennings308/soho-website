@@ -381,12 +381,12 @@ class MenuAdminForm(forms.ModelForm):
 class MenuAdmin(admin.ModelAdmin):
     form = MenuAdminForm
     list_display  = [
-        'title', 'menu_type', 'is_default', 'is_active',
+        'title', 'menu_type', 'role', 'is_default', 'is_active',
         'homepage_slot', 'scheme_preview',
         'active_from', 'active_until',
     ]
-    list_editable = ['is_active', 'is_default']
-    list_filter   = ['menu_type', 'is_active', 'homepage_slot', 'is_default']
+    list_editable = ['is_active', 'is_default', 'role']
+    list_filter   = ['menu_type', 'role', 'is_active', 'homepage_slot', 'is_default']
     search_fields = ['title']
     prepopulated_fields = {'slug': ('title',)}
     readonly_fields = ['resolved_palette_preview']
@@ -396,12 +396,14 @@ class MenuAdmin(admin.ModelAdmin):
         ('Identity', {
             'fields': ('title', 'slug', 'description'),
         }),
-        ('Type & Default', {
-            'fields': ('menu_type', 'is_default'),
+        ('Type & Role', {
+            'fields': ('menu_type', 'is_default', 'role'),
             'description': (
-                'Set menu_type to Combined for the main site menu. '
-                'One menu per type can be flagged as the default — '
-                'this is what renders on the main menu pages.'
+                'Role controls which menu the site serves on the main menu page. '
+                'Assign default_food / default_drinks for the standard menu, '
+                'event_food / event_drinks for the limited event menu. '
+                'Only one menu may hold each role — saving here automatically '
+                'removes the role from any other menu.'
             ),
         }),
         ('Color Scheme', {
