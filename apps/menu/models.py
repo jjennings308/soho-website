@@ -8,6 +8,11 @@ from apps.core.models import ColorScheme, TimeStampedModel, ScheduledModel, Recu
 
 
 class MenuItemUpload:
+    """
+    Legacy upload callable — kept here only so old migrations can import it.
+    The image field on MenuItem has been replaced by the MenuItemImage through model.
+    Do not use this class in new code.
+    """
     def __call__(self, instance, filename):
         ext = os.path.splitext(filename)[1]
         return f'menu_items/{instance.slug}{ext}'
@@ -257,21 +262,6 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
         null=True,
         help_text="Time of day this item stops being available (e.g. 16:00 for 4pm). Leave blank for no restriction."
     )
-    
-    image = models.ImageField(upload_to=MenuItemUpload(), null=True, blank=True)
-    image_alt = models.CharField(max_length=255, blank=True)
-    media_item = models.ForeignKey(
-        'media.MediaItem',
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name='menu_items',
-        limit_choices_to={'owner_type': 'staff'},
-        help_text=(
-            "Link to a media library item. Overrides the direct image upload above. "
-            "Use this for images already in the media library."
-        ),
-    )
 
     class Meta:
         ordering = ['name']
@@ -344,6 +334,58 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
             if self.available_until and now > self.available_until:
                 return False
         return True
+
+# =============================================================================
+# MENU ITEM IMAGE  (through model — one item can have multiple images)
+# =============================================================================
+
+class MenuItemImage(TimeStampedModel):
+    """
+    Associates one or more MediaItem images with a MenuItem.
+    Exactly one image per item may be marked is_primary=True; this is
+    enforced in save() using the same singleton pattern as ColorScheme.is_default.
+    """
+    menu_item = models.ForeignKey(
+        MenuItem,
+        on_delete=models.CASCADE,
+        related_name='images',
+    )
+    media_item = models.ForeignKey(
+        'media.MediaItem',
+        on_delete=models.PROTECT,
+        related_name='menu_item_images',
+        limit_choices_to={'owner_type': 'staff'},
+    )
+    is_primary = models.BooleanField(
+        default=False,
+        help_text=(
+            "Mark as the primary image for this item. "
+            "Only one image per item may be primary — saving a new primary "
+            "automatically demotes the previous one."
+        ),
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    caption = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ['display_order']
+        unique_together = [('menu_item', 'media_item')]
+        verbose_name = 'Menu Item Image'
+        verbose_name_plural = 'Menu Item Images'
+
+    def __str__(self):
+        flag = ' (primary)' if self.is_primary else ''
+        return f"{self.menu_item.name} — {self.media_item.name}{flag}"
+
+    def save(self, *args, **kwargs):
+        if self.is_primary:
+            # Demote any other primary image for the same menu item
+            MenuItemImage.objects.filter(
+                menu_item=self.menu_item,
+                is_primary=True,
+            ).exclude(pk=self.pk).update(is_primary=False)
+        super().save(*args, **kwargs)
+
 
 # =============================================================================
 # MENU ITEM VARIATION & ADDON

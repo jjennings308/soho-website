@@ -306,15 +306,6 @@ class Banner(TimeStampedModel):
         choices=BANNER_COLOR_CHOICES,
         default='text-primary',
     )
-    image = models.ForeignKey(
-        'media.MediaItem',
-        null=True,
-        blank=True,
-        on_delete=models.PROTECT,
-        related_name='banners',
-        limit_choices_to={'owner_type': 'staff'},
-        help_text="Select from the media library. Set alt text on the media item itself.",
-    )
     image_alt = models.CharField(max_length=255, blank=True)
     image_opacity = models.DecimalField(
         max_digits=3,
@@ -342,13 +333,17 @@ class Banner(TimeStampedModel):
         Returns the dict shape that banner_full.html expects.
         Pass seasonal_body (a safe HTML string) to overlay seasonal
         ContentBlock copy over the boilerplate content field.
+
+        image is selected randomly from active BannerImage records so each
+        page load can show a different photo when multiple images are assigned.
         """
+        image = self.images.filter(is_active=True).order_by('?').first()
         return {
             'title': self.title,
             'content': seasonal_body if seasonal_body is not None else self.content,
             'bg_color': self.bg_color,
             'text_color': self.text_color,
-            'image': self.image,
+            'image': image.media_item if image else None,
             'image_opacity': str(self.image_opacity),
             'image_only': self.image_only,
             'buttons': [
@@ -395,6 +390,40 @@ class BannerButton(TimeStampedModel):
             'bg_color': self.bg_color,
             'text_color': self.text_color,
         }
+
+
+class BannerImage(TimeStampedModel):
+    """
+    Associates one or more MediaItem images with a Banner.
+    When multiple images are active, Banner.as_context() picks one at random
+    on each page load — creating a lightweight rotating hero effect.
+    """
+    banner = models.ForeignKey(
+        Banner,
+        on_delete=models.CASCADE,
+        related_name='images',
+    )
+    media_item = models.ForeignKey(
+        'media.MediaItem',
+        on_delete=models.PROTECT,
+        related_name='banner_images',
+        limit_choices_to={'owner_type': 'staff'},
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Uncheck to temporarily hide this image without removing it.",
+    )
+    display_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['display_order']
+        unique_together = [('banner', 'media_item')]
+        verbose_name = 'Banner Image'
+        verbose_name_plural = 'Banner Images'
+
+    def __str__(self):
+        return f"{self.banner.label} — {self.media_item.name}"
+
 
 # ── Panel Side ───────────────────────────────────────────────────────────────
 
