@@ -91,12 +91,47 @@ class CategoryItemAssignmentInline(admin.TabularInline):
 
 @admin.register(MenuCategory)
 class MenuCategoryAdmin(admin.ModelAdmin):
-    list_display  = ['name', 'category_type', 'order', 'is_active', 'assigned_menu_count', 'item_count']
+    list_display  = ['name', 'category_type', 'order', 'is_active', 'bg_image_preview', 'assigned_menu_count', 'item_count']
     list_editable = ['order', 'is_active']
     list_filter   = ['category_type', 'is_active']
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
+    readonly_fields = ['bg_image_thumbnail']
     inlines = [CategoryItemAssignmentInline]
+
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'slug', 'category_type', 'description', 'order', 'is_active', 'show_disclaimer'),
+        }),
+        ('Background Image', {
+            'fields': ('bg_image_thumbnail', 'background_image'),
+            'description': (
+                'Optional background image displayed behind this category section on the menu page. '
+                'A dark overlay is applied automatically for text legibility. '
+                'Recommended: wide landscape photo, at least 1400 × 600 px.'
+            ),
+        }),
+    )
+
+    @admin.display(description='BG')
+    def bg_image_preview(self, obj):
+        if not obj.background_image:
+            return '—'
+        return format_html(
+            '<img src="{}" style="height:32px;width:56px;object-fit:cover;'
+            'border-radius:3px;border:1px solid rgba(0,0,0,.15);">',
+            obj.background_image.url,
+        )
+
+    @admin.display(description='Background image preview')
+    def bg_image_thumbnail(self, obj):
+        if not obj.background_image:
+            return '(none)'
+        return format_html(
+            '<img src="{}" style="max-width:400px;max-height:180px;'
+            'object-fit:cover;border-radius:4px;border:1px solid rgba(0,0,0,.15);">',
+            obj.background_image.url,
+        )
 
     @admin.display(description='Menus using this')
     def assigned_menu_count(self, obj):

@@ -51,6 +51,16 @@ class MenuCategory(TimeStampedModel):
         )
     )
     description = models.TextField(blank=True)
+    background_image = models.ImageField(
+        upload_to='menu_categories/',
+        blank=True,
+        null=True,
+        help_text=(
+            "Optional background image for this category section on the menu page. "
+            "When set, the image fills the section with a dark overlay for text "
+            "legibility. Leave blank for the standard alternating background."
+        )
+    )
     order = models.PositiveIntegerField(
         default=0,
         help_text="Default display order within this category type. "
