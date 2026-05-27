@@ -125,6 +125,17 @@ class EventDay(models.Model):
             models.Index(fields=['date', 'is_active']),
         ]
 
+    def save(self, *args, **kwargs):
+        # Smart default for limited_menu on creation only — never overrides staff changes.
+        # Only applies to game_day events; concerts, private parties, etc. are unaffected.
+        if not self.pk and self.event_type == 'game_day':
+            if self.home_away == 'home':
+                self.limited_menu = True
+            elif self.home_away == 'away':
+                self.limited_menu = False
+            # home_away is None: no default — leave limited_menu at its field default
+        super().save(*args, **kwargs)
+
     def __str__(self):
         label = self.display_label
         return f"{self.date} — {label}"
