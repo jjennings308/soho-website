@@ -79,6 +79,7 @@
       >
         <a href="{% url 'menu:full' %}?type=food" class="nav-dropdown__link">Food</a>
         <a href="{% url 'menu:full' %}?type=drinks" class="nav-dropdown__link">Drinks</a>
+        <a href="{% url 'menu:event_day_menu' %}" class="nav-dropdown__link">Event Day (Limited)</a>
       </div>
     </li>
 
@@ -125,6 +126,7 @@
         <ul style="list-style:none;display:flex;flex-direction:column;gap:0.75rem;margin-top:0.75rem;padding-left:1rem;border-left:1px solid var(--color-gold-deep);">
           <li><a href="{% url 'menu:full' %}?type=food" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Food</a></li>
           <li><a href="{% url 'menu:full' %}?type=drinks" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Drinks</a></li>
+          <li><a href="{% url 'menu:event_day_menu' %}" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Event Day (Limited)</a></li>
         </ul>
       </li>
 
