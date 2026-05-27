@@ -84,7 +84,7 @@
     </li>
 
     <li><a href="{% url 'events:calendar' %}" class="{% if request.resolver_match.namespace == 'events' %}active{% endif %}">Events</a></li>
-    <li><a href="{% url 'gallery:index' %}" class="{% if request.resolver_match.namespace == 'gallery' %}active{% endif %}">Gallery</a></li>
+    <li><a href="{% url 'media:gallery' %}" class="{% if request.resolver_match.namespace == 'media' %}active{% endif %}">Gallery</a></li>
 
   </ul>
 
@@ -131,7 +131,7 @@
       </li>
 
       <li><a href="{% url 'events:calendar' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">Events</a></li>
-      <li><a href="{% url 'gallery:index' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">Gallery</a></li>
+      <li><a href="{% url 'media:gallery' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">Gallery</a></li>
       <li><a href="{% url 'core:online_delivery' %}" style="font-family:var(--font-nav);font-size:0.75rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-text-nav);">Online Delivery</a></li>
     </ul>
     <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid var(--color-dark-gray);">

@@ -1,0 +1,32 @@
+{# Single gallery card. Expects `item` (MediaItem) in context. #}
+{% with caption=item.caption|default:item.alt_text %}
+<a
+  href="{{ item.file.url }}"
+  class="glightbox group"
+  data-gallery="soho-gallery"
+  {% if caption %}data-description="{{ caption }}"{% endif %}
+  style="display:block;overflow:hidden;border-radius:3px;background:var(--color-bg-tertiary);aspect-ratio:1/1;position:relative;"
+>
+  <img
+    src="{{ item.file.url }}"
+    alt="{{ caption|default:'Gallery photo' }}"
+    loading="lazy"
+    style="width:100%;height:100%;object-fit:cover;transition:transform 0.4s ease;"
+    onmouseover="this.style.transform='scale(1.08)'"
+    onmouseout="this.style.transform='scale(1)'"
+  >
+  {% if caption %}
+  <div style="
+    position:absolute;bottom:0;left:0;right:0;
+    background:linear-gradient(to top,rgba(0,0,0,0.65) 0%,transparent 100%);
+    padding:1.5rem 0.75rem 0.6rem;
+    opacity:0;
+    transition:opacity 0.3s ease;
+  " class="gallery-caption">
+    <p style="font-family:var(--font-secondary);font-size:0.78rem;color:var(--color-white);margin:0;line-height:1.3;">
+      {{ caption }}
+    </p>
+  </div>
+  {% endif %}
+</a>
+{% endwith %}

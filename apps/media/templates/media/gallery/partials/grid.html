@@ -1,0 +1,12 @@
+{# Photo grid partial. Expects `items` queryset (MediaItem) in context. #}
+{% for item in items %}
+<div>
+  {% include "media/gallery/partials/item_card.html" %}
+</div>
+{% empty %}
+<div style="grid-column:1/-1;text-align:center;padding:4rem 1rem;">
+  <p style="font-family:var(--font-secondary);color:var(--color-text-secondary);font-size:0.95rem;">
+    No photos in this category yet.
+  </p>
+</div>
+{% endfor %}
