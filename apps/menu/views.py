@@ -158,9 +158,11 @@ class EventDayMenuView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['food_menu']  = Menu.objects.filter(role='event_food').first()
-        context['drink_menu'] = Menu.objects.filter(role='event_drinks').first()
-        context['is_preview'] = not (EventDay.get_current_menu_mode() == 'limited')
+        active_type = self.request.GET.get('type')
+        context['food_menu']   = Menu.objects.filter(role='event_food').first()
+        context['drink_menu']  = Menu.objects.filter(role='event_drinks').first()
+        context['is_preview']  = not (EventDay.get_current_menu_mode() == 'limited')
+        context['active_type'] = active_type
         return context
 
 
