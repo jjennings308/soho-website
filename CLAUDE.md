@@ -75,6 +75,8 @@ If `.envrc` is blocked, run `direnv allow` from the project root. With direnv ac
 | `apps.events` | Event calendar driving limited-menu mode (game days, etc.) |
 | `apps.media` | Site-wide media library — images and video. Drives the public `/gallery/` page and supplies media to banners, menu items, categories, popups, and any other use point. Replaces `apps.gallery`. |
 | `apps.members` | Mailing list, member accounts, future photo submissions |
+| `apps.reviews` | Third-party and member reviews with moderation and aggregate ratings |
+| `apps.bookings` | **Planned — not yet built.** Private event lifecycle: inquiry → booking → planning → confirmed → completed. Replaces `EventInquiry` in `apps.core` when built. Covers customer communications, audit trail, templated emails, custom event menus, and staff assignment. |
 | `apps.staff` | Purpose-built staff portal — no Django admin required for day-to-day ops |
 
 `django-media-manager` has been removed from the project — do not reference it.
@@ -1091,3 +1093,91 @@ When `SoHoMember` gains a Django `User` link and login capability:
 - Approval: `is_approved=True`, `is_published=True` → appears in member photo section of public gallery
 - Rejection: `is_flagged=True` → email notification to member
 - Member submissions never appear in staff assignment pickers (`limit_choices_to={'owner_type': 'staff'}` on all FKs)
+
+---
+
+## Bookings app (`apps/bookings/`) — PLANNED, NOT YET BUILT
+
+Do not build this app yet. This section documents the intended architecture so future Claude Code sessions have full context.
+
+### Purpose
+
+Private events that happen *at* the restaurant — not events that happen *to* it. A Pirates game affects operations (menu mode, staffing). A private birthday party is a customer relationship with a full planning lifecycle. These are fundamentally different concerns and live in different apps.
+
+`apps.bookings` owns the customer-facing private event lifecycle. `apps.events` stays lean and operational.
+
+### Relationship to existing apps
+
+- **Replaces `EventInquiry` in `apps.core`** — when built, migrate `EventInquiry` data into `Booking` and remove `EventInquiry` from `apps.core`. This cleans up `apps.core` as a side effect.
+- **Connects to `apps.events`** — a confirmed booking optionally creates an `EventDay`. `EventDay` gets an optional `OneToOneField` back to `Booking` so staff can navigate between operational calendar and booking detail.
+- **Uses `apps.menu`** — each booking can have a custom `Menu` (type `promo`, role `none`) built specifically for that event. No new menu infrastructure needed.
+- **Uses `EMAIL_BACKEND`** — all outbound emails go through the same Django email backend as newsletters and member notifications. No new email infrastructure.
+
+### Booking lifecycle
+
+```
+new → contacted → planning → confirmed → completed → cancelled
+```
+
+Each status transition auto-creates a `BookingAuditEntry`. Some transitions suggest a templated email in the staff portal — staff always reviews before sending.
+
+### Planned models
+
+#### `Booking`
+| Field | Type | Notes |
+|-------|------|-------|
+| `status` | CharField choices | `new` / `contacted` / `planning` / `confirmed` / `completed` / `cancelled` |
+| `customer_name` | CharField | |
+| `customer_email` | EmailField | |
+| `customer_phone` | CharField | |
+| `preferred_contact` | CharField | `email` / `phone` |
+| `event_type` | CharField | `private_party` / `corporate` / `birthday` / `rehearsal_dinner` / `other` |
+| `event_date` | DateField(null=True) | |
+| `guest_count` | PositiveIntegerField(null=True) | |
+| `message` | TextField | Original inquiry text |
+| `internal_notes` | TextField(blank=True) | Staff-only notes |
+| `assigned_to` | FK → User (null=True) | Staff member owning this booking |
+| `event_day` | OneToOneField → `events.EventDay` (null=True) | Created when booking is confirmed |
+| `event_menu` | FK → `menu.Menu` (null=True) | Custom menu for this event |
+| `member` | FK → `members.SoHoMember` (null=True) | If the customer is a known member |
+
+#### `BookingMessage`
+| Field | Type | Notes |
+|-------|------|-------|
+| `booking` | FK → Booking | |
+| `direction` | CharField | `inbound` / `outbound` |
+| `subject` | CharField | |
+| `body` | CKEditor5Field | |
+| `sent_by` | FK → User (null=True) | Null for inbound messages |
+| `sent_at` | DateTimeField(null=True) | Null = draft |
+| `is_draft` | BooleanField(default=True) | |
+
+#### `BookingAuditEntry`
+| Field | Type | Notes |
+|-------|------|-------|
+| `booking` | FK → Booking | |
+| `user` | FK → User | Staff member who triggered the action |
+| `action` | CharField | E.g. "Status changed to confirmed", "Menu assigned", "Email sent to customer" |
+| `detail` | TextField(blank=True) | Additional context |
+
+#### `MessageTemplate`
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | CharField | E.g. "Initial inquiry response" |
+| `template_type` | CharField | `inquiry_response` / `confirmation` / `reminder` / `followup` |
+| `subject` | CharField | Supports tokens: `{{customer_name}}`, `{{event_date}}`, `{{guest_count}}` |
+| `body` | CKEditor5Field | Same tokens available |
+
+### Staff portal integration
+
+When built, `apps.bookings` adds a Bookings section to the staff portal left nav with:
+- Booking list filtered by status (new / active / upcoming / past)
+- Booking detail — full communication thread, audit trail, menu assignment, status controls
+- Compose message — pick template, edit, preview, send
+- Message templates — CRUD for reusable templates
+
+### What NOT to build in `apps.bookings`
+
+- Payment processing — out of scope
+- Online booking form for customers (Phase 1 is staff-created from inquiry; customer-facing booking form is a future phase)
+- Calendar UI — the `apps.events` calendar handles operational display; bookings appear there via the `EventDay` link
