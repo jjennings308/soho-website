@@ -499,7 +499,27 @@ class Menu(RecurrenceMixin, ScheduledModel):
             "Only one menu should occupy each slot at a time."
         )
     )
-    
+
+    # ── Role ──────────────────────────────────────────────────────────────────
+    ROLE_CHOICES = [
+        ('none',          'No special role'),
+        ('default_food',  'Default Food Menu'),
+        ('default_drinks','Default Drinks Menu'),
+        ('event_food',    'Event Food Menu'),
+        ('event_drinks',  'Event Drinks Menu'),
+    ]
+
+    role = models.CharField(
+        max_length=20,
+        choices=ROLE_CHOICES,
+        default='none',
+        help_text=(
+            "Functional role used by views to select the correct menu. "
+            "Only one menu may hold each non-'none' role at a time — "
+            "assigning a role here automatically removes it from any other menu."
+        )
+    )
+
     # ── Categories (declared via through table) ───────────────────────────────
     categories = models.ManyToManyField(
         MenuCategory,
@@ -516,6 +536,12 @@ class Menu(RecurrenceMixin, ScheduledModel):
     def __str__(self):
         marker = ' (default)' if self.is_default else ''
         return f"{self.title}{marker}"
+
+    def save(self, *args, **kwargs):
+        if self.role != 'none':
+            # Demote any other menu currently holding this role
+            Menu.objects.filter(role=self.role).exclude(pk=self.pk).update(role='none')
+        super().save(*args, **kwargs)
 
     # ── Properties ────────────────────────────────────────────────────────────
 
