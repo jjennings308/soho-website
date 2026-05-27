@@ -8,7 +8,7 @@ __pycache__/
 
 # Django
 *.sql
-media/
+/media/
 logs/
 staticfiles/
 
