@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% load menu_tags menu_filters %}
+
+{% block title %}SoHo Pittsburgh - Event Menu{% endblock %}
+
+{% block content %}
+
+{# ── Preview banner — only shown when event mode is not currently active ── #}
+{% if is_preview %}
+<div class="text-center py-4 px-6"
+     style="background-color: var(--color-bg-accent); color: var(--color-text-accent);">
+  <strong>Event Menu Preview</strong> — This is our limited menu served during select events.
+  <a href="{% url 'events:calendar' %}"
+     style="color: var(--color-text-accent); text-decoration: underline; margin-left: 0.5rem;">
+    Check our events calendar →
+  </a>
+</div>
+{% endif %}
+
+{# ── Food menu ── #}
+{% if food_menu %}
+  {% include "menu/partials/menu_sections.html" with menu=food_menu section_offset=0 %}
+{% else %}
+  <section class="menu-category-section py-12 px-12 text-center"
+           style="background-color: var(--color-bg-primary); color: var(--color-text-primary);">
+    <p class="opacity-60">Event food menu not yet configured.</p>
+  </section>
+{% endif %}
+
+{# ── Drinks menu ── #}
+{% if drink_menu %}
+  {% with food_count=food_menu.menu_category_assignments.count|default:0 %}
+    {% include "menu/partials/menu_sections.html" with menu=drink_menu section_offset=food_count %}
+  {% endwith %}
+{% else %}
+  <section class="menu-category-section py-12 px-12 text-center"
+           style="background-color: var(--color-bg-secondary); color: var(--color-text-secondary);">
+    <p class="opacity-60">Event drinks menu not yet configured.</p>
+  </section>
+{% endif %}
+
+{# ── Modals ── #}
+{% include "menu/partials/menu_item_modal.html" %}
+
+{% endblock %}

@@ -2,6 +2,8 @@ from django.shortcuts import render, get_object_or_404
 from django.http import Http404, JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Prefetch
+from django.views.generic import TemplateView
+from apps.events.models import EventDay
 
 from .models import (
     Menu,
@@ -136,6 +138,25 @@ def promotions(request):
         'title':       ' - Promotions',
     }
     return render(request, 'menu/promotions.html', context)
+
+
+class EventDayMenuView(TemplateView):
+    """
+    Always renders the event menus (event_food + event_drinks roles)
+    regardless of whether event mode is currently active.
+
+    When event mode is NOT active, shows a preview banner explaining
+    this is the limited menu served during select events.
+    When event mode IS active, renders identically to the main menu page.
+    """
+    template_name = 'menu/event_day_menu.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['food_menu']  = Menu.objects.filter(role='event_food').first()
+        context['drink_menu'] = Menu.objects.filter(role='event_drinks').first()
+        context['is_preview'] = not (EventDay.get_current_menu_mode() == 'limited')
+        return context
 
 
 # =============================================================================
