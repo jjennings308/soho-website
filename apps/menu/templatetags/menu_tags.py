@@ -8,16 +8,30 @@ from django.db.models import Prefetch
 register = template.Library()
 
 
-class _ImageFieldAdapter:
-    """Wraps a MenuItem ImageField to expose .file.url and .alt_text for templates."""
-    def __init__(self, image_field, alt_text=''):
-        self.file = image_field  # ImageField — .file.url works
-        self.alt_text = alt_text
-
-
 # =============================================================================
 # INTERNAL HELPERS
 # =============================================================================
+
+
+def _get_item_primary_image(item):
+    """
+    Returns the MenuItemImage for a MenuItem that should be used as the
+    primary display image, or None if the item has no images.
+
+    Priority: is_primary=True first, then lowest display_order.
+
+    Uses '_prefetched_images' (to_attr from get_category_assignments) when
+    available to avoid per-item DB queries in list views.
+    """
+    from apps.menu.models import MenuItemImage
+    images = getattr(item, '_prefetched_images', None)
+    if images is None:
+        images = list(
+            item.images
+            .select_related('media_item')
+            .order_by('-is_primary', 'display_order')[:1]
+        )
+    return images[0] if images else None
 
 def _currency(value):
     """Mirrors the currency filter for use inside Python tag logic."""
@@ -44,12 +58,12 @@ def _assignment_to_json_data(assignment):
     """
     item = assignment.menu_item
 
-    # Images — media_item FK (MediaItem) takes priority; falls back to legacy ImageField
+    # Images — primary MenuItemImage through-model
     gallery = []
-    if item.media_item and item.media_item.file:
-        gallery.append({'url': item.media_item.file.url, 'alt': item.media_item.alt_text or item.name})
-    elif item.image:
-        gallery.append({'url': item.image.url, 'alt': item.image_alt or item.name})
+    primary_img = _get_item_primary_image(item)
+    if primary_img and primary_img.media_item and primary_img.media_item.file:
+        mi = primary_img.media_item
+        gallery.append({'url': mi.file.url, 'alt': mi.alt_text or item.name})
 
     primary_url = gallery[0]['url'] if gallery else None
 
@@ -91,7 +105,7 @@ def _assignment_to_json_data(assignment):
         'description':       item.description or '',
         'short_description': item.short_description or '',
 
-        # Images — media_item FK primary, then legacy ImageField as fallback
+        # Images — primary MenuItemImage through-model
         'primary_image':     primary_url,
         'has_image':         bool(primary_url),
         'gallery':           gallery,
@@ -152,12 +166,10 @@ def item_to_json(assignment):
 @register.simple_tag
 def get_primary_media(obj):
     """
-    Returns the primary image for a MenuItem as an object with .file.url
-    and .alt_text.
+    Returns the primary MediaItem for a MenuItem, or None.
 
-    Priority:
-      1. media_item FK (MediaItem) — preferred going forward
-      2. legacy image ImageField — fallback while migration is in progress
+    Looks up the is_primary=True MenuItemImage first; falls back to the
+    first image by display_order if none is marked primary.
 
     Usage:
         {% get_primary_media assignment.menu_item as primary_image %}
@@ -165,11 +177,8 @@ def get_primary_media(obj):
             <img src="{{ primary_image.file.url }}" alt="{{ primary_image.alt_text }}">
         {% endif %}
     """
-    if obj.media_item and obj.media_item.file:
-        return obj.media_item  # MediaItem has .file.url and .alt_text natively
-    if obj.image:
-        return _ImageFieldAdapter(obj.image, obj.image_alt)
-    return None
+    img = _get_item_primary_image(obj)
+    return img.media_item if img else None
 
 
 @register.simple_tag
@@ -229,6 +238,8 @@ def get_category_assignments(category):
     """
     from apps.menu.models import MenuItemCategoryAssignment
 
+    from apps.menu.models import MenuItemVariation, MenuItemAddon, MenuItemImage
+
     return MenuItemCategoryAssignment.objects.filter(
         category=category,
         is_active=True,
@@ -238,18 +249,21 @@ def get_category_assignments(category):
         'subcategory',
     ).prefetch_related(
         Prefetch(
+            'menu_item__images',
+            queryset=MenuItemImage.objects.select_related(
+                'media_item'
+            ).order_by('-is_primary', 'display_order'),
+            to_attr='_prefetched_images',
+        ),
+        Prefetch(
             'menu_item__variations',
-            queryset=__import__(
-                'apps.menu.models', fromlist=['MenuItemVariation']
-            ).MenuItemVariation.objects.filter(
+            queryset=MenuItemVariation.objects.filter(
                 is_available=True
             ).order_by('order', 'price'),
         ),
         Prefetch(
             'menu_item__addons',
-            queryset=__import__(
-                'apps.menu.models', fromlist=['MenuItemAddon']
-            ).MenuItemAddon.objects.filter(
+            queryset=MenuItemAddon.objects.filter(
                 is_available=True
             ).order_by('order', 'price'),
         ),
