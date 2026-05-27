@@ -187,6 +187,46 @@ def accessibility(request):
     return render(request, 'core/legal/accessibility.html')
 
 
+class ContactFormView(View):
+    def post(self, request):
+        errors = {}
+        data = {
+            'name':    request.POST.get('name', '').strip(),
+            'email':   request.POST.get('email', '').strip(),
+            'phone':   request.POST.get('phone', '').strip(),
+            'message': request.POST.get('message', '').strip(),
+        }
+
+        if not data['name']:
+            errors['name'] = 'Please enter your name.'
+        if not data['email']:
+            errors['email'] = 'Please enter your email.'
+        if not data['message']:
+            errors['message'] = 'Please enter a message.'
+
+        if errors:
+            return render(request, 'core/partials/contact_form.html', {'errors': errors, 'data': data})
+
+        site = SiteSettings.load()
+        recipient = site.notification_email or site.email
+
+        if recipient:
+            send_mail(
+                subject=f'Website Contact — {data["name"]}',
+                message=(
+                    f'Name: {data["name"]}\n'
+                    f'Email: {data["email"]}\n'
+                    f'Phone: {data["phone"] or "—"}\n\n'
+                    f'{data["message"]}'
+                ),
+                from_email=None,
+                recipient_list=[recipient],
+                fail_silently=True,
+            )
+
+        return render(request, 'core/partials/contact_form.html', {'success': True})
+
+
 class EventInquiryView(View):
     def post(self, request):
         errors = {}

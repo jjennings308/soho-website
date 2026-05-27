@@ -1,0 +1,120 @@
+{# Contact modal — triggered by contactOpen in the parent x-data scope.          #}
+{# Requires site_settings in context (injected by context processor globally).   #}
+
+<div x-show="contactOpen"
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0"
+     x-transition:enter-end="opacity-100"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100"
+     x-transition:leave-end="opacity-0"
+     @keydown.escape.window="contactOpen = false"
+     style="display:none;position:fixed;inset:0;z-index:9000;
+            background:rgba(0,0,0,0.75);
+            align-items:center;justify-content:center;padding:1rem;"
+     :style="contactOpen ? 'display:flex;' : 'display:none;'"
+     @click.self="contactOpen = false">
+
+  <div style="background:var(--color-bg-secondary);border-radius:8px;
+              width:100%;max-width:780px;max-height:90vh;overflow-y:auto;
+              position:relative;">
+
+    {# Header bar #}
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:1.25rem 1.75rem;
+                border-bottom:1px solid rgba(201,168,76,0.18);">
+      <h2 style="font-family:var(--font-nav);font-size:0.85rem;letter-spacing:0.18em;
+                 text-transform:uppercase;color:var(--color-gold-primary);margin:0;">
+        Get in Touch
+      </h2>
+      <button @click="contactOpen = false"
+              style="background:none;border:none;cursor:pointer;
+                     color:var(--color-text-secondary);font-size:1.4rem;line-height:1;
+                     padding:0.2rem 0.4rem;"
+              aria-label="Close">&times;</button>
+    </div>
+
+    {# Body #}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;
+                @media(max-width:600px){grid-template-columns:1fr}">
+
+      {# Left — contact info #}
+      <div style="padding:1.75rem;border-right:1px solid rgba(201,168,76,0.12);">
+        <h3 style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;
+                   text-transform:uppercase;color:var(--color-gold-primary);
+                   margin:0 0 1.25rem;">Contact Information</h3>
+
+        {# Address #}
+        {% if site_settings.address_line1 %}
+        <div style="margin-bottom:1.25rem;">
+          <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+                      color:var(--color-text-secondary);margin-bottom:0.35rem;">Address</div>
+          <address style="font-style:normal;font-size:0.9rem;
+                          color:var(--color-text-primary);line-height:1.6;">
+            {{ site_settings.address_line1 }}
+            {% if site_settings.address_line2 %}<br>{{ site_settings.address_line2 }}{% endif %}
+            {% if site_settings.city or site_settings.state %}
+              <br>{{ site_settings.city }}{% if site_settings.city and site_settings.state %}, {% endif %}{{ site_settings.state }} {{ site_settings.zip_code }}
+            {% endif %}
+          </address>
+          <a href="https://maps.google.com/?q={{ site_settings.address_line1|urlencode }}+{{ site_settings.city|urlencode }}+{{ site_settings.state|urlencode }}"
+             target="_blank" rel="noopener"
+             style="font-size:0.78rem;color:var(--color-gold-primary);text-decoration:none;
+                    display:inline-block;margin-top:0.4rem;">
+            Get directions →
+          </a>
+        </div>
+        {% endif %}
+
+        {# Phone #}
+        {% if site_settings.phone %}
+        <div style="margin-bottom:1.25rem;">
+          <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+                      color:var(--color-text-secondary);margin-bottom:0.35rem;">Phone</div>
+          <a href="tel:{{ site_settings.phone }}"
+             style="font-size:0.9rem;color:var(--color-text-primary);text-decoration:none;">
+            {{ site_settings.phone }}
+          </a>
+        </div>
+        {% endif %}
+
+        {# Email #}
+        {% if site_settings.email %}
+        <div style="margin-bottom:1.25rem;">
+          <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+                      color:var(--color-text-secondary);margin-bottom:0.35rem;">Email</div>
+          <a href="mailto:{{ site_settings.email }}"
+             style="font-size:0.9rem;color:var(--color-text-primary);text-decoration:none;word-break:break-all;">
+            {{ site_settings.email }}
+          </a>
+        </div>
+        {% endif %}
+
+        {# Divider + social links if present #}
+        {% if site_settings.facebook_url or site_settings.instagram_url %}
+        <div style="margin-top:1.5rem;padding-top:1.25rem;
+                    border-top:1px solid rgba(201,168,76,0.12);">
+          <div style="font-size:0.7rem;letter-spacing:0.12em;text-transform:uppercase;
+                      color:var(--color-text-secondary);margin-bottom:0.6rem;">Follow Us</div>
+          <div style="display:flex;gap:0.75rem;">
+            {% if site_settings.facebook_url %}
+              <a href="{{ site_settings.facebook_url }}" target="_blank" rel="noopener"
+                 style="font-size:0.8rem;color:var(--color-gold-primary);text-decoration:none;">Facebook</a>
+            {% endif %}
+            {% if site_settings.instagram_url %}
+              <a href="{{ site_settings.instagram_url }}" target="_blank" rel="noopener"
+                 style="font-size:0.8rem;color:var(--color-gold-primary);text-decoration:none;">Instagram</a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Right — contact form #}
+      <div style="padding:1.75rem;" data-contact-form>
+        {% include 'core/partials/contact_form.html' %}
+      </div>
+
+    </div>
+  </div>
+</div>
