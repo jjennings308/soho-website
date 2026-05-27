@@ -78,8 +78,8 @@ def full(request):
     menus = get_active_menus()
 
     context = {
-        'food_menu':   menus['food']   if active_type in (None, 'food')   else None,
-        'drink_menu':  menus['drinks'] if active_type in (None, 'drinks') else None,
+        'food_menu':   menus['food'],
+        'drink_menu':  menus['drinks'],
         'event_mode':  menus['event_mode'],
         'active_type': active_type,
         'title':       ' - Menu',

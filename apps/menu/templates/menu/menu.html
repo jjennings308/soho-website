@@ -26,26 +26,30 @@
 </div>
 {% endif %}
 
-{# ── Food menu ── #}
-{% if food_menu %}
-  {% include "menu/partials/menu_sections.html" with menu=food_menu section_offset=0 %}
-{% else %}
-  <section class="menu-category-section py-12 px-12 text-center"
-           style="background-color: var(--color-bg-primary); color: var(--color-text-primary);">
-    <p class="opacity-60">Food menu coming soon.</p>
-  </section>
+{# ── Food menu — hidden when ?type=drinks is active ── #}
+{% if active_type != 'drinks' %}
+  {% if food_menu %}
+    {% include "menu/partials/menu_sections.html" with menu=food_menu section_offset=0 %}
+  {% else %}
+    <section class="menu-category-section py-12 px-12 text-center"
+             style="background-color: var(--color-bg-primary); color: var(--color-text-primary);">
+      <p class="opacity-60">Food menu coming soon.</p>
+    </section>
+  {% endif %}
 {% endif %}
 
-{# ── Drinks menu ── #}
-{% if drink_menu %}
-  {% with food_count=food_menu.menu_category_assignments.count|default:0 %}
-    {% include "menu/partials/menu_sections.html" with menu=drink_menu section_offset=food_count %}
-  {% endwith %}
-{% else %}
-  <section class="menu-category-section py-12 px-12 text-center"
-           style="background-color: var(--color-bg-secondary); color: var(--color-text-secondary);">
-    <p class="opacity-60">Drinks menu coming soon.</p>
-  </section>
+{# ── Drinks menu — hidden when ?type=food is active ── #}
+{% if active_type != 'food' %}
+  {% if drink_menu %}
+    {% with food_count=food_menu.menu_category_assignments.count|default:0 %}
+      {% include "menu/partials/menu_sections.html" with menu=drink_menu section_offset=food_count %}
+    {% endwith %}
+  {% else %}
+    <section class="menu-category-section py-12 px-12 text-center"
+             style="background-color: var(--color-bg-secondary); color: var(--color-text-secondary);">
+      <p class="opacity-60">Drinks menu coming soon.</p>
+    </section>
+  {% endif %}
 {% endif %}
 
 {# ── Modals ── #}
