@@ -147,7 +147,7 @@ def about(request):
         'about_info':    get_content_group('about_page_info'),
         'left_contact':  get_panel_side('contact-text'),
         'right_contact': get_panel_side('contact-map'),
-        'bottom_banner': get_banner('about-bottom'),
+        'bottom_banner': get_banner('t'),
     }
     return render(request, 'core/about.html', context)
 
