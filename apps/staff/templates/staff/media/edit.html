@@ -22,6 +22,9 @@
     <div style="font-size:0.75rem;color:var(--color-mid-gray);">
       {% if item.file %}
         <div>{{ item.file.name }}</div>
+        {% if item.file_size_display %}
+          <div style="margin-top:0.2rem;">{{ item.file_size_display }}</div>
+        {% endif %}
       {% endif %}
       <div style="margin-top:0.25rem;">
         Uploaded: {{ item.created_at|date:"N j, Y" }}
