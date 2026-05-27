@@ -38,6 +38,12 @@ IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp', '
 
 DEFAULT_SCAN_DIR = 'gallery'  # relative to MEDIA_ROOT
 
+# Subdirectories (relative to MEDIA_ROOT) that the importer should never touch.
+# gallery/deleted holds files archived by the staff delete action pending review.
+SKIP_SUBDIRS = {
+    Path('gallery') / 'deleted',
+}
+
 
 def filename_to_name(filename: str) -> str:
     """
@@ -110,6 +116,14 @@ class Command(BaseCommand):
             # Path stored in DB is relative to MEDIA_ROOT
             rel_path = abs_path.relative_to(media_root)
             rel_path_str = str(rel_path)  # e.g. "gallery/burgers/Burger_Hero.jpg"
+
+            # Skip protected subdirectories (e.g. gallery/deleted)
+            if any(
+                rel_path.parts[:len(skip.parts)] == skip.parts
+                for skip in SKIP_SUBDIRS
+            ):
+                skipped_count += 1
+                continue
 
             if rel_path_str in existing_paths:
                 skipped_count += 1

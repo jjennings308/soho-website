@@ -1,5 +1,7 @@
 import re
+import shutil
 from io import StringIO
+from pathlib import Path
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -289,11 +291,26 @@ class MediaToggleView(StaffRequiredMixin, View):
 
 class MediaDeleteView(StaffRequiredMixin, View):
     def post(self, request, pk):
+        from django.conf import settings
         from django.db.models import ProtectedError
         item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
         try:
+            # Move file to deleted archive before removing the DB record.
+            # The import command skips gallery/deleted/ so re-importing won't
+            # resurrect these files. Staff can review them there before a
+            # permanent wipe.
+            if item.file:
+                src = Path(settings.MEDIA_ROOT) / item.file.name
+                if src.exists():
+                    deleted_dir = Path(settings.MEDIA_ROOT) / 'gallery' / 'deleted'
+                    deleted_dir.mkdir(parents=True, exist_ok=True)
+                    dest = deleted_dir / src.name
+                    # Avoid overwriting a file with the same name
+                    if dest.exists():
+                        dest = deleted_dir / f"{src.stem}_{item.pk}{src.suffix}"
+                    shutil.move(str(src), str(dest))
             item.delete()
-            messages.success(request, f'"{item.name}" deleted.')
+            messages.success(request, f'"{item.name}" moved to deleted archive and removed from library.')
         except ProtectedError as exc:
             # Build a human-readable list of what's referencing this item
             refs = ', '.join(
