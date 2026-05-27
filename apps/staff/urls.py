@@ -36,14 +36,6 @@ urlpatterns = [
     path('media/<int:pk>/toggle/', MediaToggleView.as_view(), name='media_toggle'),
     path('media/<int:pk>/delete/', MediaDeleteView.as_view(), name='media_delete'),
 
-    # Gallery (apps.gallery — deprecated, kept for transition)
-    path('gallery/', views.GalleryListView.as_view(), name='gallery'),
-    path('gallery/upload/', views.GalleryUploadView.as_view(), name='gallery_upload'),
-    path('gallery/import/', views.GalleryImportView.as_view(), name='gallery_import'),
-    path('gallery/<int:pk>/edit/', views.GalleryEditView.as_view(), name='gallery_edit'),
-    path('gallery/<int:pk>/toggle/', views.GalleryToggleView.as_view(), name='gallery_toggle'),
-    path('gallery/<int:pk>/delete/', views.GalleryDeleteView.as_view(), name='gallery_delete'),
-
     # Popups
     path('popups/', views.PopupListView.as_view(), name='popups'),
     path('popups/add/', views.PopupAddView.as_view(), name='popup_add'),
