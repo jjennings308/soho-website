@@ -190,7 +190,7 @@ def get_active_menus(menu_type=None, homepage_only=False, limit=None):
     and item assignments prefetched.
 
     Args:
-        menu_type:     Filter by menu_type ('food', 'drinks', 'combined', 'promo').
+        menu_type:     Filter by menu_type ('food', 'drinks', 'promo').
                        Omit to return all active menus.
         homepage_only: If True, only return menus with show_on_homepage=True.
         limit:         Maximum number of menus to return.
@@ -268,21 +268,16 @@ def get_category_assignments(category):
 
 
 @register.simple_tag
-def get_default_menu(menu_type='combined'):
+def get_menu_by_role(role):
     """
-    Returns the default Menu for the given type, with categories and
-    item assignments prefetched.
+    Returns the active Menu holding the given role, or None.
 
     Args:
-        menu_type: 'combined', 'food', or 'drinks'.
+        role: 'default_food', 'default_drinks', 'event_food', or 'event_drinks'.
 
     Usage:
-        {% get_default_menu 'combined' as menu %}
-        {% get_default_menu 'food' as food_menu %}
+        {% get_menu_by_role 'default_food' as food_menu %}
+        {% get_menu_by_role 'event_food' as event_food_menu %}
     """
     from apps.menu.models import Menu
-    return Menu.objects.filter(
-        menu_type=menu_type,
-        is_default=True,
-        is_active=True,
-    ).first()
+    return Menu.objects.filter(role=role, is_active=True).first()

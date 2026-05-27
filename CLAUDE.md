@@ -107,19 +107,21 @@ Template usage:
 
 ### Menu mode (`apps/menu/`, `apps/events/`)
 
-The menu has two modes — **full** and **limited** — controlled by `EventDay.get_current_menu_mode()`:
-1. `SiteSettings.force_full_menu` → full (highest priority)
-2. `SiteSettings.force_game_day_mode` → limited
-3. Active `EventDay` with `limited_menu=True` and within lead time → limited
-4. Default → full
+The menu has two modes — **standard** and **event** — controlled by `EventDay.get_current_menu_mode()`:
+1. `SiteSettings.force_full_menu` → standard (highest priority)
+2. `SiteSettings.force_game_day_mode` → event
+3. Active `EventDay` with `limited_menu=True` and within lead time → event
+4. Default → standard
 
-In limited mode, only `MenuItemCategoryAssignment` records with `available_game_day=True` are shown. Views pass `limited_menu=True/False` into context; templates filter accordingly.
+In event mode, views switch to the menus with `role='event_food'` and `role='event_drinks'` instead of `role='default_food'` and `role='default_drinks'`. See the **Menu restructure** section for full detail.
+
+**Note:** `available_game_day` on `MenuItemCategoryAssignment` is deprecated and being removed — do not use it in new code. Item-level filtering is replaced by role-based menu switching.
 
 ### Menu data model
 
 Items (`MenuItem`) are a shared library — not owned by any menu. Placement is via two through-tables:
 - `MenuCategoryAssignment` — declares which categories a `Menu` shows, and in what order
-- `MenuItemCategoryAssignment` — places an item into a category with per-placement `order`, `override_price`, `note`, and `available_game_day`
+- `MenuItemCategoryAssignment` — places an item into a category with per-placement `order`, `override_price`, `note`. The `available_game_day` field on this model is deprecated — do not reference it in new code.
 
 The same item can appear in multiple categories at different prices.
 
@@ -495,3 +497,407 @@ Do not set `EMAIL_BACKEND` in the VPS `.env` — `production.py` hardcodes smtp.
 ### Timezone
 
 `TIME_ZONE = 'America/New_York'` with `USE_TZ = True`. Timestamps stored as UTC in the database; `timezone.localdate()` / `timezone.localtime()` return Eastern time. Always use these in views and templates rather than `datetime.date.today()`.
+
+---
+
+## Reviews app (`apps/reviews/`)
+
+### Decision log
+
+- Single `Review` model handles both third-party (Google, Yelp, OpenTable, Rewards Network) and future member-written reviews. They share display logic and are differentiated by `source` field — not separate models.
+- Ratings normalized to 1–5 decimal scale on ingest regardless of source platform scale.
+- Display: half-star rendering (SVG, no JS library needed). Numeric value stored as `DecimalField(max_digits=3, decimal_places=1)` — supports 3.5, 4.5 etc.
+- Homepage widget: 3–4 featured reviews from mixed sources + aggregate rating summary (pulled from Google Places API separately).
+- Dedicated `/reviews/` page: all published reviews, filterable by source, with aggregate summary header.
+- Source badges: platform logo (Google, Yelp, OpenTable, Rewards Network) displayed on each card for attribution. Fair use for attribution is acceptable.
+- Scraping strategy: one-time import script for initial population; manual curation via admin thereafter. Ongoing automated scraping is fragile and not worth maintaining at restaurant scale.
+- **Phase 2 (future, do not build yet):** member-written reviews linked to `SoHoMember`. Rewards Network reviews are verified-diner by nature (card-linked transaction); member reviews use honor system initially.
+
+### Model
+
+#### `Review`
+Inherits `TimeStampedModel`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `source` | CharField(choices) | `google` / `yelp` / `opentable` / `rewards_network` / `member` |
+| `source_id` | CharField(200, blank=True) | Platform's own review ID — used for dedup on re-import |
+| `source_url` | URLField(blank=True) | Link back to original review on the platform |
+| `author_name` | CharField(200, blank=True) | Display name for third-party reviews |
+| `member` | FK → `members.SoHoMember` (null=True, blank=True) | Phase 2 — member-written reviews only |
+| `rating` | DecimalField(max_digits=3, decimal_places=1) | Normalized to 1.0–5.0 regardless of source |
+| `title` | CharField(200, blank=True) | Not all platforms include titles |
+| `body` | TextField | Review text |
+| `review_date` | DateField | When the customer wrote it — not when we imported it |
+| `is_published` | BooleanField(default=False) | Third-party: hand-curated. Member: set True after approval |
+| `is_featured` | BooleanField(default=False) | Pins to homepage widget and top of /reviews/ |
+| `is_verified_diner` | BooleanField(default=False) | True for OpenTable (reservation) and Rewards Network (card transaction). Always False for Google/Yelp. Phase 2: cross-reference for member reviews TBD |
+| `display_order` | PositiveIntegerField(default=0) | Manual ordering within published set |
+| `is_approved` | BooleanField(default=False) | Phase 2 member reviews — starts False, set True by staff |
+| `is_flagged` | BooleanField(default=False) | Phase 2 — flagged for review |
+| `flagged_reason` | TextField(blank=True) | Phase 2 |
+| `approved_by` | FK → User (null=True, blank=True) | Staff user who approved |
+| `approved_at` | DateTimeField(null=True, blank=True) | |
+| `scraped_at` | DateTimeField(null=True, blank=True) | Null for member reviews |
+| `raw_data` | JSONField(default=dict, blank=True) | Original scraped/imported payload — for reference, not displayed |
+
+Default ordering: `['-is_featured', 'display_order', '-review_date']`
+
+#### `AggregateRating`
+Stores the platform-level summary rating (e.g. "4.7 stars based on 312 Google reviews"). Updated periodically via management command, not per review import.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `source` | CharField(choices) | Same choices as `Review.source` (excludes `member`) |
+| `rating` | DecimalField(max_digits=3, decimal_places=1) | Platform aggregate, e.g. 4.7 |
+| `review_count` | PositiveIntegerField | Total reviews on the platform |
+| `last_updated` | DateTimeField(auto_now=True) | |
+| `source_url` | URLField(blank=True) | Link to the business profile on the platform |
+
+One record per source. Used in the homepage widget header and `/reviews/` page aggregate summary bar.
+
+### Admin (`apps/reviews/admin.py`)
+
+#### `ReviewAdmin`
+- `list_display`: author (name or member email), source (with icon), star_display, review_date, is_published, is_featured, is_verified_diner
+- `list_filter`: source, is_published, is_featured, is_verified_diner, is_approved
+- `search_fields`: author_name, body, member__email
+- `list_editable`: is_published, is_featured, display_order
+- `readonly_fields`: source_id, scraped_at, raw_data, approved_by, approved_at
+- Bulk actions: `publish_selected`, `unpublish_selected`, `feature_selected`, `unfeature_selected`
+- Custom method `star_display` renders a text approximation of the star rating in list view (e.g. `★★★★½`)
+
+#### `AggregateRatingAdmin`
+- `list_display`: source, rating, review_count, last_updated, source_url
+- `readonly_fields`: last_updated
+- Simple — mainly used to verify the refresh command ran correctly
+
+### URLs / views
+
+| URL | View | Name | Notes |
+|-----|------|------|-------|
+| `/reviews/` | `ReviewListView` | `reviews:index` | All published reviews; filterable by source via `?source=` param |
+
+No detail view needed — review body is shown in full on the list page (cards).
+
+Homepage widget is a template partial included in the homepage view context — not a separate URL.
+
+### Template structure
+
+```
+apps/reviews/templates/reviews/
+    index.html              # /reviews/ page — aggregate summary + full card grid
+    partials/
+        review_card.html    # single review card (shared by homepage and /reviews/)
+        star_rating.html    # SVG half-star renderer — takes `rating` variable (1.0–5.0)
+        aggregate_bar.html  # summary row: "4.7 ★ · 312 Google reviews · View on Google"
+        homepage_widget.html # 3–4 featured cards + link to /reviews/
+```
+
+Homepage includes:
+```django
+{% include 'reviews/partials/homepage_widget.html' %}
+```
+
+### Star rating rendering
+
+SVG-based, no JS library. `star_rating.html` takes a `rating` float and renders 5 stars with full, half, or empty fill. Use inline SVG with CSS custom properties for color theming. Example logic:
+
+```
+For each of 5 positions:
+  if rating >= position → full star
+  elif rating >= position - 0.5 → half star
+  else → empty star
+```
+
+Pass as template tag or include with context: `{% include 'reviews/partials/star_rating.html' with rating=review.rating %}`.
+
+Do NOT use a JS star library — SVG keeps it server-rendered, no flash of unstyled content, works without JS.
+
+### Source badges
+
+Each platform has a badge shown on the review card. Use inline SVG or a small PNG for logos. Badge includes the platform name as alt text for accessibility. Displayed in the card footer alongside the verified diner checkmark (if applicable).
+
+```
+[Google logo] Google   ✓ Verified Diner
+```
+
+SVG logos for Google, Yelp, OpenTable, Rewards Network — store in `apps/reviews/static/reviews/img/`. Do not hotlink from platform CDNs.
+
+### Scraper architecture (`apps/reviews/scrapers/`)
+
+```
+apps/reviews/scrapers/
+    __init__.py
+    base.py           # BaseReviewScraper — normalize_rating(), build_Review_dict(), dedup check
+    google.py         # Google Places API client
+    yelp.py           # Yelp Fusion API client
+    opentable.py      # Playwright-based (fragile — use for one-time import only)
+    rewards_network.py # Portal export parser (CSV or Playwright TBD — check merchant portal)
+```
+
+#### `base.py`
+```python
+class BaseReviewScraper:
+    source: str  # subclasses set this
+
+    def normalize_rating(self, raw_rating: float, scale: float = 5.0) -> Decimal:
+        """Normalize any platform scale to 1.0–5.0."""
+        return round(Decimal(raw_rating / scale * 5), 1)
+
+    def is_duplicate(self, source_id: str) -> bool:
+        return Review.objects.filter(source=self.source, source_id=source_id).exists()
+
+    def fetch(self) -> list[dict]:
+        raise NotImplementedError
+
+    def run(self) -> tuple[int, int]:
+        """Returns (imported_count, skipped_count)."""
+```
+
+#### `google.py`
+Uses Google Places API (requires `GOOGLE_PLACES_API_KEY` in `.env`). Returns up to 5 reviews per call (API limit). Also fetches aggregate rating and review count for `AggregateRating`.
+
+```python
+GOOGLE_PLACE_ID = env('GOOGLE_PLACE_ID')  # find via Places API or Google Maps URL
+```
+
+#### `yelp.py`
+Uses Yelp Fusion API (requires `YELP_API_KEY` in `.env`). Returns up to 3 reviews. Also fetches aggregate rating.
+
+```python
+YELP_BUSINESS_ID = env('YELP_BUSINESS_ID')  # from Yelp business URL slug
+```
+
+#### `opentable.py` and `rewards_network.py`
+Playwright-based for one-time import. Mark clearly in code as fragile/manual-use-only. Check Rewards Network merchant portal first — if CSV export is available, parse that instead of scraping.
+
+### Management commands
+
+`python manage.py import_reviews --source=google`
+`python manage.py import_reviews --source=yelp`
+`python manage.py import_reviews --source=opentable`
+`python manage.py import_reviews --source=rewards_network`
+`python manage.py import_reviews --source=all`
+
+All imported reviews arrive with `is_published=False` — staff curates which to publish via admin. Command prints import/skip counts. Safe to re-run (dedup via `source_id`).
+
+`python manage.py refresh_aggregate_ratings`
+
+Calls Google Places API and Yelp Fusion API to update `AggregateRating` records. Run periodically (weekly cron or manual). Does not touch individual `Review` records.
+
+### Environment variables to add to `.env.example`
+
+```
+GOOGLE_PLACES_API_KEY=
+GOOGLE_PLACE_ID=
+YELP_API_KEY=
+YELP_BUSINESS_ID=
+```
+
+### Homepage widget context
+
+The homepage view (`apps/core/views.py`) should pass:
+```python
+context['featured_reviews'] = (
+    Review.objects
+    .filter(is_published=True, is_featured=True)
+    .select_related('member')
+    .order_by('display_order', '-review_date')[:4]
+)
+context['aggregate_ratings'] = AggregateRating.objects.all()
+```
+
+### Phase 2 — Member reviews (future, do not build yet)
+
+When member accounts are active (`apps.members` Phase 2 complete):
+- Add `/reviews/submit/` — `MemberReviewSubmitView`, requires member login
+- `Review.member` FK populated; `Review.author_name` left blank (display uses `member.first_name`)
+- `is_published=False` on submit; staff approves via admin approval queue (filter: `source=member, is_approved=False`)
+- Approval triggers email notification to member via `send_mail()`
+- `is_verified_diner` logic TBD — honor system at launch, possible Rewards Network cross-reference later
+- Add `MemberReviewForm` to `apps/reviews/forms.py` — fields: rating (1–5 integer selector), title (optional), body (required, min 20 chars)
+
+---
+
+## Menu restructure (`apps/menu/`)
+
+### Decision log
+
+- `menu_type` field already exists on `Menu` — do NOT modify it or its existing choices.
+- Add a `role` field to `Menu` — this is the only model change to `Menu`.
+- The combined `all` menu type is retired. The full menu page renders default food and default drink menus together in the view — no combined menu record is needed. Remove the `all` option from `menu_type` choices only after confirming no menus currently use it and no views/templates reference it. Grep before removing.
+- `available_game_day` on `MenuItemCategoryAssignment` is deprecated and replaced entirely by role-based menu switching. Do NOT use `available_game_day` as the basis for populating event menus — the flag was experimental and the menus have evolved since it was introduced. Event menus are built fresh in the admin with deliberate item selections.
+- "Game day" terminology replaced throughout by "event" — not all events are games.
+- `SiteSettings.force_game_day_mode` rename to `force_event_mode` is desirable for consistency but only if the field rename doesn't break existing references — grep first, treat as a separate step if widely referenced.
+
+### `Menu.role` field
+
+Add to `Menu` model in `apps/menu/models.py`:
+
+```python
+ROLE_CHOICES = [
+    ('none', 'No special role'),
+    ('default_food', 'Default Food Menu'),
+    ('default_drinks', 'Default Drinks Menu'),
+    ('event_food', 'Event Food Menu'),
+    ('event_drinks', 'Event Drinks Menu'),
+]
+
+role = models.CharField(
+    max_length=20,
+    choices=ROLE_CHOICES,
+    default='none',
+)
+```
+
+**Uniqueness enforcement** — only one menu can hold each non-`none` role at a time. Enforce in `Menu.save()`, same pattern as `ColorScheme.is_default`:
+
+```python
+def save(self, *args, **kwargs):
+    if self.role != 'none':
+        # Demote any other menu currently holding this role
+        Menu.objects.filter(role=self.role).exclude(pk=self.pk).update(role='none')
+    super().save(*args, **kwargs)
+```
+
+Reassigning a role to a new menu automatically demotes the previous holder to `role='none'` — no orphaned duplicate roles possible.
+
+### `EventDay.save()` smart default
+
+`EventDay` has `event_type` (choices include `game_day`) and `home_away` (optional, choices include `home` and `away`). Add to `EventDay.save()` **before** `super().save()`:
+
+```python
+def save(self, *args, **kwargs):
+    # Smart default for limited_menu on creation only — never overrides staff changes
+    if not self.pk and self.event_type == 'game_day':
+        if self.home_away == 'home':
+            self.limited_menu = True
+        elif self.home_away == 'away':
+            self.limited_menu = False
+        # home_away is None: no default set — leave limited_menu at its field default
+    super().save(*args, **kwargs)
+```
+
+Key rules:
+- `if not self.pk` — fires on creation only, never on subsequent saves
+- Only applies to `event_type == 'game_day'` — concerts, private parties, and other event types are unaffected and get no automatic default
+- Staff can override `limited_menu` freely after creation — the smart default is a convenience, not a constraint
+- Example: Steelers make the Super Bowl — away game defaults to `limited_menu=False` on creation; staff flips it to `True` for the watch party. Both steps work correctly
+- This logic belongs in the model `save()` not in admin `save_model()` — it must apply everywhere (admin, management commands, shell)
+
+### View logic — `get_active_menus()` helper
+
+Add to `apps/menu/utils.py`:
+
+```python
+def get_active_menus() -> dict:
+    """
+    Returns the correct food and drink menus based on current event mode.
+    Always returns a dict — values may be None if no menu holds that role.
+    Templates must handle None gracefully.
+    """
+    from apps.events.models import EventDay
+    from apps.menu.models import Menu
+
+    event_mode = EventDay.get_current_menu_mode() == 'limited'
+
+    food_role = 'event_food' if event_mode else 'default_food'
+    drinks_role = 'event_drinks' if event_mode else 'default_drinks'
+
+    return {
+        'food': Menu.objects.filter(role=food_role).first(),
+        'drinks': Menu.objects.filter(role=drinks_role).first(),
+        'event_mode': event_mode,
+    }
+```
+
+Use `.first()` not `.get()` — if no menu holds a role the view receives `None` rather than an exception. This is important during the transition period when roles are being assigned.
+
+Views pass both menus to context:
+
+```python
+menus = get_active_menus()
+context['food_menu'] = menus['food']
+context['drink_menu'] = menus['drinks']
+context['event_mode'] = menus['event_mode']
+```
+
+### Full menu page template
+
+Render food then drinks sequentially — no combined menu record:
+
+```django
+{% if food_menu %}
+    {% include 'menu/partials/menu_sections.html' with menu=food_menu %}
+{% else %}
+    <p>Food menu coming soon.</p>
+{% endif %}
+
+{% if drink_menu %}
+    {% include 'menu/partials/menu_sections.html' with menu=drink_menu %}
+{% else %}
+    <p>Drinks menu coming soon.</p>
+{% endif %}
+```
+
+### Event day menu preview URL
+
+Add a `/menu/event-day/` URL that always shows event menus regardless of current mode. Useful for customers planning around upcoming events.
+
+```python
+# apps/menu/urls.py
+path('event-day/', EventDayMenuView.as_view(), name='event_day_menu'),
+# Full name: menu:event_day_menu
+```
+
+```python
+class EventDayMenuView(TemplateView):
+    template_name = 'menu/event_day_menu.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['food_menu'] = Menu.objects.filter(role='event_food').first()
+        context['drink_menu'] = Menu.objects.filter(role='event_drinks').first()
+        context['is_preview'] = not (EventDay.get_current_menu_mode() == 'limited')
+        return context
+```
+
+Template shows a banner when `is_preview=True`:
+> "This is our event day menu — available during select events. Check our events calendar to see what's coming up."
+
+When `is_preview=False` (event mode is actually active), no banner — this is just the regular menu view.
+
+### Promo menus
+
+Promo menus use `menu_type='promo'` and `role='none'` — unaffected by this restructure. Homepage slot assignment via `homepage_slot` field is unchanged. A future `show_in_event_mode` boolean on `Menu` may be needed to control promo visibility during events — do not add it now, flag with a `# TODO` comment in the promo display logic.
+
+### Migration sequence — follow this order exactly
+
+**Step 1 — Grep first.** Search entire codebase for every reference to:
+- `available_game_day`
+- `menu_type='all'` and `default='all'`
+- `force_game_day_mode`
+- `limited_menu` (understand all usages before changing anything)
+
+Document every file and line. Do not proceed until the full list is known.
+
+**Step 2 — Add `Menu.role` field.** `makemigrations`, `migrate`. All existing menus get `role='none'` — no data loss. Commit.
+
+**Step 3 — Add `EventDay.save()` smart default logic.** No migration needed. Commit.
+
+**Step 4 — Add `get_active_menus()` helper** to `apps/menu/utils.py`. Commit.
+
+**Step 5 — Update views and templates.** Replace all `available_game_day` filtering with `get_active_menus()`. Update every template that references `available_game_day`. Commit.
+
+**Step 6 — Add event day preview URL** (`/menu/event-day/`). Commit.
+
+**Step 7 — Staff assigns roles in admin.** Set `default_food`, `default_drinks`, `event_food`, `event_drinks` on the appropriate menus. Build event menus fresh — do not derive from `available_game_day` data.
+
+**Step 8 — Verify both modes.** Use `SiteSettings.force_game_day_mode=True` to simulate event mode without waiting for a real event. Confirm menu pages render correctly in both modes. Confirm preview URL works.
+
+**Step 9 — Remove `available_game_day`.** Only after Step 5 is confirmed working. Remove field from `MenuItemCategoryAssignment`. `makemigrations`, `migrate`. Commit.
+
+**Step 10 — Remove `all` from `menu_type` choices.** Only after confirming no menus use it. Delete the combined menu record from the database. Commit.
+
+**Do not combine steps into a single commit** — each step must be independently revertable.

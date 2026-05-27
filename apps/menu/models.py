@@ -25,9 +25,9 @@ class MenuCategory(TimeStampedModel):
     A named grouping of menu items — e.g. Starters, Burgers, Desserts,
     Signature Cocktails, Beer, Sweet Street, Happy Hour Food.
 
-    category_type determines whether this category belongs on the Food tab
-    or the Drinks tab when rendered inside a combined Menu. The Menu itself
-    declares which categories it uses via MenuCategoryAssignment.
+    category_type determines whether this category belongs on the Food menu
+    or the Drinks menu. The Menu itself declares which categories it uses
+    via MenuCategoryAssignment.
 
     Categories are shared infrastructure — the same category can appear on
     multiple Menus. A Menu selects the categories it wants to show; it does
@@ -46,8 +46,8 @@ class MenuCategory(TimeStampedModel):
         choices=CATEGORY_TYPE_CHOICES,
         default='food',
         help_text=(
-            "Food or Drinks — used by combined menus to split categories "
-            "into the correct tab."
+            "Food or Drinks — used to determine which menu this category "
+            "belongs to (food or drinks)."
         )
     )
     description = models.TextField(blank=True)
@@ -421,15 +421,13 @@ class Menu(RecurrenceMixin, ScheduledModel):
     promotional menus.
 
     menu_type controls rendering:
-        'food'     — renders food categories only
-        'drinks'   — renders drink categories only
-        'combined' — renders both with Food / Drinks tabs
-        'promo'    — promotional menu; uses color_scheme and show_on_homepage
+        'food'   — food menu; assign role=default_food or event_food
+        'drinks' — drinks menu; assign role=default_drinks or event_drinks
+        'promo'  — promotional menu; uses color_scheme and homepage_slot
 
-    is_default:
-        One menu per menu_type can be flagged as default. The default food,
-        drinks, and combined menus are what render on the main menu pages.
-        Non-default menus are promos, happy hour, specials, etc.
+    The active food and drinks menus are selected by role via get_active_menus(),
+    not by is_default. is_default is legacy — prefer role for new menus.
+    Non-default menus are promos, happy hour, specials, etc.
 
     Categories are declared via MenuCategoryAssignment. Items within each
     category are placed via MenuItemCategoryAssignment.
@@ -441,10 +439,9 @@ class Menu(RecurrenceMixin, ScheduledModel):
     """
 
     MENU_TYPE_CHOICES = [
-        ('food',     'Food'),
-        ('drinks',   'Drinks'),
-        ('combined', 'Combined (Food & Drinks)'),
-        ('promo',    'Promotion'),
+        ('food',   'Food'),
+        ('drinks', 'Drinks'),
+        ('promo',  'Promotion'),
     ]
 
     # ── Identity ──────────────────────────────────────────────────────────────
@@ -458,17 +455,15 @@ class Menu(RecurrenceMixin, ScheduledModel):
         choices=MENU_TYPE_CHOICES,
         default='promo',
         help_text=(
-            "Controls how this menu is rendered. "
-            "'Combined' shows Food and Drinks tabs. "
-            "'Promotion' enables color scheme and homepage display."
+            "Food or Drinks for role-assigned menus. "
+            "Promotion enables color scheme and homepage display."
         )
     )
     is_default = models.BooleanField(
         default=False,
         help_text=(
-            "Marks this as the default menu for its type. "
-            "One default per menu_type. The default combined/food/drinks menu "
-            "is what renders on the main menu pages."
+            "Legacy flag — the active menu is now selected by role, not is_default. "
+            "Leave unchecked for new menus."
         )
     )
 

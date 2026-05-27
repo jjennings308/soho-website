@@ -9,12 +9,16 @@ What this does:
     1. Creates all MenuCategory and MenuSubCategory records
     2. Creates all MenuItem records (item library)
     3. Creates MenuItemCategoryAssignment records (places items into categories)
-    4. Creates the default Menu records (combined, food, drinks)
+    4. Creates the default Menu records (food, drinks)
     5. Creates MenuCategoryAssignment records (declares which categories each menu uses)
 
 Safe to re-run — uses get_or_create throughout. Running again will not
 duplicate items or categories. To do a full reset, wipe the tables first
 via the Django shell or a separate management command.
+
+After running this command, assign roles (default_food / default_drinks /
+event_food / event_drinks) to the appropriate menus via the Django admin
+or staff portal.
 
 Place at: apps/menu/management/commands/load_soho_menu.py
 """
@@ -235,11 +239,13 @@ class Command(BaseCommand):
 
     def _create_default_menus(self):
         """
-        Creates the three default Menu records and declares their categories.
+        Creates the default Menu records and declares their categories.
 
-        - Default Combined menu: all food + drink categories (main menu pages)
         - Default Food menu: food categories only
         - Default Drinks menu: drink categories only
+
+        After running, assign roles (default_food / default_drinks /
+        event_food / event_drinks) to the appropriate menus in the admin.
 
         MenuCategoryAssignment records are created for each, using the
         category's natural order as display_order.
@@ -294,15 +300,6 @@ class Command(BaseCommand):
             self.cat_wine,
             self.cat_na_beverages,
         ]
-
-        # ── Default combined menu (main site menu) ────────────────────────────
-        combined = make_menu(
-            'SoHo Menu',
-            'soho-menu',
-            'combined',
-            'The full SoHo Pittsburgh menu — food and drinks.'
-        )
-        assign_categories(combined, food_cats + drink_cats)
 
         # ── Default food-only menu ────────────────────────────────────────────
         food = make_menu(
