@@ -27,8 +27,7 @@
   {# Semi-transparent overlay so text stays legible against any photo #}
   <div style="position:absolute;inset:0;background:rgba(0,0,0,0.58);pointer-events:none;"></div>
 
-  {# Content wrapper — overrides CSS vars so all var(--color-text-*) calls
-     in child templates render as light colors on the dark overlay.        #}
+  {# Content wrapper: overrides CSS vars so var(--color-text-*) renders as light colors. #}
   <div style="
     position:relative;
     z-index:1;
