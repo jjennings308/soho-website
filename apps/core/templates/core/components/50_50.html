@@ -3,13 +3,13 @@
   <div class="grid md:grid-cols-2">
 
     {% if left %}
-    <div style="background-color: var(--color-{{ left.bg_color|default:'bg-primary' }}); min-height: 24rem;">
+    <div style="background-color: var(--color-{{ left.bg_color|default:'bg-primary' }}); min-height: 24rem; display: flex; flex-direction: column;">
       {% include "core/components/_panel_side.html" with panel=left %}
     </div>
     {% endif %}
 
     {% if right %}
-    <div style="background-color: var(--color-{{ right.bg_color|default:'bg-secondary' }}); min-height: 24rem;">
+    <div style="background-color: var(--color-{{ right.bg_color|default:'bg-secondary' }}); min-height: 24rem; display: flex; flex-direction: column;">
       {% include "core/components/_panel_side.html" with panel=right %}
     </div>
     {% endif %}
