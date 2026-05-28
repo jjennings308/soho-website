@@ -56,6 +56,7 @@
           onsubmit="return confirm('Delete \'{{ item.name|escapejs }}\'? This cannot be undone.')"
           style="margin-top:0.5rem;">
       {% csrf_token %}
+      <input type="hidden" name="next" value="{{ back_url }}">
       <button type="submit" class="sp-btn sp-btn--danger sp-btn--sm" style="width:100%;">Delete</button>
     </form>
   </div>
