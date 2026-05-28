@@ -279,33 +279,24 @@ class SiteSettings(models.Model):
 
 # ── Banner ────────────────────────────────────────────────────────────────────
 
-BANNER_COLOR_CHOICES = [
-    # Light backgrounds
+BACKGROUND_COLOR_CHOICES = [
     ('bg-primary',        'Page Background (near-white)'),
     ('bg-secondary',      'Warm Cream'),
     ('bg-tertiary',       'Warm Linen'),
     ('bg-surface',        'Light Panel Surface'),
     ('bg-surface-raised', 'Raised Panel Surface'),
     ('white',             'White'),
-    ('accent-red-light',  'Red Tint (light)'),
-    # Gold scale
-    ('gold-light',        'Gold — Pale Tint'),
-    ('gold-bright',       'Gold — Bright'),
-    ('gold-primary',      'Gold — Sandy (brand)'),
-    ('bg-accent',         'Gold — Button/Accent'),
-    ('gold-deep',         'Gold — Deep'),
-    # Dark backgrounds
-    ('dark-gray',         'Dark Warm Gray'),
-    ('steeler-black',     'Near Black'),
-    # Bold
-    ('accent-red',        'Brand Red'),
-    ('steeler-gold',      'Bright Yellow Gold'),
-    # Text colors (use on text_color field)
-    ('text-accent',       'Gold Accent (text)'),
-    ('text-primary',      'Warm Near-Black (text)'),
-    ('text-secondary',    'Medium Brown (text)'),
-    ('text-tertiary',     'Dark Charcoal (text)'),
-    ('text-heading',      'Near-Black Heading (text)'),
+    ('accent-red-light',  'Red Tint'),
+]
+
+TEXT_COLOR_CHOICES = [
+    ('text-primary',   'Warm Near-Black'),
+    ('text-secondary', 'Medium Brown'),
+    ('text-tertiary',  'Dark Charcoal'),
+    ('text-heading',   'Near-Black Heading'),
+    ('text-accent',    'Gold Accent'),
+    ('steeler-black',  'Black'),
+    ('white',          'White'),
 ]
 
 
@@ -335,12 +326,12 @@ class Banner(TimeStampedModel):
     )
     bg_color = models.CharField(
         max_length=50,
-        choices=BANNER_COLOR_CHOICES,
+        choices=BACKGROUND_COLOR_CHOICES,
         default='bg-primary',
     )
     text_color = models.CharField(
         max_length=50,
-        choices=BANNER_COLOR_CHOICES,
+        choices=TEXT_COLOR_CHOICES,
         default='text-primary',
     )
     image_alt = models.CharField(max_length=255, blank=True)
@@ -407,12 +398,12 @@ class BannerButton(TimeStampedModel):
     href = models.CharField(max_length=500)
     bg_color = models.CharField(
         max_length=50,
-        choices=BANNER_COLOR_CHOICES,
+        choices=BACKGROUND_COLOR_CHOICES,
         default='bg-secondary',
     )
     text_color = models.CharField(
         max_length=50,
-        choices=BANNER_COLOR_CHOICES,
+        choices=TEXT_COLOR_CHOICES,
         default='text-primary',
     )
 
@@ -531,7 +522,7 @@ class PanelSide(TimeStampedModel):
     # ── Shared ────────────────────────────────────────────────────────────────
     bg_color = models.CharField(
         max_length=50,
-        choices=BANNER_COLOR_CHOICES,
+        choices=BACKGROUND_COLOR_CHOICES,
         default='bg-primary',
         help_text="Background color. For image panels, shows while image loads."
     )
@@ -548,20 +539,20 @@ class PanelSide(TimeStampedModel):
     )
     text_color = models.CharField(
         max_length=50,
-        choices=BANNER_COLOR_CHOICES,
+        choices=TEXT_COLOR_CHOICES,
         default='text-primary',
     )
     button_label = models.CharField(max_length=100, blank=True)
     button_href = models.CharField(max_length=500, blank=True)
     button_bg_color = models.CharField(
         max_length=50,
-        choices=BANNER_COLOR_CHOICES,
+        choices=BACKGROUND_COLOR_CHOICES,
         default='bg-secondary',
         blank=True,
     )
     button_text_color = models.CharField(
         max_length=50,
-        choices=BANNER_COLOR_CHOICES,
+        choices=TEXT_COLOR_CHOICES,
         default='text-primary',
         blank=True,
     )
