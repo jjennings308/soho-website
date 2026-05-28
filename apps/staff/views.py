@@ -327,21 +327,23 @@ class MediaDeleteView(StaffRequiredMixin, View):
 
 
 class MediaEditView(StaffRequiredMixin, View):
-    def _ctx(self, form, item):
-        return {'form': form, 'item': item}
+    def _ctx(self, form, item, back_url):
+        return {'form': form, 'item': item, 'back_url': back_url}
 
     def get(self, request, pk):
         item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
-        return render(request, 'staff/media/edit.html', self._ctx(MediaItemEditForm(instance=item), item))
+        back_url = request.GET.get('next') or reverse('staff:media_library')
+        return render(request, 'staff/media/edit.html', self._ctx(MediaItemEditForm(instance=item), item, back_url))
 
     def post(self, request, pk):
         item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
+        back_url = request.POST.get('next') or reverse('staff:media_library')
         form = MediaItemEditForm(request.POST, instance=item)
         if form.is_valid():
             form.save()
             messages.success(request, f'"{item.name}" updated.')
-            return redirect('staff:media_library')
-        return render(request, 'staff/media/edit.html', self._ctx(form, item))
+            return redirect(back_url)
+        return render(request, 'staff/media/edit.html', self._ctx(form, item, back_url))
 
 
 # ── Newsletter ────────────────────────────────────────────────────────────────
