@@ -270,6 +270,13 @@ class SiteSettings(models.Model):
         obj, created = cls.objects.get_or_create(pk=1)
         return obj
 
+    @property
+    def map_directions_url(self):
+        from urllib.parse import quote
+        parts = [self.address_line1, self.address_line2, self.city, self.state, self.zip_code]
+        address_str = ', '.join(p for p in parts if p)
+        return f"https://maps.google.com/?q={quote(address_str)}" if address_str else ''
+
 # ── Banner ────────────────────────────────────────────────────────────────────
 
 BANNER_COLOR_CHOICES = [
@@ -296,6 +303,15 @@ class Banner(TimeStampedModel):
         max_length=200,
         help_text="Admin-only label, e.g. 'Home Hero Banner'"
     )
+
+    content_group = models.ForeignKey(
+        'content.ContentGroup',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='banners',
+        help_text="Content group supplying title, body, and button slots for this banner.",
+    )
+
     title = models.CharField(max_length=200, blank=True)
     content = models.TextField(
         blank=True,
@@ -332,6 +348,13 @@ class Banner(TimeStampedModel):
 
     def __str__(self):
         return self.label
+
+    @property
+    def random_image(self):
+        """Returns a random active BannerImage using prefetched data when available."""
+        import random
+        active = [img for img in self.images.all() if img.is_active]
+        return random.choice(active) if active else None
 
     def as_context(self, seasonal_body=None):
         """
@@ -444,12 +467,19 @@ class PanelSide(TimeStampedModel):
     One side of a 50/50 split section. Two PanelSide records are paired
     in the view as left= and right= when including 50_50.html.
 
-    mode='image' → renders as a full-bleed image (full_img dict).
-    mode='text'  → renders title, content, optional button (text dict).
+    component='content' → renders ContentGroup slots (title, body, button).
+    component='image'   → renders a full-bleed MediaItem image.
+    component='map'     → renders a Google Maps embed (URL from SiteSettings).
 
     Image panels can be reused across pages by referencing the same slug
-    in multiple views — pair with a different text panel each time.
+    in multiple views — pair with a different content panel each time.
     """
+
+    class Component(models.TextChoices):
+        CONTENT = 'content', 'Content (uses ContentGroup)'
+        MAP     = 'map',     'Google Maps Embed'
+        IMAGE   = 'image',   'Full-bleed Image'
+
     slug = models.SlugField(
         max_length=100,
         unique=True,
@@ -459,6 +489,22 @@ class PanelSide(TimeStampedModel):
         max_length=200,
         help_text="Admin-only label, e.g. 'Front Door Image Panel'"
     )
+
+    component = models.CharField(
+        max_length=20,
+        choices=Component.choices,
+        default=Component.CONTENT,
+        help_text="What this panel side renders.",
+    )
+
+    content_group = models.ForeignKey(
+        'content.ContentGroup',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='panel_sides',
+        help_text="Content group for this panel side. Only used when component is Content.",
+    )
+
     mode = models.CharField(
         max_length=10,
         choices=PANEL_MODE_CHOICES,
