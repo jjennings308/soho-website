@@ -1633,3 +1633,148 @@ When built, `apps.bookings` adds a Bookings section to the staff portal left nav
 - Payment processing — out of scope
 - Online booking form for customers (Phase 1 is staff-created from inquiry; customer-facing booking form is a future phase)
 - Calendar UI — the `apps.events` calendar handles operational display; bookings appear there via the `EventDay` link
+
+---
+
+## Template cleanup — page templates (`about.html`, `home.html`)
+
+### Context
+
+Both page templates accumulated inline color styles as features were added. This section documents the cleanup work to bring them into compliance with the design system enforcement rule above. All color logic must live in component templates, not page templates.
+
+### Three new partials to create
+
+#### `content_section.html`
+
+Location: `templates/core/components/content_section.html`
+
+A simple reusable partial for content-driven page sections that need a background color but no database record. Parameter-driven — the caller passes `bg` and `text` color slug choices directly. Renders `ContentGroup.all_slots` in order, handling title, subtitle, body, and button component types.
+
+```django
+{# Usage #}
+{% include "core/components/content_section.html" with group=about_mission bg="bg-secondary" text="text-secondary" %}
+{% include "core/components/content_section.html" with group=about_vision bg="bg-primary" text="text-primary" %}
+{% include "core/components/content_section.html" with group=about_values bg="bg-secondary" text="text-secondary" %}
+```
+
+Template structure:
+```django
+{% if group %}
+<section class="w-full" style="background-color: var(--color-{{ bg|default:'bg-primary' }});">
+  <div class="max-w-3xl mx-auto px-6 py-12">
+    {% for slot in group.all_slots %}
+      {% with block=slot.get_active_block %}
+        {% if block %}
+          {% if slot.component_type == 'title' %}
+            <h2 class="text-3xl font-bold mb-4"
+                style="color: var(--color-{{ text|default:'text-primary' }});">
+              {{ block.body|safe }}
+            </h2>
+          {% elif slot.component_type == 'subtitle' %}
+            <p class="text-xl mb-4"
+               style="color: var(--color-{{ text|default:'text-primary' }});">
+              {{ block.body|safe }}
+            </p>
+          {% elif slot.component_type == 'body' %}
+            <div class="prose max-w-none mb-6"
+                 style="color: var(--color-{{ text|default:'text-primary' }});">
+              {{ block.body|safe }}
+            </div>
+          {% elif slot.component_type == 'button' %}
+            {% if block.button_label %}
+              {% if block.button_url == '#open-contact' %}
+                <button @click="$dispatch('open-contact')" class="btn btn-primary mt-2">
+                  {{ block.button_label }}
+                </button>
+              {% else %}
+                <a href="{{ block.button_url }}" class="btn btn-primary mt-2">
+                  {{ block.button_label }}
+                </a>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endwith %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+```
+
+**When to use `content_section.html` vs `db_banner_full.html`:**
+- `content_section.html` — no database record needed, colors fixed by developer, simple content only, no background images
+- `db_banner_full.html` — has a `Banner` record, staff controls colors via portal/admin, may have background images
+
+#### `promo_grid.html`
+
+Location: `templates/menu/partials/promo_grid.html`
+
+Extracts the promo slot rendering logic from `home.html`. Currently duplicated identically for slot 1 and slot 2 — approximately 40 lines of color logic repeated. This partial eliminates the duplication and owns all color styling for promo sections.
+
+```django
+{# Usage #}
+{% include "menu/partials/promo_grid.html" with promo=promo_slot_1 grid=promo_slot_1_grid %}
+{% include "menu/partials/promo_grid.html" with promo=promo_slot_2 grid=promo_slot_2_grid %}
+```
+
+Template receives `promo` (a `Menu` instance with `resolve_colors()`) and `grid` (the grouped item assignments). All `style=` color attributes referencing `promo-primary`, `promo-accent`, `promo-text`, `promo-bg` move inside this partial. The `home.html` promo sections become two identical one-line includes.
+
+#### `reviews_section.html`
+
+Location: `templates/core/components/reviews_section.html`
+
+Extracts the reviews display section from `home.html`. Owns the section wrapper background color, heading styles (`color: var(--color-text-accent)`, `color: var(--color-text-heading)`), card grid, and "Read All Reviews" link.
+
+```django
+{# Usage #}
+{% include "core/components/reviews_section.html" with reviews=featured_reviews %}
+```
+
+### `about.html` changes
+
+After the Banner/PanelSide restructure is complete:
+
+1. **Banner section** — replace the hand-rolled `<section>` with `{% include "core/components/db_banner_full.html" with banner=about_banner %}`. Remove the inline `background-color`, `color` on h1, and inline-styled button entirely.
+
+2. **Mission section** — replace with `{% include "core/components/content_section.html" with group=about_mission bg="bg-secondary" text="text-secondary" %}`
+
+3. **Vision section** — replace with `{% include "core/components/content_section.html" with group=about_vision bg="bg-primary" text="text-primary" %}`
+
+4. **Values section** — replace with `{% include "core/components/content_section.html" with group=about_values bg="bg-secondary" text="text-secondary" %}`
+
+5. **Info + Map 50/50** — replace the hand-rolled grid with `{% include "core/components/50_50.html" with left=about_info_panel right=about_map_panel %}`. The left `PanelSide` (`about_info_panel`) has `component='content'` pointing at the `about_info` ContentGroup. The right `PanelSide` (`about_map_panel`) has `component='map'`. Remove all inline color styles from this section — `50_50.html` and `_panel_side.html` own them. Keep `id="contact"` and `scroll-margin-top: 64px` on the outer section — these are structural, not color.
+
+6. **Bottom banner** — already correct, no change needed.
+
+**After cleanup, `about.html` should have zero `background-color` or `color:` style references.** Run the grep check before committing:
+```bash
+grep -n "background-color\|color:" templates/about.html
+```
+Expected result: zero matches.
+
+### `home.html` changes
+
+1. **Reservations bar** — keep as-is. Add a comment: `{# intentional — fixed UI element, not content-driven #}`. This is the one documented exception to the no-inline-color rule.
+
+2. **Promo slot 1** — replace the entire `{% if promo_slot_1 %}...{% endif %}` block (~20 lines) with `{% include "menu/partials/promo_grid.html" with promo=promo_slot_1 grid=promo_slot_1_grid %}`
+
+3. **Promo slot 2** — same: replace with `{% include "menu/partials/promo_grid.html" with promo=promo_slot_2 grid=promo_slot_2_grid %}`
+
+4. **Reviews section** — replace the entire `{% if featured_reviews %}...{% endif %}` block with `{% include "core/components/reviews_section.html" with reviews=featured_reviews %}`
+
+5. **Everything else** — hero, catering 50/50, middle banner — already correct, no changes.
+
+**After cleanup, `home.html` should have zero `background-color` or `color:` style references outside the documented reservations bar exception.** Run the grep check:
+```bash
+grep -n "background-color\|color:" templates/home.html
+```
+Expected result: one match only — the reservations bar `bg-[var(--color-bg-secondary)]`.
+
+### Execution order — do Banner/PanelSide restructure first
+
+This template cleanup depends on the Banner/PanelSide restructure being complete because:
+- `about.html` banner section needs `db_banner_full.html` to be slot-based (already done)
+- `about.html` 50/50 section needs `PanelSide.component` field to exist
+- `_panel_side.html` needs to handle `component='content'` and `component='map'`
+
+**Do not start this template cleanup until the Banner/PanelSide restructure migration sequence is complete and verified.**
