@@ -732,8 +732,37 @@ def _menu_item_image_formset():
 class MenuItemListView(StaffRequiredMixin, View):
     def get(self, request):
         from apps.menu.models import MenuItem
-        items = MenuItem.objects.prefetch_related('images').order_by('name')
-        return render(request, 'staff/menu/item_list.html', {'items': items})
+
+        qs = MenuItem.objects.prefetch_related('images').order_by('name')
+
+        search = request.GET.get('q', '').strip()
+        avail_filter = request.GET.get('avail', '')
+        flag_filter = request.GET.get('flag', '')
+
+        if search:
+            qs = qs.filter(name__icontains=search)
+        if avail_filter == 'available':
+            qs = qs.filter(is_available=True)
+        elif avail_filter == 'unavailable':
+            qs = qs.filter(is_available=False)
+        if flag_filter == 'featured':
+            qs = qs.filter(is_featured=True)
+        elif flag_filter == 'new':
+            qs = qs.filter(is_new=True)
+        elif flag_filter == 'chef':
+            qs = qs.filter(is_chef_special=True)
+        elif flag_filter == 'seasonal':
+            qs = qs.filter(is_seasonal=True)
+
+        total = qs.count()
+
+        return render(request, 'staff/menu/item_list.html', {
+            'items': qs,
+            'total': total,
+            'search': search,
+            'avail_filter': avail_filter,
+            'flag_filter': flag_filter,
+        })
 
 
 class MenuItemImagesView(StaffRequiredMixin, View):
