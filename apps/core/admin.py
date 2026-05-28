@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import EventInquiry, Review, SitePopup, SiteSettings, Banner, BannerButton, PanelSide
+from .models import EventInquiry, Review, SitePopup, SiteSettings, Banner, BannerButton, BannerImage, PanelSide
 
 
 @admin.register(SiteSettings)
@@ -54,6 +54,13 @@ class BannerButtonInline(admin.TabularInline):
     ordering = ['order']
 
 
+class BannerImageInline(admin.TabularInline):
+    model = BannerImage
+    extra = 1
+    fields = ['media_item', 'is_active', 'display_order']
+    ordering = ['display_order']
+
+
 @admin.register(Banner)
 class BannerAdmin(admin.ModelAdmin):
     list_display = ['label', 'slug', 'bg_color', 'image_only', 'is_active']
@@ -61,7 +68,7 @@ class BannerAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'image_only']
     search_fields = ['label', 'slug']
     readonly_fields = ['slug']
-    inlines = [BannerButtonInline]
+    inlines = [BannerImageInline, BannerButtonInline]
 
     fieldsets = (
         ('Identity', {
@@ -76,7 +83,7 @@ class BannerAdmin(admin.ModelAdmin):
             )
         }),
         ('Appearance', {
-            'fields': ('bg_color', 'text_color', 'image', 'image_alt', 'image_opacity', 'image_only'),
+            'fields': ('bg_color', 'text_color', 'image_alt', 'image_opacity', 'image_only'),
         }),
     )
 
