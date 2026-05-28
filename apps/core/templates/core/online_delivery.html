@@ -184,7 +184,8 @@
   <div class="ordering-cards__grid">
 
     {# ── DoorDash ── #}
-    <a href="https://www.doordash.com/store/soho-pittsburgh-38211695/87648147/"
+    {% if site_settings.doordash_url %}
+    <a href="{{ site_settings.doordash_url }}"
        class="delivery-card delivery-card--doordash" target="_blank" rel="noopener noreferrer">
       <div class="delivery-card__accent-bar"></div>
       <div class="delivery-card__body">
@@ -201,9 +202,11 @@
         </span>
       </div>
     </a>
+    {% endif %}
 
     {# ── Grubhub ── #}
-    <a href="http://menus.fyi/11489616"
+    {% if site_settings.grubhub_url %}
+    <a href="{{ site_settings.grubhub_url }}"
        class="delivery-card delivery-card--grubhub" target="_blank" rel="noopener noreferrer">
       <div class="delivery-card__accent-bar"></div>
       <div class="delivery-card__body">
@@ -220,9 +223,11 @@
         </span>
       </div>
     </a>
+    {% endif %}
 
     {# ── Uber Eats ── #}
-    <a href="https://www.ubereats.com/store/soho/sBB2OJEbWkC6wDcThtwD5Q"
+    {% if site_settings.ubereats_url %}
+    <a href="{{ site_settings.ubereats_url }}"
        class="delivery-card delivery-card--ubereats" target="_blank" rel="noopener noreferrer">
       <div class="delivery-card__accent-bar"></div>
       <div class="delivery-card__body">
@@ -239,6 +244,7 @@
         </span>
       </div>
     </a>
+    {% endif %}
 
   </div>
 </section>
