@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import EventInquiry, Review, SitePopup, SiteSettings, Banner, BannerButton, BannerImage, PanelSide
+from .models import EventInquiry, Review, SitePopup, SiteSettings, Banner, BannerImage, PanelSide
 
 
 @admin.register(SiteSettings)
@@ -52,13 +52,6 @@ class SiteSettingsAdmin(admin.ModelAdmin):
         }),
     )
     
-class BannerButtonInline(admin.TabularInline):
-    model = BannerButton
-    extra = 1
-    fields = ['label', 'href', 'order', 'is_active', 'bg_color', 'text_color']
-    ordering = ['order']
-
-
 class BannerImageInline(admin.TabularInline):
     model = BannerImage
     extra = 1
@@ -73,7 +66,7 @@ class BannerAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'image_only']
     search_fields = ['label', 'slug']
     readonly_fields = ['slug']
-    inlines = [BannerImageInline, BannerButtonInline]
+    inlines = [BannerImageInline]
 
     fieldsets = (
         ('Identity', {
@@ -134,10 +127,9 @@ class PanelSideAdmin(admin.ModelAdmin):
         ('Appearance', {
             'fields': ('bg_color', 'text_color', 'vertical_align', 'horizontal_align'),
         }),
-        ('Legacy Fields (used until ContentGroup is assigned)', {
-            'fields': ('title', 'content_slot', 'button_label', 'button_href', 'button_bg_color', 'button_text_color', 'image_alt', 'image_fallback_url'),
+        ('Image / Fallback', {
+            'fields': ('image_alt', 'image_fallback_url'),
             'classes': ('collapse',),
-            'description': 'These fields are still rendered when component=Content and no ContentGroup is set.',
         }),
     )
 
