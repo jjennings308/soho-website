@@ -55,6 +55,10 @@ urlpatterns = [
     path('reviews/<int:pk>/feature/', ReviewFeatureView.as_view(), name='review_feature'),
     path('reviews/<int:pk>/delete/', ReviewDeleteView.as_view(), name='review_delete'),
 
+    # Menu Items
+    path('menu/items/', views.MenuItemListView.as_view(), name='menu_item_list'),
+    path('menu/items/<int:pk>/images/', views.MenuItemImagesView.as_view(), name='menu_item_images'),
+
     # Color reference
     path('colors/', views.ColorReferenceView.as_view(), name='colors'),
 

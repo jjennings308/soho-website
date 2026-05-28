@@ -1,0 +1,48 @@
+{% extends "staff/base.html" %}
+{% block title %}Images — {{ item.name }}{% endblock %}
+{% block page_title %}Images — {{ item.name }}{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  {{ formset.management_form }}
+
+  <div class="sp-card" style="margin-bottom:1.5rem;">
+    <table class="sp-table">
+      <thead>
+        <tr>
+          <th>Image</th>
+          <th style="width:80px;text-align:center;">Order</th>
+          <th style="width:70px;text-align:center;">Primary</th>
+          <th style="width:60px;text-align:center;">Remove</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for form in formset %}
+        <tr>
+          {% if form.instance.pk %}{{ form.id }}{% endif %}
+          <td>
+            {{ form.media_item }}
+            {% if form.media_item.errors %}
+              <p style="color:#e87;font-size:0.75rem;margin:0.2rem 0 0;">{{ form.media_item.errors|join:", " }}</p>
+            {% endif %}
+          </td>
+          <td style="text-align:center;">{{ form.display_order }}</td>
+          <td style="text-align:center;">{{ form.is_primary }}</td>
+          <td style="text-align:center;">
+            {% if form.instance.pk %}
+              {{ form.DELETE }}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:1rem;">
+    <button type="submit" class="sp-btn sp-btn--primary">Save Images</button>
+    <a href="{% url 'staff:menu_item_list' %}" class="sp-btn sp-btn--outline">Cancel</a>
+  </div>
+</form>
+{% endblock %}
