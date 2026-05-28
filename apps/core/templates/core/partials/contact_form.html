@@ -87,13 +87,8 @@
     {% endif %}
   </div>
 
-  <button type="submit" :disabled="loading"
-          :style="loading ? 'opacity:0.6;cursor:not-allowed;' : ''"
-          style="width:100%;padding:0.7rem 1.5rem;
-                 background:var(--color-gold-primary);color:var(--color-bg-primary);
-                 border:none;border-radius:4px;cursor:pointer;
-                 font-family:var(--font-nav);font-size:0.8rem;letter-spacing:0.12em;
-                 text-transform:uppercase;font-weight:600;">
+  <button type="submit" class="btn btn-primary" style="width:100%;"
+          :disabled="loading" :style="loading ? 'opacity:0.6;cursor:not-allowed;' : ''">
     <span x-show="!loading">Send Message</span>
     <span x-show="loading">Sending&hellip;</span>
   </button>
