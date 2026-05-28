@@ -603,6 +603,10 @@ class PanelSide(TimeStampedModel):
 
     is_active = models.BooleanField(default=True)
 
+    @property
+    def text_align(self):
+        return self.HALIGN_TO_TEXT.get(self.horizontal_align, 'left')
+
     class Meta:
         ordering = ['slug']
         verbose_name = 'Panel Side'

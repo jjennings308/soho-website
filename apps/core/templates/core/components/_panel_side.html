@@ -9,7 +9,7 @@
 
 {% elif panel.component == 'map' %}
 
-  <div class="relative w-full" style="min-height: 24rem;">
+  <div class="relative w-full" style="min-height: 24rem; height: 100%;">
     <iframe
       src="{{ site_settings.map_embed_url }}"
       class="absolute inset-0 w-full h-full border-0"
@@ -30,7 +30,7 @@
 {% elif panel.component == 'content' %}
 
   <div style="display:flex;align-items:{{ panel.vertical_align|default:'center' }};padding:3rem 2.5rem;min-height:24rem;">
-    <div style="max-width:28rem;text-align:{{ panel.HALIGN_TO_TEXT|default_if_none:''|default:'left' }};">
+    <div style="max-width:28rem;text-align:{{ panel.text_align }};">
 
       {% if panel.content_group %}
 
