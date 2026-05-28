@@ -217,7 +217,9 @@ class MediaLibraryView(StaffRequiredMixin, View):
         pub_filter    = request.GET.get('pub', '')
         search        = request.GET.get('q', '').strip()
 
-        if category_slug:
+        if category_slug == 'none':
+            qs = qs.filter(category__isnull=True)
+        elif category_slug:
             qs = qs.filter(category__slug=category_slug)
         if pub_filter == 'published':
             qs = qs.filter(is_published=True)
