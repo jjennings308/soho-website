@@ -5,6 +5,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Staff{% endblock %} — SoHo Pittsburgh</title>
+  {% if site_settings.favicon %}
+    <link rel="icon" href="{{ site_settings.favicon.url }}">
+    <link rel="apple-touch-icon" href="{{ site_settings.favicon.url }}">
+  {% else %}
+    <link rel="icon" href="{% static 'img/favicon.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
+  {% endif %}
   <link rel="stylesheet" href="{% static 'css/theme.css' %}">
   <link rel="stylesheet" href="{% static 'dist/output.css' %}">
   <style>
