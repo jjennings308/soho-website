@@ -53,22 +53,6 @@
           {% endwith %}
         {% endfor %}
 
-      {% else %}
-
-        {# ── Legacy fields ── #}
-        {% if hero_banner.title %}
-          <h1 class="text-4xl font-bold mb-4"
-              style="color: var(--color-{{ hero_banner.text_color|default:'text-primary' }});">
-            {{ hero_banner.title }}
-          </h1>
-        {% endif %}
-        {% if hero_banner.content %}
-          <p class="mb-6 opacity-90"
-             style="color: var(--color-{{ hero_banner.text_color|default:'text-primary' }});">
-            {{ hero_banner.content }}
-          </p>
-        {% endif %}
-
       {% endif %}
     </div>
 
