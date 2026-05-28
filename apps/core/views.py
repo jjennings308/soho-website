@@ -114,6 +114,9 @@ class HomeView(TemplateView):
         # ── Catering Banner ───────────────────────────────────────────────────
         context['catering_banner'] = get_banner('catering')
 
+        # ── Middle Banner ───────────────────────────────────────────────────
+        context['middle_banner'] = get_banner('homeMiddleBanner')
+
         # ── Homepage promo menus ──────────────────────────────────────────────
         promo_qs = Menu.objects.filter(
             menu_type='promo',
