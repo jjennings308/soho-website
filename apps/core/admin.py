@@ -50,7 +50,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
 class BannerButtonInline(admin.TabularInline):
     model = BannerButton
     extra = 1
-    fields = ['label', 'href', 'bg_color', 'text_color', 'order', 'is_active']
+    fields = ['label', 'href', 'order', 'is_active', 'bg_color', 'text_color']
     ordering = ['order']
 
 
@@ -119,7 +119,7 @@ class PanelSideAdmin(admin.ModelAdmin):
             )
         }),
         ('Content (component = Content)', {
-            'fields': ('content_group', 'text_color', 'vertical_align', 'horizontal_align'),
+            'fields': ('content_group',),
             'classes': ('collapse',),
         }),
         ('Image (component = Full-bleed Image)', {
@@ -127,7 +127,7 @@ class PanelSideAdmin(admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('Appearance', {
-            'fields': ('bg_color',),
+            'fields': ('bg_color', 'text_color', 'vertical_align', 'horizontal_align'),
         }),
         ('Legacy Fields (used until ContentGroup is assigned)', {
             'fields': ('title', 'content_slot', 'button_label', 'button_href', 'button_bg_color', 'button_text_color', 'image_alt', 'image_fallback_url'),
