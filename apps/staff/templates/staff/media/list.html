@@ -33,6 +33,7 @@
 
   <select class="sp-select" name="category" style="max-width:200px;margin:0;">
     <option value="">All Categories</option>
+    <option value="none" {% if category_slug == 'none' %}selected{% endif %}>— No Category —</option>
     {% for cat in categories %}
       <option value="{{ cat.slug }}" {% if cat.slug == category_slug %}selected{% endif %}>{{ cat.name }}</option>
     {% endfor %}
