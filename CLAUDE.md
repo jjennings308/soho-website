@@ -1778,3 +1778,119 @@ This template cleanup depends on the Banner/PanelSide restructure being complete
 - `_panel_side.html` needs to handle `component='content'` and `component='map'`
 
 **Do not start this template cleanup until the Banner/PanelSide restructure migration sequence is complete and verified.**
+
+---
+
+## Banner and PanelSide legacy field cleanup
+
+### Context
+
+The audit script (`audit_legacy.py`) identified legacy fields still in use across 7 files. Live data exists in those fields and must be migrated to ContentGroups before the fields can be dropped. This is a two-phase operation.
+
+### Live data inventory (from database check)
+
+| Model | Field | Count | Action |
+|-------|-------|-------|--------|
+| Banner | title | 3 records | Migrate to ContentGroup title slot |
+| Banner | content | 1 record | Migrate to ContentGroup body slot |
+| BannerButton | (model) | 4 records | Migrate to ContentGroup button slots |
+| PanelSide | title | 4 records | Migrate to ContentGroup title slot |
+| PanelSide | button_label | 3 records | Migrate to ContentGroup button slots |
+
+### Phase 1 — Data migration management command
+
+Create `apps/core/management/commands/migrate_legacy_banner_content.py`
+
+The command migrates all legacy field data into the ContentGroup system. Safe to re-run (uses get_or_create). Run in development first, verify in admin, then run on production.
+
+Logic:
+
+```python
+# For each Banner with title or content or buttons:
+#   1. Get or create a ContentGroup named after the banner slug
+#   2. Get or create a title ContentSlot (order=1) if title exists
+#      → Get or create a ContentBlock with body=banner.title, is_active=True
+#   3. Get or create a body ContentSlot (order=2) if content exists
+#      → Get or create a ContentBlock with body=banner.content, is_active=True
+#   4. For each BannerButton on this banner (ordered by order):
+#      → Get or create a button ContentSlot (order=10+button.order)
+#      → Get or create a ContentBlock with button_label=btn.label,
+#        button_url=btn.href, is_active=True
+#   5. Assign content_group to the Banner if not already set
+#
+# For each PanelSide with title or button_label:
+#   1. Get or create a ContentGroup named after the panel slug
+#   2. Get or create a title ContentSlot (order=1) if title exists
+#      → Get or create a ContentBlock with body=panel.title, is_active=True
+#   3. If content_slot FK exists, get its active block body → body ContentSlot (order=2)
+#   4. If button_label and button_href exist:
+#      → Get or create a button ContentSlot (order=3)
+#      → Get or create a ContentBlock with button_label=panel.button_label,
+#        button_url=panel.button_href, is_active=True
+#   5. Assign content_group to the PanelSide if not already set
+```
+
+Command output must clearly show:
+- Which banners/panels were processed
+- Which ContentGroups were created vs already existed
+- Which slots and blocks were created
+- A final count: X banners migrated, Y panels migrated
+
+Usage:
+```bash
+python manage.py migrate_legacy_banner_content
+python manage.py migrate_legacy_banner_content --dry-run  # show what would happen without saving
+```
+
+### Phase 2 — Remove legacy fields (only after Phase 1 verified)
+
+**Do not start Phase 2 until:**
+1. Phase 1 command has run successfully
+2. Admin/portal review confirms all ContentGroups are correct
+3. Site renders correctly with content_group-based templates
+
+**Files to update in order:**
+
+1. `templates/core/components/db_banner_full.html` — remove the entire `{% else %}` legacy block (title, content, buttons fallback). Only the `{% if banner.content_group %}` branch remains.
+
+2. `templates/core/components/banner_full.html` — this template uses only legacy fields (`banner.title`, `banner.content`, `render_button`). Assess whether it is still used anywhere. If not used, delete it. If used, rewrite to use `banner.content_group.all_slots` pattern matching `db_banner_full.html`.
+
+3. `templates/core/components/hero_with_promos.html` — remove the `{% else %}` legacy block (hero_banner.title, hero_banner.content fallback).
+
+4. `templates/core/components/_panel_side.html` — remove: `panel.title` block, `panel.content_slot` block, `panel.button_label`/`panel.button_href` block.
+
+5. `apps/core/models.py`:
+   - Remove `Banner.title` field
+   - Remove `Banner.content` field
+   - Remove `Banner.as_context()` method
+   - Remove `BannerButton` model entirely
+   - Remove `PanelSide.title` field
+   - Remove `PanelSide.button_label` field
+   - Remove `PanelSide.button_href` field
+   - Remove `PanelSide.button_bg_color` field
+   - Remove `PanelSide.button_text_color` field
+   - Remove `PanelSide.content_slot` FK field
+   - Remove `PanelSide.mode` field
+   - Remove `PANEL_MODE_CHOICES` list
+   - Remove `PanelSide.as_dict()` method
+   - Keep: `PanelSide.component`, `content_group`, `image`, `bg_color`, `text_color`, `horizontal_align`, `vertical_align`, `image_fallback_url`, `image_alt`, `is_active`
+
+6. `apps/core/admin.py` — remove `BannerButtonInline`, remove `BannerButton` from imports and `BannerAdmin.inlines`.
+
+7. `apps/core/management/commands/load_banners.py` — remove `BannerButton` import and all `BannerButton.objects.get_or_create` calls.
+
+8. `makemigrations` — review migration before running. It will drop columns and the BannerButton table. Flag any data loss warnings.
+
+9. `migrate`
+
+10. Run grep verification:
+```bash
+grep -rn "banner\.title\|banner\.content\|BannerButton\|as_context\|panel\.title\|panel\.button_label\|panel\.mode\|as_dict\|content_slot\|PANEL_MODE_CHOICES\|full_img" \
+  --include="*.py" --include="*.html" \
+  --exclude-dir={migrations,.venv,__pycache__} .
+```
+Expected: zero matches (excluding audit_legacy.py itself).
+
+### render_button template tag
+
+`render_button` in `ui_tags.py` is still valid — it renders button dicts passed from views. Do NOT remove it. The legacy usage is `BannerButton.as_dict()` feeding it, which goes away. The tag itself stays for any view that constructs button dicts manually.
