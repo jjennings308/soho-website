@@ -1,6 +1,7 @@
 # core/utils.py
 
-from apps.content.models import ContentBlock, ContentSlot
+from apps.content.models import ContentSlot
+
 
 def get_block_body(slug):
     try:
@@ -8,37 +9,34 @@ def get_block_body(slug):
     except ContentSlot.DoesNotExist:
         return None
 
+
 def get_banner(slug):
     """
-    Fetch an active Banner by slug and return its context dict,
-    with any active seasonal ContentBlock overlaid on the content field.
-    Returns an empty dict if the banner doesn't exist, so templates
-    degrade gracefully rather than raising.
+    Fetch an active Banner by slug and return the Banner instance,
+    with content_group and images prefetched. Returns None if not found.
     """
     from apps.core.models import Banner
 
-    try:
-        banner = Banner.objects.get(slug=slug, is_active=True)
-    except Banner.DoesNotExist:
-        return {}
+    return (
+        Banner.objects
+        .filter(slug=slug, is_active=True)
+        .select_related('content_group')
+        .prefetch_related('content_group__slots__blocks', 'images__media_item')
+        .first()
+    )
 
-    seasonal = get_block_body(f'banner_{slug}_seasonal')
-    seasonal_body = seasonal.body if seasonal else None
-
-    return banner.as_context(seasonal_body=seasonal_body)
 
 def get_panel_side(slug):
     """
-    Fetch an active PanelSide by slug and return its context dict.
-    Returns an empty dict if the slug doesn't exist, so the template
-    degrades gracefully rather than raising.
+    Fetch an active PanelSide by slug and return the PanelSide instance,
+    with content_group and image prefetched. Returns None if not found.
     """
     from apps.core.models import PanelSide
 
-    try:
-        panel = PanelSide.objects.select_related(
-            'content_slot'
-        ).get(slug=slug, is_active=True)
-        return panel.as_dict()
-    except PanelSide.DoesNotExist:
-        return {}
+    return (
+        PanelSide.objects
+        .filter(slug=slug, is_active=True)
+        .select_related('content_group', 'image')
+        .prefetch_related('content_group__slots__blocks')
+        .first()
+    )

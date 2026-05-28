@@ -107,6 +107,47 @@ Template usage:
 {% for slot in group.title_slots %}...{% endfor %}
 ```
 
+### Design system enforcement — CRITICAL
+
+**The single most important rule for all template work:**
+
+Page templates (`about.html`, `home.html`, etc.) must NEVER contain inline color styles, hardcoded CSS variable references, or layout decisions that belong in a component template. All color and presentation logic lives in the component templates.
+
+**The correct pattern:**
+```django
+{# about.html — correct #}
+{% include "core/components/banner_full.html" with banner=about_banner %}
+{% include "core/components/50_50.html" with left_panel=left_panel right_panel=right_panel %}
+```
+
+**The forbidden pattern — never do this in a page template:**
+```django
+{# about.html — WRONG #}
+<section style="background-color: var(--color-bg-primary);">
+  <h1 style="color: var(--color-text-primary);">About SoHo</h1>
+</section>
+```
+
+**Rules Claude Code must follow without exception:**
+
+- Color values (`var(--color-bg-primary)`, `var(--color-text-secondary)`, hex codes, etc.) must NEVER appear in page-level templates. They belong only in component templates (`banner_full.html`, `50_50.html`, `_panel_side.html`) where they are driven by model fields (`banner.bg_color`, `panel.text_color`).
+- If a section needs color control, it must be a `Banner` or `PanelSide` record — not an inline-styled `<section>` tag in the page template.
+- If the existing component templates cannot accommodate a layout need, raise it as a question rather than working around them with inline styles. The fix is to extend the component template, not bypass it.
+- `btn btn-primary`, `btn btn-secondary`, `btn btn-ghost` are the only button styles. Never inline-style a button.
+- When Claude Code is tempted to write `style="background-color:..."` or `style="color:..."` in a page template, it must stop and use a Banner or PanelSide component instead.
+- Structural layout (padding, grid, flex) may appear in page templates. Color never does.
+
+**How to check your own work:** Before committing any template change, grep the page template for `background-color`, `color:`, and `var(--color-`. If any appear outside a component template, they are wrong.
+
+```bash
+grep -n "background-color\|color:" templates/about.html
+grep -n "background-color\|color:" templates/home.html
+```
+
+The result should be zero matches in page templates. All matches should live only in component templates and `theme.css`.
+
+---
+
 ### Menu mode (`apps/menu/`, `apps/events/`)
 
 The menu has two modes — **standard** and **event** — controlled by `EventDay.get_current_menu_mode()`:
@@ -129,7 +170,27 @@ The same item can appear in multiple categories at different prices.
 
 ### Page components
 
-`Banner` and `PanelSide` models (in `apps.core`) drive reusable page sections. Views call `get_banner(slug)` and `get_panel_side(slug)` from `apps/core/utils.py`, which return context dicts consumed by `banner_full.html` and `50_50.html` partials.
+`Banner` and `PanelSide` models (in `apps.core`) drive reusable page sections. See the **Banner and PanelSide restructure** section for full model and template spec.
+
+**Key architectural principle:** `Banner` and `PanelSide` are presentation wrappers only. Content (text, titles, buttons) lives in `ContentGroup` → `ContentSlot` → `ContentBlock`. Colors, images, and layout settings live on the display component. This separation allows the same `ContentGroup` to be assigned to a banner today and a panel tomorrow with no content duplication.
+
+**`as_context()` is removed** from `Banner` and `PanelSide`. Templates access content directly via `banner.content_group.all_slots`. Do not re-implement `as_context()`.
+
+**Button system (`apps/core/templatetags/ui_tags.py` + `button.html`):**
+- `render_button(button)` accepts a dict with `label`, `href`, `bg_color`, `text_color`, and optionally `x_on_click`.
+- If `x_on_click` is set on the button dict, `button.html` renders a `<button @click="...">` instead of an `<a>` tag — use this to open Alpine modals from `PanelSide` buttons injected in views.
+- Example: `catering_right['button'] = {'label': 'Inquire', 'x_on_click': 'inquiryOpen = true'}`
+- Button slots in ContentBlocks use `block.button_url == '#open-contact'` sentinel pattern — see content system section.
+
+**CSS button classes (`static/src/input.css`):**
+- `btn btn-primary` — gold fill; hover goes transparent with gold border/text.
+- `btn btn-secondary` / `btn btn-outline` — same definition (gold outline); hover fills bright gold with lift + shadow.
+- `btn btn-ghost` — white outline for use on dark/image backgrounds.
+- Always use these classes. Never inline-style buttons.
+
+### `SiteSettings` notable fields
+
+Key fields beyond the obvious (name, contact, social): `map_embed_url` (URLField) — Google Maps embed URL shown on the contact/about page. When blank, the embed URL is derived from the address. Editable only via Django admin (not the staff portal) because it rarely changes and the format is sensitive. `reservations_url`, `notification_email`, `force_game_day_mode`, `force_full_menu`, `maintenance_mode`.
 
 ### Context processors
 
@@ -335,11 +396,17 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/` | Dashboard — menu mode, subscriber count, draft newsletters, unpublished photos, new inquiries, popup status, today's events, upcoming events, promo menus panel |
 | `/staff/menu-mode/` | Toggle menu mode: Automatic / Force Full / Force Game Day. POSTs to `SiteSettings` |
 | `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
-| `/staff/gallery/` | Thumbnail table; publish/hide toggle; photo upload; import from disk; edit (caption, category, order) |
+| `/staff/media/` | Media library — thumbnail grid; publish/hide toggle; upload; import from disk; edit (name, category, alt text); page-retention via `?next=` |
+| `/staff/menu/items/` | Menu item list with filters (name, availability, flags); Images button per row |
+| `/staff/menu/items/<pk>/images/` | Formset to assign, order, and set primary image for a menu item |
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
 | `/staff/popups/` | List, add, edit, delete site popups |
 | `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
 | `/staff/settings/` | Edit `SiteSettings` (notification email, phone, reservations URL, etc.); manage color schemes (add/edit/delete) |
+
+**Media library page retention:** Edit/cancel/delete on the media edit page all return to the URL that launched the edit. The list page passes `?next={{ request.get_full_path|urlencode }}` on edit links; the edit view threads it through a hidden `<input name="next">` field so POST redirects land back on the same filtered/paginated page. `safe='/'` on the `urlencode` filter keeps path slashes readable.
+
+**Soft-delete for media files:** Deleting a media item via the staff portal moves the physical file to `media/gallery/deleted/` rather than permanently deleting it. The `MediaItem` database record is removed; the file is kept as a safety net. The `import_media_files` command skips `gallery/deleted/` so re-importing does not resurrect deleted items.
 
 ### Design decisions
 
@@ -801,7 +868,7 @@ Document every file and line. Do not proceed until the full list is known.
 
 - `apps.gallery` is fully replaced by `apps.media` — see deprecation notice above.
 - `django-media-manager` is removed — do not reference it.
-- `MenuItem.image` replaces the reverse FK pattern (`GalleryItem.menu_item`). The canonical direction is `MenuItem → MediaItem`, not the other way around. The old `GalleryItem.menu_item` FK is dropped with `apps.gallery`.
+- `MenuItem` images use a `MenuItemImage` through model (not a direct FK). One item can have multiple images; `is_primary` enforces a single primary image via `save()`. The old `GalleryItem.menu_item` reverse FK is dropped with `apps.gallery`.
 - Files on disk in `media/gallery/` and subdirectories are preserved exactly as-is. The import command scans these directories to create `MediaItem` records. No files are moved or renamed.
 - `owner_type` separates staff-controlled media from future member submissions at the model level. Staff pickers only ever show `owner_type='staff'` items. Member submissions (`owner_type='member'`) go through a moderation queue before appearing anywhere public.
 - Physical file separation: staff files upload to `media/library/` (or existing `media/gallery/` subdirs for re-imported files). Member submissions upload to `media/submissions/`. This makes S3 bucket policy and filesystem permissions straightforward.
@@ -882,7 +949,7 @@ def media_upload_path(instance, filename):
 
 **Note on re-imported files:** Files already on disk under `media/gallery/` keep their existing paths when imported — the `file` field stores the relative path as-is. The `media_upload_path` function applies only to new uploads through the staff portal or member submission form.
 
-`save()` auto-generates `slug` from `name` if not set, with collision handling (append `-2`, `-3` etc.).
+`save()` auto-generates `slug` from `name` if not set, with collision handling (append `-2`, `-3` etc.). `file_size_display` is a read-only property that returns a human-readable file size string (e.g. "1.2 MB") for use in the staff portal.
 
 ```python
 class Meta:
@@ -896,14 +963,6 @@ Each of the following gets a nullable FK to `MediaItem`. All use `on_delete=PROT
 All FKs use `limit_choices_to={'owner_type': 'staff'}` — member submissions never appear in staff assignment pickers.
 
 ```python
-# apps/core/models.py — Banner
-image = models.ForeignKey(
-    'media.MediaItem', null=True, blank=True,
-    on_delete=models.PROTECT,
-    limit_choices_to={'owner_type': 'staff'},
-    related_name='banners',
-)
-
 # apps/core/models.py — PanelSide
 image = models.ForeignKey(
     'media.MediaItem', null=True, blank=True,
@@ -927,15 +986,11 @@ background_image = models.ForeignKey(
     limit_choices_to={'owner_type': 'staff'},
     related_name='menu_category_backgrounds',
 )
-
-# apps/menu/models.py — MenuItem
-image = models.ForeignKey(
-    'media.MediaItem', null=True, blank=True,
-    on_delete=models.PROTECT,
-    limit_choices_to={'owner_type': 'staff'},
-    related_name='menu_items',
-)
 ```
+
+**`Banner`** uses a `BannerImage` through model (not a direct FK) — supports a pool of images for random selection. See Page components section.
+
+**`MenuItem`** uses a `MenuItemImage` through model — supports multiple images per item with `is_primary`. Staff manages these via `/staff/menu/items/<pk>/images/`.
 
 Remove the old `GalleryItem.menu_item` reverse FK entirely when `apps.gallery` is deleted.
 
@@ -962,6 +1017,8 @@ python manage.py seed_media_categories
 #### `import_media_files`
 
 Replaces `import_gallery_images`. Scans `media/gallery/` (and all subdirectories) for image files. Creates a `MediaItem` record for each file not already in the database (dedup by `file` path). Sets `owner_type='staff'`, `is_published=False`, `is_approved=True`. Populates `name` from the filename — strips extension, replaces underscores/hyphens with spaces, title-cases the result. Staff renames from there.
+
+Automatically skips `media/gallery/deleted/` — files moved there by the staff delete action are not re-imported.
 
 ```bash
 python manage.py import_media_files
@@ -1133,6 +1190,361 @@ When `SoHoMember` gains a Django `User` link and login capability:
 - Approval: `is_approved=True`, `is_published=True` → appears in member photo section of public gallery
 - Rejection: `is_flagged=True` → email notification to member
 - Member submissions never appear in staff assignment pickers (`limit_choices_to={'owner_type': 'staff'}` on all FKs)
+
+---
+
+## Banner and PanelSide restructure (`apps/core/`)
+
+### Guiding principle
+
+`Banner` and `PanelSide` are **presentation wrappers** — they control how content looks (colors, images, layout) but not what it says. Content lives in `ContentGroup` → `ContentSlot` → `ContentBlock`. The same `ContentGroup` can be assigned to a banner, a panel, or both simultaneously. No content duplication ever.
+
+### Decision log
+
+- `Banner.as_context()` is removed entirely — do not re-implement it. Templates access content directly via `banner.content_group.all_slots`.
+- `Banner.title` and `Banner.content` text fields are removed — content moves to `ContentGroup`.
+- `PanelSide` `mode`, `title`, `body`, `button_*` fields are removed — content moves to `ContentGroup`.
+- Colors (`bg_color`, `text_color`) stay on `Banner` and `PanelSide` — presentation, not content. `ContentGroup` is color-agnostic so it can be reused across surfaces with different color schemes.
+- `Banner` uses `BannerImage` through model for random image selection — unchanged from current spec.
+- `PanelSide.component` field controls what each side renders: `content` (uses ContentGroup), `map` (renders Google Maps embed from `SiteSettings`), or `image` (full-bleed MediaItem).
+- Google Maps embed URL lives in `SiteSettings` — not in ContentGroup, not in ContentBlock. The map is infrastructure, not content.
+- Clean break on data — existing `Banner` and `PanelSide` records are rebuilt in admin under the new architecture. No data migration needed.
+- `get_banner(slug)` and `get_panel_side(slug)` in `apps/core/utils.py` are updated to return the model instance directly (or None) rather than a context dict. Views pass the instance to templates. Templates access fields and ContentGroup directly.
+
+### `Banner` model
+
+Remove: `title`, `content` (text fields)
+Keep: `slug`, `label`, `bg_color`, `text_color`, `image_opacity`, `image_only`, `is_active`
+Add: `content_group` FK
+
+```python
+class Banner(TimeStampedModel):
+    slug = models.SlugField(max_length=100, unique=True)
+    label = models.CharField(max_length=200)
+
+    content_group = models.ForeignKey(
+        'content.ContentGroup',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='banners',
+        help_text="Content group supplying title, body, and button slots for this banner.",
+    )
+
+    bg_color = models.CharField(max_length=50, choices=BANNER_COLOR_CHOICES, default='bg-primary')
+    text_color = models.CharField(max_length=50, choices=BANNER_COLOR_CHOICES, default='text-primary')
+    image_opacity = models.DecimalField(max_digits=3, decimal_places=2, default=Decimal('0.40'))
+    image_only = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    # BannerImage through model handles images (multiple, random selection)
+    # Access via: banner.images.filter(is_active=True).order_by('?').first()
+```
+
+### `BannerImage` through model (unchanged)
+
+```python
+class BannerImage(TimeStampedModel):
+    banner = models.ForeignKey(Banner, on_delete=models.CASCADE, related_name='images')
+    media_item = models.ForeignKey(
+        'media.MediaItem', on_delete=models.PROTECT,
+        limit_choices_to={'owner_type': 'staff'}
+    )
+    display_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['display_order']
+        unique_together = [('banner', 'media_item')]
+```
+
+### `PanelSide` model
+
+Remove: `mode`, `title`, `body`, `button_label`, `button_url`, `button_bg_color`, `button_text_color`, `image` (direct FK)
+Keep: `slug`, `label`, `side`, `bg_color`, `text_color`, `is_active`
+Add: `component`, `content_group`, `image` (FK → MediaItem, for component='image')
+
+```python
+class PanelSide(TimeStampedModel):
+
+    class Component(models.TextChoices):
+        CONTENT = 'content', 'Content (uses ContentGroup)'
+        MAP     = 'map',     'Google Maps Embed'
+        IMAGE   = 'image',   'Full-bleed Image'
+
+    class Side(models.TextChoices):
+        LEFT  = 'left',  'Left'
+        RIGHT = 'right', 'Right'
+
+    slug  = models.SlugField(max_length=100, unique=True)
+    label = models.CharField(max_length=200)
+    side  = models.CharField(max_length=10, choices=Side.choices, default=Side.LEFT)
+
+    component = models.CharField(
+        max_length=20,
+        choices=Component.choices,
+        default=Component.CONTENT,
+        help_text="What this panel side renders.",
+    )
+
+    # Used when component='content'
+    content_group = models.ForeignKey(
+        'content.ContentGroup',
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name='panel_sides',
+        help_text="Content group for this panel side. Only used when component is Content.",
+    )
+
+    # Used when component='image'
+    image = models.ForeignKey(
+        'media.MediaItem',
+        null=True, blank=True,
+        on_delete=models.PROTECT,
+        limit_choices_to={'owner_type': 'staff'},
+        related_name='panel_sides',
+        help_text="Full-bleed image. Only used when component is Image.",
+    )
+
+    # Presentation — applies to all component types
+    bg_color   = models.CharField(max_length=50, choices=BANNER_COLOR_CHOICES, default='bg-primary')
+    text_color = models.CharField(max_length=50, choices=BANNER_COLOR_CHOICES, default='text-primary')
+    is_active  = models.BooleanField(default=True)
+```
+
+### `get_banner()` and `get_panel_side()` in `apps/core/utils.py`
+
+Updated to return the model instance directly, not a context dict.
+
+```python
+def get_banner(slug: str) -> Banner | None:
+    return (
+        Banner.objects
+        .filter(slug=slug, is_active=True)
+        .select_related('content_group')
+        .prefetch_related('content_group__slots__blocks', 'images__media_item')
+        .first()
+    )
+
+def get_panel_side(slug: str) -> PanelSide | None:
+    return (
+        PanelSide.objects
+        .filter(slug=slug, is_active=True)
+        .select_related('content_group', 'image')
+        .prefetch_related('content_group__slots__blocks')
+        .first()
+    )
+```
+
+Views pass the instance to context:
+```python
+context['hero_banner'] = get_banner('hero')
+context['left_panel'] = get_panel_side('home-events-image')
+context['right_panel'] = get_panel_side('home-events-text')
+```
+
+### Template pattern — `banner_full.html`
+
+Slots render in `order` sequence via `all_slots`. Each slot's `component_type` determines how it renders. Colors come from banner fields, not ContentGroup.
+
+```django
+{% if banner %}
+<section style="background-color: var(--color-{{ banner.bg_color }}); position:relative;">
+
+  {# Background image — random from BannerImage pool #}
+  {% with img=banner.images.filter_active_random %}
+    {% if img %}
+    <div class="absolute inset-0">
+      <img src="{{ img.media_item.file.url }}"
+           alt="{{ img.media_item.alt_text }}"
+           class="w-full h-full object-cover"
+           style="opacity: {{ banner.image_opacity }};">
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="relative z-10 max-w-7xl mx-auto px-6 py-12
+              {% if banner.image_only %}sr-only{% endif %}">
+
+    {% if banner.content_group %}
+      {% for slot in banner.content_group.all_slots %}
+        {% with block=slot.get_active_block %}
+          {% if block %}
+            {% if slot.component_type == 'title' %}
+              <h1 style="color: var(--color-{{ banner.text_color }});">
+                {{ block.body|safe }}
+              </h1>
+            {% elif slot.component_type == 'subtitle' %}
+              <p class="text-lg" style="color: var(--color-{{ banner.text_color }});">
+                {{ block.body|safe }}
+              </p>
+            {% elif slot.component_type == 'body' %}
+              <div class="prose" style="color: var(--color-{{ banner.text_color }});">
+                {{ block.body|safe }}
+              </div>
+            {% elif slot.component_type == 'button' %}
+              {% if block.button_label %}
+                {% if block.button_url == '#open-contact' %}
+                  <button @click="$dispatch('open-contact')" class="btn btn-primary">
+                    {{ block.button_label }}
+                  </button>
+                {% elif block.button_url == '#open-reserve' %}
+                  <button @click="$dispatch('open-reserve')" class="btn btn-primary">
+                    {{ block.button_label }}
+                  </button>
+                {% else %}
+                  <a href="{{ block.button_url }}" class="btn btn-primary">
+                    {{ block.button_label }}
+                  </a>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endwith %}
+      {% endfor %}
+    {% endif %}
+
+  </div>
+</section>
+{% endif %}
+```
+
+Note: `banner.images.filter_active_random` — add a model method or manager method on `BannerImage` to avoid calling `.filter().order_by('?').first()` in the template. Put the random selection in `get_banner()` and pass `image` separately in context, or add a `@property` on `Banner`:
+
+```python
+@property
+def random_image(self):
+    return self.images.filter(is_active=True).order_by('?').first()
+```
+
+### Template pattern — `50_50.html`
+
+Two `PanelSide` instances passed as `left_panel` and `right_panel`. Each renders based on its `component` field.
+
+```django
+{% if left_panel or right_panel %}
+<section class="grid md:grid-cols-2">
+
+  {# Left panel #}
+  {% if left_panel %}
+  <div style="background-color: var(--color-{{ left_panel.bg_color }});">
+    {% include "core/components/_panel_side.html" with panel=left_panel %}
+  </div>
+  {% endif %}
+
+  {# Right panel #}
+  {% if right_panel %}
+  <div style="background-color: var(--color-{{ right_panel.bg_color }});">
+    {% include "core/components/_panel_side.html" with panel=right_panel %}
+  </div>
+  {% endif %}
+
+</section>
+{% endif %}
+```
+
+### Template pattern — `_panel_side.html` partial
+
+```django
+{% if panel.component == 'content' and panel.content_group %}
+
+  <div style="display:flex;align-items:center;padding:3rem 2.5rem;">
+    <div style="max-width:28rem;">
+      {% for slot in panel.content_group.all_slots %}
+        {% with block=slot.get_active_block %}
+          {% if block %}
+            {% if slot.component_type == 'title' %}
+              <h2 style="color: var(--color-{{ panel.text_color }});">{{ block.body|safe }}</h2>
+            {% elif slot.component_type == 'subtitle' %}
+              <p style="color: var(--color-{{ panel.text_color }});">{{ block.body|safe }}</p>
+            {% elif slot.component_type == 'body' %}
+              <div class="prose" style="color: var(--color-{{ panel.text_color }});">
+                {{ block.body|safe }}
+              </div>
+            {% elif slot.component_type == 'button' %}
+              {% if block.button_label %}
+                {% if block.button_url == '#open-contact' %}
+                  <button @click="$dispatch('open-contact')" class="btn btn-primary mt-4">
+                    {{ block.button_label }}
+                  </button>
+                {% else %}
+                  <a href="{{ block.button_url }}" class="btn btn-primary mt-4">
+                    {{ block.button_label }}
+                  </a>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+
+{% elif panel.component == 'map' %}
+
+  {# Google Maps embed — URL from SiteSettings, not ContentGroup #}
+  <div class="relative w-full" style="min-height:24rem;">
+    <iframe
+      src="{{ site_settings.map_embed_url }}"
+      class="absolute inset-0 w-full h-full border-0"
+      allowfullscreen loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+    {% if site_settings.map_directions_url %}
+    <a href="{{ site_settings.map_directions_url }}"
+       target="_blank" rel="noopener"
+       class="absolute top-4 left-4 z-10 btn btn-primary">
+      &#10148; Get Directions
+    </a>
+    {% endif %}
+  </div>
+
+{% elif panel.component == 'image' and panel.image %}
+
+  <div class="relative w-full h-full" style="min-height:24rem;">
+    <img src="{{ panel.image.file.url }}"
+         alt="{{ panel.image.alt_text }}"
+         class="absolute inset-0 w-full h-full object-cover">
+  </div>
+
+{% endif %}
+```
+
+### `SiteSettings` additions
+
+The map component pulls embed URL from `SiteSettings` — add these fields if not already present:
+
+```python
+map_embed_url = models.URLField(blank=True, help_text="Google Maps embed URL for the map panel component.")
+map_directions_url = models.URLField(blank=True, help_text="Google Maps directions URL.")
+```
+
+`site_settings` is already injected into every template via context processor — no view changes needed to access these.
+
+### Content system note — `button_url` sentinel values
+
+Button slots in ContentBlocks use sentinel URL values to trigger Alpine modals:
+- `#open-contact` → dispatches `open-contact` window event
+- `#open-reserve` → dispatches `open-reserve` window event (add more as needed)
+
+Document these in the `button_url` field help text in `ContentBlock`. Templates check for sentinel values before rendering as a standard `<a>` tag.
+
+### Migration sequence — clean break
+
+**Step 1 — Add new fields.** Add `content_group` FK to `Banner`. Add `component`, `content_group`, `image` FK to `PanelSide`. All nullable. `makemigrations`, `migrate`. Commit.
+
+**Step 2 — Update `get_banner()` and `get_panel_side()`** in `apps/core/utils.py` to return model instances with prefetch. Update all views that call these to pass instances not dicts. Commit.
+
+**Step 3 — Update templates.** Replace `banner_full.html` and `50_50.html` with slot-based patterns above. Add `_panel_side.html` partial. Remove all references to `banner.title`, `banner.content`, `panel.mode`, `panel.title`, `panel.body` etc. Grep before editing. Commit.
+
+**Step 4 — Add `SiteSettings.map_embed_url` and `map_directions_url`** if not present. Update the about page contact section to use `panel.component == 'map'` pattern. Commit.
+
+**Step 5 — Remove `as_context()`.** Grep entire codebase for `as_context` calls. Remove the method from `Banner` and `PanelSide`. Fix any remaining callers. Commit.
+
+**Step 6 — Remove old fields.** Remove `Banner.title`, `Banner.content`. Remove `PanelSide.mode`, `PanelSide.title`, `PanelSide.body`, `PanelSide.button_*`. `makemigrations`, `migrate`. Commit.
+
+**Step 7 — Rebuild content in admin.** Create `ContentGroup` records for each banner and panel. Add slots in desired order. Add ContentBlocks with copy. Assign ContentGroups to Banner and PanelSide records.
+
+**Do not combine steps** — each must be independently revertable.
 
 ---
 

@@ -1,0 +1,108 @@
+{% if panel.component == 'image' and panel.image %}
+
+  <div class="w-full h-full" style="min-height: 24rem;">
+    <img src="{{ panel.image.file.url }}"
+         alt="{{ panel.image.alt_text|default:'' }}"
+         class="w-full h-full object-cover"
+         style="min-height: 24rem;">
+  </div>
+
+{% elif panel.component == 'map' %}
+
+  <div class="relative w-full" style="min-height: 24rem;">
+    <iframe
+      src="{{ site_settings.map_embed_url }}"
+      class="absolute inset-0 w-full h-full border-0"
+      allowfullscreen
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade">
+    </iframe>
+    {% if site_settings.map_directions_url %}
+    <a href="{{ site_settings.map_directions_url }}"
+       target="_blank"
+       rel="noopener"
+       class="absolute top-4 left-4 z-10 btn btn-primary">
+      &#10148; Get Directions
+    </a>
+    {% endif %}
+  </div>
+
+{% elif panel.component == 'content' %}
+
+  <div style="display:flex;align-items:{{ panel.vertical_align|default:'center' }};padding:3rem 2.5rem;min-height:24rem;">
+    <div style="max-width:28rem;text-align:{{ panel.HALIGN_TO_TEXT|default_if_none:''|default:'left' }};">
+
+      {% if panel.content_group %}
+
+        {# ── Slot-based content ── #}
+        {% for slot in panel.content_group.all_slots %}
+          {% with block=slot.get_active_block %}
+            {% if block %}
+              {% if slot.component_type == 'title' %}
+                <h2 style="color: var(--color-{{ panel.text_color|default:'text-primary' }}); font-size:2rem; font-weight:700; margin-bottom:1rem;">
+                  {{ block.body|safe }}
+                </h2>
+              {% elif slot.component_type == 'subtitle' %}
+                <p style="color: var(--color-{{ panel.text_color|default:'text-primary' }}); font-size:1.1rem; margin-bottom:0.75rem;">
+                  {{ block.body|safe }}
+                </p>
+              {% elif slot.component_type == 'body' %}
+                <div class="prose" style="color: var(--color-{{ panel.text_color|default:'text-primary' }}); margin-bottom:1rem;">
+                  {{ block.body|safe }}
+                </div>
+              {% elif slot.component_type == 'button' %}
+                {% if block.button_label %}
+                  <div class="mt-4">
+                    {% if block.button_url == '#open-contact' %}
+                      <button @click="$dispatch('open-contact')" class="btn btn-primary">
+                        {{ block.button_label }}
+                      </button>
+                    {% elif block.button_url == '#open-inquiry' %}
+                      <button @click="inquiryOpen = true" class="btn btn-primary">
+                        {{ block.button_label }}
+                      </button>
+                    {% elif block.button_url == '#open-reserve' %}
+                      <button @click="$dispatch('open-reserve')" class="btn btn-primary">
+                        {{ block.button_label }}
+                      </button>
+                    {% else %}
+                      <a href="{{ block.button_url }}" class="btn btn-primary">
+                        {{ block.button_label }}
+                      </a>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              {% endif %}
+            {% endif %}
+          {% endwith %}
+        {% endfor %}
+
+      {% else %}
+
+        {# ── Legacy fields (used until content_group is assigned in admin) ── #}
+        {% if panel.title %}
+          <h2 style="color: var(--color-{{ panel.text_color|default:'text-primary' }}); font-size:2rem; font-weight:700; margin-bottom:1rem;">
+            {{ panel.title }}
+          </h2>
+        {% endif %}
+        {% with block=panel.content_slot.get_active_block %}
+          {% if block %}
+            <div class="prose" style="color: var(--color-{{ panel.text_color|default:'text-primary' }}); margin-bottom:1rem;">
+              {{ block.body|safe }}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% if panel.button_label and panel.button_href %}
+          <div class="mt-4">
+            <a href="{{ panel.button_href }}" class="btn btn-primary">
+              {{ panel.button_label }}
+            </a>
+          </div>
+        {% endif %}
+
+      {% endif %}
+
+    </div>
+  </div>
+
+{% endif %}

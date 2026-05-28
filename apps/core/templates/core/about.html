@@ -171,22 +171,10 @@
         </div>
         {% endif %}
 
-        {# Right — Google Maps embed #}
-        {% if right_contact.map %}
-        <div class="relative w-full" style="min-height:24rem;">
-            <iframe
-                src="{{ right_contact.map.embed_url }}"
-                class="absolute inset-0 w-full h-full border-0"
-                allowfullscreen
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade">
-            </iframe>
-            <a href="{{ right_contact.map.directions_url }}"
-               target="_blank"
-               rel="noopener"
-               class="absolute top-4 left-4 z-10 flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-widest btn btn-primary">
-                &#10148; Get Directions
-            </a>
+        {# Right — Google Maps embed via PanelSide component #}
+        {% if right_contact and right_contact.component == 'map' %}
+        <div style="background-color: var(--color-{{ right_contact.bg_color|default:'bg-primary' }}); min-height:24rem;">
+          {% include "core/components/_panel_side.html" with panel=right_contact %}
         </div>
         {% endif %}
 
