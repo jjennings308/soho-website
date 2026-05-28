@@ -40,6 +40,11 @@ class SiteSettingsAdmin(admin.ModelAdmin):
                 'they are not cleared automatically.'
             ),
         }),
+        ('Online Delivery', {
+            'fields': ('doordash_url', 'grubhub_url', 'ubereats_url'),
+            'classes': ('collapse',),
+            'description': 'Store page URLs for each delivery platform. Leave blank to hide that card on the delivery page.',
+        }),
         ('Review Platform Links', {
             'fields': ('google_review_url', 'yelp_review_url', 'opentable_review_url', 'rewardsnetwork_review_url'),
             'classes': ('collapse',),
