@@ -29,10 +29,10 @@
 {% endif %}
 
 {# ══════════════════════════════════════════════════════════════════════════ #}
-{# CATERING & EVENTS BANNER                                                  #}
+{# CATERING & EVENTS — 50/50                                                 #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
 <div x-data="{ inquiryOpen: false }">
-  {% include "core/components/db_banner_full.html" with banner=catering_banner inquiry_button="Inquire About Private Events" %}
+  {% include "core/components/50_50.html" with left=catering_left right=catering_right %}
   {% include "core/components/event_inquiry_modal.html" %}
 </div>
 
