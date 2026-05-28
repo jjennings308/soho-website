@@ -76,11 +76,15 @@ class BannerAdmin(admin.ModelAdmin):
             'description': 'Slug is set on creation and cannot be changed — templates reference it by slug.'
         }),
         ('Content', {
-            'fields': ('title', 'content'),
+            'fields': ('content_group',),
             'description': (
-                'Boilerplate copy. Override per-season via the ContentBlock '
-                'with slug <code>banner_{slug}_seasonal</code> in the Content admin.'
+                'Assign a ContentGroup to supply title, body, and button slots. '
+                'When set, the ContentGroup takes precedence over the legacy Title/Body fields below.'
             )
+        }),
+        ('Legacy Content (used until ContentGroup is assigned)', {
+            'fields': ('title', 'content'),
+            'classes': ('collapse',),
         }),
         ('Appearance', {
             'fields': ('bg_color', 'text_color', 'image_alt', 'image_opacity', 'image_only'),
@@ -94,31 +98,41 @@ class BannerAdmin(admin.ModelAdmin):
     
 @admin.register(PanelSide)
 class PanelSideAdmin(admin.ModelAdmin):
-    list_display = ['label', 'slug', 'mode', 'bg_color', 'is_active']
+    list_display = ['label', 'slug', 'component', 'bg_color', 'is_active']
     list_editable = ['is_active']
-    list_filter = ['mode', 'is_active']
+    list_filter = ['component', 'is_active']
     search_fields = ['label', 'slug']
     readonly_fields = ['slug']
 
     fieldsets = (
         ('Identity', {
-            'fields': ('slug', 'label', 'mode', 'is_active'),
+            'fields': ('slug', 'label', 'is_active'),
             'description': 'Slug is set on creation and cannot be changed.'
         }),
-        ('Image Mode', {
-            'fields': ('image', 'image_alt', 'image_fallback_url', 'bg_color'),
-            'description': 'Used when mode is set to Full Image.',
+        ('Component', {
+            'fields': ('component',),
+            'description': (
+                'Controls what this panel renders. '
+                '<strong>Content</strong> — assign a ContentGroup below. '
+                '<strong>Map</strong> — uses the Google Maps embed URL from Site Settings. '
+                '<strong>Full-bleed Image</strong> — select an image from the media library.'
+            )
+        }),
+        ('Content (component = Content)', {
+            'fields': ('content_group', 'text_color', 'vertical_align', 'horizontal_align'),
             'classes': ('collapse',),
         }),
-        ('Text Mode', {
-            'fields': ('title', 'content_slot', 'text_color', 'vertical_align', 'horizontal_align'),
-            'description': 'Used when mode is set to Text & Button.',
+        ('Image (component = Full-bleed Image)', {
+            'fields': ('image',),
             'classes': ('collapse',),
         }),
-        ('Button', {
-            'fields': ('button_label', 'button_href', 'button_bg_color', 'button_text_color'),
-            'description': 'Optional. Only renders if both label and href are set.',
+        ('Appearance', {
+            'fields': ('bg_color',),
+        }),
+        ('Legacy Fields (used until ContentGroup is assigned)', {
+            'fields': ('title', 'content_slot', 'button_label', 'button_href', 'button_bg_color', 'button_text_color', 'image_alt', 'image_fallback_url'),
             'classes': ('collapse',),
+            'description': 'These fields are still rendered when component=Content and no ContentGroup is set.',
         }),
     )
 
