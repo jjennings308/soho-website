@@ -1,0 +1,40 @@
+{% if group %}
+<section class="w-full" style="background-color: var(--color-{{ bg|default:'bg-primary' }});">
+  <div class="max-w-3xl mx-auto px-6 py-12">
+    {% for slot in group.all_slots %}
+      {% with block=slot.get_active_block %}
+        {% if block %}
+          {% if slot.component_type == 'title' %}
+            <h2 class="text-3xl font-bold mb-4"
+                style="color: var(--color-{{ text|default:'text-primary' }});">
+              {{ block.body|safe }}
+            </h2>
+          {% elif slot.component_type == 'subtitle' %}
+            <p class="text-xl mb-4"
+               style="color: var(--color-{{ text|default:'text-primary' }});">
+              {{ block.body|safe }}
+            </p>
+          {% elif slot.component_type == 'body' %}
+            <div class="prose max-w-none mb-6"
+                 style="color: var(--color-{{ text|default:'text-primary' }});">
+              {{ block.body|safe }}
+            </div>
+          {% elif slot.component_type == 'button' %}
+            {% if block.button_label %}
+              {% if block.button_url == '#open-contact' %}
+                <button @click="$dispatch('open-contact')" class="btn btn-primary mt-2">
+                  {{ block.button_label }}
+                </button>
+              {% else %}
+                <a href="{{ block.button_url }}" class="btn btn-primary mt-2">
+                  {{ block.button_label }}
+                </a>
+              {% endif %}
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      {% endwith %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}

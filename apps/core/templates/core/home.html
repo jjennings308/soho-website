@@ -17,6 +17,7 @@
 {# RESERVATIONS BAR                                                          #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {% if site_settings.reservations_url %}
+{# intentional — fixed UI element, not content-driven #}
 <div class="w-full py-3 flex items-center justify-center
             bg-[var(--color-bg-secondary)]">
   <a href="{{ site_settings.reservations_url }}"
@@ -39,92 +40,12 @@
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {# PROMO SLOT 1 — 3×3 GRID                                                  #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
-{% if promo_slot_1 and promo_slot_1_grid %}
-  {% with colors=promo_slot_1.resolve_colors %}
-  <section id="promo1" class="py-12 px-4"
-           style="
-             --color-promo-primary: {{ colors.primary }};
-             --color-promo-accent:  {{ colors.accent }};
-             --color-promo-text:    {{ colors.text }};
-             --color-promo-bg:      {{ colors.bg }};
-             background-color: var(--color-promo-bg);
-             color: var(--color-promo-text);
-           ">
-    <div class="max-w-6xl mx-auto">
-      <h2 class="text-2xl font-bold mb-6" style="color: var(--color-promo-primary);">
-        {{ promo_slot_1.title }}{% if promo_slot_1.description %} — {{ promo_slot_1.description }}{% endif %}
-      </h2>
-
-      {% for group in promo_slot_1_grid %}
-        <h3 class="text-sm font-semibold uppercase tracking-widest mt-6 mb-3"
-            style="color: var(--color-promo-accent);">
-          {{ group.category.name }}
-        </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {% for assignment in group.assignments %}
-            {% include "menu/partials/homepage_item_card.html" with assignment=assignment %}
-          {% endfor %}
-        </div>
-      {% endfor %}
-
-      <div class="mt-8">
-        <a href="{% url 'menu:menu_detail' promo_slot_1.slug %}"
-           class="inline-block px-6 py-2 rounded font-semibold
-                  hover:opacity-90 transition-opacity"
-           style="background-color: var(--color-promo-primary);
-                  color: var(--color-promo-bg);">
-          Full {{ promo_slot_1.title }} Menu
-        </a>
-      </div>
-    </div>
-  </section>
-  {% endwith %}
-{% endif %}
+{% include "menu/partials/promo_grid.html" with promo=promo_slot_1 grid=promo_slot_1_grid section_id="promo1" %}
 
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {# PROMO SLOT 2 — 3×3 GRID                                                  #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
-{% if promo_slot_2 and promo_slot_2_grid %}
-  {% with colors=promo_slot_2.resolve_colors %}
-  <section id="promo2" class="py-12 px-4"
-           style="
-             --color-promo-primary: {{ colors.primary }};
-             --color-promo-accent:  {{ colors.accent }};
-             --color-promo-text:    {{ colors.text }};
-             --color-promo-bg:      {{ colors.bg }};
-             background-color: var(--color-promo-bg);
-             color: var(--color-promo-text);
-           ">
-    <div class="max-w-6xl mx-auto">
-      <h2 class="text-2xl font-bold mb-6" style="color: var(--color-promo-primary);">
-        {{ promo_slot_2.title }}{% if promo_slot_2.description %} — {{ promo_slot_2.description }}{% endif %}
-      </h2>
-
-      {% for group in promo_slot_2_grid %}
-        <h3 class="text-sm font-semibold uppercase tracking-widest mt-6 mb-3"
-            style="color: var(--color-promo-accent);">
-          {{ group.category.name }}
-        </h3>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {% for assignment in group.assignments %}
-            {% include "menu/partials/homepage_item_card.html" with assignment=assignment %}
-          {% endfor %}
-        </div>
-      {% endfor %}
-
-      <div class="mt-8">
-        <a href="{% url 'menu:menu_detail' promo_slot_2.slug %}"
-           class="inline-block px-6 py-2 rounded font-semibold
-                  hover:opacity-90 transition-opacity"
-           style="background-color: var(--color-promo-primary);
-                  color: var(--color-promo-bg);">
-          Full {{ promo_slot_2.title }} Menu
-        </a>
-      </div>
-    </div>
-  </section>
-  {% endwith %}
-{% endif %}
+{% include "menu/partials/promo_grid.html" with promo=promo_slot_2 grid=promo_slot_2_grid section_id="promo2" %}
 
 {% if middle_banner %}
     {% include "core/components/db_banner_full.html" with banner=middle_banner %}
@@ -133,32 +54,7 @@
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {# FEATURED REVIEWS                                                          #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
-{% if featured_reviews %}
-<section style="background-color: var(--color-bg-primary); padding: 4rem 1.5rem;">
-    <div style="max-width: 72rem; margin: 0 auto;">
-
-        <div style="text-align: center; margin-bottom: 2.5rem;">
-            <p style="font-family: var(--font-accent); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--color-text-accent); margin-bottom: 0.75rem;">
-                What People Are Saying
-            </p>
-            <h2 style="font-family: var(--font-primary); font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700; color: var(--color-text-heading);">
-                Guest Reviews
-            </h2>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); gap: 1.5rem; margin-bottom: 2.5rem;">
-            {% for review in featured_reviews %}
-                {% include "core/partials/review_card.html" with review=review %}
-            {% endfor %}
-        </div>
-
-        <div style="text-align: center;">
-            <a href="{% url 'core:reviews' %}" class="btn btn-secondary">Read All Reviews</a>
-        </div>
-
-    </div>
-</section>
-{% endif %}
+{% include "core/components/reviews_section.html" with reviews=featured_reviews %}
 
 {% include "menu/partials/menu_item_modal.html" %}
 {% include "core/components/site_popup.html" %}
