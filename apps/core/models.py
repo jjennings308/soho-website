@@ -216,6 +216,11 @@ class SiteSettings(models.Model):
     yelp_review_url = models.URLField(blank=True, help_text="Yelp reviews page link")
     opentable_review_url = models.URLField(blank=True, help_text="OpenTable reviews page link")
     rewardsnetwork_review_url = models.URLField(blank=True, help_text="Rewards Network reviews page link")
+    map_embed_url = models.URLField(
+        blank=True,
+        help_text="Google Maps embed URL (src= from the iframe). When set, overrides the auto-generated map.",
+    )
+
     reservations_url = models.URLField(
         blank=True,
         help_text="OpenTable or other reservations link. Used for the Reservations button on the homepage."
@@ -595,10 +600,11 @@ class PanelSide(TimeStampedModel):
             ]
             address_str = ', '.join(p for p in parts if p)
             encoded = quote(address_str)
+            embed_url = settings.map_embed_url or f"https://maps.google.com/maps?q={encoded}&output=embed&iwloc=near"
             return {
                 'map': {
                     'address': address_str,
-                    'embed_url': f"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3036.2150976073344!2d-80.00708392411087!3d40.4483759714345!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8834f3fe953cc959%3A0xcc44a73fd333e3ac!2s203%20Federal%20St%2C%20Pittsburgh%2C%20PA%2015212!5e0!3m2!1sen!2sus!4v1779980739524!5m2!1sen!2sus&z=16",
+                    'embed_url': embed_url,
                     'directions_url': f"https://maps.google.com/?q={encoded}",
                     'bg_color': self.bg_color,
                 }
