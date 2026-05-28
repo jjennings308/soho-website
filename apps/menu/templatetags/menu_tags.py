@@ -58,12 +58,18 @@ def _assignment_to_json_data(assignment):
     """
     item = assignment.menu_item
 
-    # Images — primary MenuItemImage through-model
-    gallery = []
-    primary_img = _get_item_primary_image(item)
-    if primary_img and primary_img.media_item and primary_img.media_item.file:
-        mi = primary_img.media_item
-        gallery.append({'url': mi.file.url, 'alt': mi.alt_text or item.name})
+    # Images — all MenuItemImage records, primary first
+    all_images = getattr(item, '_prefetched_images', None)
+    if all_images is None:
+        all_images = list(
+            item.images.select_related('media_item').order_by('-is_primary', 'display_order')
+        )
+
+    gallery = [
+        {'url': img.media_item.file.url, 'alt': img.media_item.alt_text or item.name}
+        for img in all_images
+        if img.media_item and img.media_item.file
+    ]
 
     primary_url = gallery[0]['url'] if gallery else None
 

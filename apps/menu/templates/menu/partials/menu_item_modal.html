@@ -192,14 +192,7 @@
       activeImage: null,
 
       get allImages() {
-        const imgs = [];
-        if (this.item.primary_image) {
-          imgs.push({ url: this.item.primary_image, alt: this.item.name });
-        }
-        if (this.item.gallery && this.item.gallery.length) {
-          this.item.gallery.forEach(g => imgs.push({ url: g.url, alt: g.alt || this.item.name }));
-        }
-        return imgs;
+        return this.item.gallery || [];
       },
 
       open(data) {
