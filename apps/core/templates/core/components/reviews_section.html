@@ -1,0 +1,31 @@
+{% if reviews %}
+<section style="background-color: var(--color-bg-primary); padding: 4rem 1.5rem;">
+  <div style="max-width: 72rem; margin: 0 auto;">
+
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+      <p style="font-family: var(--font-accent); font-size: 0.75rem; font-weight: 600;
+                letter-spacing: 0.2em; text-transform: uppercase;
+                color: var(--color-text-accent); margin-bottom: 0.75rem;">
+        What People Are Saying
+      </p>
+      <h2 style="font-family: var(--font-primary);
+                 font-size: clamp(1.75rem, 4vw, 2.5rem); font-weight: 700;
+                 color: var(--color-text-heading);">
+        Guest Reviews
+      </h2>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+                gap: 1.5rem; margin-bottom: 2.5rem;">
+      {% for review in reviews %}
+        {% include "core/partials/review_card.html" with review=review %}
+      {% endfor %}
+    </div>
+
+    <div style="text-align: center;">
+      <a href="{% url 'core:reviews' %}" class="btn btn-secondary">Read All Reviews</a>
+    </div>
+
+  </div>
+</section>
+{% endif %}
