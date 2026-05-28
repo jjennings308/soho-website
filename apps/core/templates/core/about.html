@@ -143,13 +143,27 @@
         {% if about_info %}
         <div style="display:flex;align-items:center;padding:3rem 2.5rem;">
             <div style="max-width:28rem;">
-                {% for slot in about_info.body_slots %}
+                {% for slot in about_info.slots.all %}
                     {% with block=slot.get_active_block %}
                         {% if block %}
-                        <div class="prose max-w-none mb-6 info--{{ slot.slug }}"
-                             style="color: var(--color-text-primary);">
-                            {{ block.body|safe }}
-                        </div>
+                            {% if slot.component_type == 'button' %}
+                                {% if block.button_url == '#open-contact' %}
+                                    <button @click="$dispatch('open-contact')"
+                                            class="btn btn-primary mt-4">
+                                        {{ block.button_label }}
+                                    </button>
+                                {% else %}
+                                    <a href="{{ block.button_url }}"
+                                    class="btn btn-primary mt-4">
+                                        {{ block.button_label }}
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                <div class="prose max-w-none mb-6 info--{{ slot.slug }}"
+                                    style="color: var(--color-text-primary);">
+                                    {{ block.body|safe }}
+                                </div>
+                            {% endif %}
                         {% endif %}
                     {% endwith %}
                 {% endfor %}
