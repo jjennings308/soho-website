@@ -839,11 +839,9 @@
   color: var(--color-text-heading);
 }
 .btn-primary:hover {
-  background-color: var(--color-gold-bright);
-  border-color: var(--color-gold-bright);
+  background-color: var(--color-bg-accent);
+  border-color: var(--color-bg-accent);
   color: var(--color-text-heading);
-  box-shadow: var(--shadow-gold);
-  transform: translateY(-1px);
 }
 
 /* Gold outline */
@@ -853,8 +851,11 @@
   border: 1px solid var(--color-text-accent);
 }
 .btn-secondary:hover {
-  background-color: var(--color-bg-accent);
+  background-color: var(--color-gold-bright);
+  border-color: var(--color-gold-bright);
   color: var(--color-text-heading);
+  box-shadow: var(--shadow-gold);
+  transform: translateY(-1px);
 }
 
 /* White outline (for use on dark/image sections) */
