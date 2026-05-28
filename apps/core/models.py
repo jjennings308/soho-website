@@ -598,7 +598,7 @@ class PanelSide(TimeStampedModel):
             return {
                 'map': {
                     'address': address_str,
-                    'embed_url': f"https://maps.google.com/maps?q={encoded}&output=embed&iwloc=",
+                    'embed_url': f"https://maps.google.com/maps?q={encoded}&output=embed&iwloc=near",
                     'directions_url': f"https://maps.google.com/?q={encoded}",
                     'bg_color': self.bg_color,
                 }
