@@ -280,16 +280,32 @@ class SiteSettings(models.Model):
 # ── Banner ────────────────────────────────────────────────────────────────────
 
 BANNER_COLOR_CHOICES = [
-    ('bg-primary',      'Primary Background'),
-    ('bg-secondary',    'Secondary Background'),
-    ('bg-tertiary',     'Tertiary Background'),
-    ('white',           'White'),
-    ('steeler-black',   'Steeler Black'),
-    ('steeler-gold',    'Steeler Gold'),
-    ('text-primary',    'Primary Text'),
-    ('text-secondary',  'Secondary Text'),
-    ('text-tertiary',   'Tertiary Text'),
-    ('gold-bright',     'Gold Bright'),
+    # Light backgrounds
+    ('bg-primary',        'Page Background (near-white)'),
+    ('bg-secondary',      'Warm Cream'),
+    ('bg-tertiary',       'Warm Linen'),
+    ('bg-surface',        'Light Panel Surface'),
+    ('bg-surface-raised', 'Raised Panel Surface'),
+    ('white',             'White'),
+    ('accent-red-light',  'Red Tint (light)'),
+    # Gold scale
+    ('gold-light',        'Gold — Pale Tint'),
+    ('gold-bright',       'Gold — Bright'),
+    ('gold-primary',      'Gold — Sandy (brand)'),
+    ('bg-accent',         'Gold — Button/Accent'),
+    ('gold-deep',         'Gold — Deep'),
+    # Dark backgrounds
+    ('dark-gray',         'Dark Warm Gray'),
+    ('steeler-black',     'Near Black'),
+    # Bold
+    ('accent-red',        'Brand Red'),
+    ('steeler-gold',      'Bright Yellow Gold'),
+    # Text colors (use on text_color field)
+    ('text-accent',       'Gold Accent (text)'),
+    ('text-primary',      'Warm Near-Black (text)'),
+    ('text-secondary',    'Medium Brown (text)'),
+    ('text-tertiary',     'Dark Charcoal (text)'),
+    ('text-heading',      'Near-Black Heading (text)'),
 ]
 
 

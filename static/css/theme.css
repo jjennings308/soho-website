@@ -62,7 +62,7 @@
   --color-dark-gray: #3a3530;   /* borders — warm dark */
   --color-mid-gray:  #7a6e64;   /* placeholder text — warm mid */
 
-  /* --- Team Colors (unused during rebrand — keep for future promo menus) ---
+  /* --- Team Colors --------------------------------------------------------- */
   --color-steeler-gold:  #ffb612;
   --color-steeler-black: #101820;
 
@@ -71,7 +71,6 @@
 
   --color-pitt-gold: #ffb81c;
   --color-pitt-blue: #003594;
-  --- */
 
   /* --- Modals -------------------------------------------------------------- */
   --color-modal-backdrop: rgba(0,0,0,0.60); /* semi-transparent page overlay */
