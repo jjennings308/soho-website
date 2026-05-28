@@ -226,6 +226,11 @@ class SiteSettings(models.Model):
         help_text="OpenTable or other reservations link. Used for the Reservations button on the homepage."
     )
 
+    # ── Online Delivery ───────────────────────────────────────────────────────
+    doordash_url = models.URLField(blank=True, help_text="DoorDash store page URL.")
+    grubhub_url  = models.URLField(blank=True, help_text="Grubhub store page URL.")
+    ubereats_url = models.URLField(blank=True, help_text="Uber Eats store page URL.")
+
     meta_description = models.TextField(blank=True, max_length=160)
     meta_keywords = models.CharField(max_length=255, blank=True)
 
