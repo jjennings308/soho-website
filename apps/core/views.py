@@ -111,8 +111,15 @@ class HomeView(TemplateView):
         # ── Banners ───────────────────────────────────────────────────────────
         context['hero_banner'] = get_banner('hero')
 
-        # ── Catering Banner ───────────────────────────────────────────────────
-        context['catering_banner'] = get_banner('catering')
+        # ── Catering & Events 50/50 ───────────────────────────────────────────
+        context['catering_left']  = get_panel_side('home-events-image')
+        catering_right = get_panel_side('home-events-text')
+        if catering_right:
+            catering_right['button'] = {
+                'label':      'Inquire About Private Events',
+                'x_on_click': 'inquiryOpen = true',
+            }
+        context['catering_right'] = catering_right
 
         # ── Middle Banner ───────────────────────────────────────────────────
         context['middle_banner'] = get_banner('homeMiddleBanner')
