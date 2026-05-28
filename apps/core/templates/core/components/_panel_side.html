@@ -30,7 +30,7 @@
 {% elif panel.component == 'content' %}
 
   <div style="display:flex;align-items:{{ panel.vertical_align|default:'center' }};padding:3rem 2.5rem;min-height:24rem;">
-    <div style="max-width:28rem;text-align:{{ panel.HALIGN_TO_TEXT|default_if_none:''|default:'left' }};">
+    <div style="max-width:28rem;text-align:{{ panel.text_align }};">
 
       {% if panel.content_group %}
 
