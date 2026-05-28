@@ -16,7 +16,7 @@ class SiteSettingsAdmin(admin.ModelAdmin):
             'fields': ('restaurant_name', 'logo', 'favicon')
         }),
         ('Contact Information', {
-            'fields': ('phone', 'email', 'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country', 'reservations_url')
+            'fields': ('phone', 'email', 'address_line1', 'address_line2', 'city', 'state', 'zip_code', 'country', 'reservations_url', 'map_embed_url')
         }),
         ('Social Media', {
             'fields': ('facebook_url', 'instagram_url', 'twitter_url', 'yelp_url'),
