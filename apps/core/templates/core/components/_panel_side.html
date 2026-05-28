@@ -77,29 +77,6 @@
           {% endwith %}
         {% endfor %}
 
-      {% else %}
-
-        {# ── Legacy fields (used until content_group is assigned in admin) ── #}
-        {% if panel.title %}
-          <h2 style="color: var(--color-{{ panel.text_color|default:'text-primary' }}); font-size:2rem; font-weight:700; margin-bottom:1rem;">
-            {{ panel.title }}
-          </h2>
-        {% endif %}
-        {% with block=panel.content_slot.get_active_block %}
-          {% if block %}
-            <div class="prose" style="color: var(--color-{{ panel.text_color|default:'text-primary' }}); margin-bottom:1rem;">
-              {{ block.body|safe }}
-            </div>
-          {% endif %}
-        {% endwith %}
-        {% if panel.button_label and panel.button_href %}
-          <div class="mt-4">
-            <a href="{{ panel.button_href }}" class="btn btn-primary">
-              {{ panel.button_label }}
-            </a>
-          </div>
-        {% endif %}
-
       {% endif %}
 
     </div>
