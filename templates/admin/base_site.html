@@ -1,0 +1,13 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block extrahead %}
+  {{ block.super }}
+  {% if site_settings.favicon %}
+    <link rel="icon" href="{{ site_settings.favicon.url }}">
+    <link rel="apple-touch-icon" href="{{ site_settings.favicon.url }}">
+  {% else %}
+    <link rel="icon" href="{% static 'img/favicon.png' %}">
+    <link rel="apple-touch-icon" href="{% static 'img/favicon.png' %}">
+  {% endif %}
+{% endblock %}
