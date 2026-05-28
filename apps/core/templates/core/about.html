@@ -143,7 +143,7 @@
         {% if about_info %}
         <div style="display:flex;align-items:center;padding:3rem 2.5rem;">
             <div style="max-width:28rem;">
-                {% for slot in about_info.slots.all %}
+                {% for slot in about_info.all_slots %}
                     {% with block=slot.get_active_block %}
                         {% if block %}
                             {% if slot.component_type == 'button' %}
