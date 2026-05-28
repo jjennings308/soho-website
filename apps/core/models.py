@@ -324,11 +324,6 @@ class Banner(TimeStampedModel):
         help_text="Content group supplying title, body, and button slots for this banner.",
     )
 
-    title = models.CharField(max_length=200, blank=True)
-    content = models.TextField(
-        blank=True,
-        help_text="Boilerplate body copy shown when no seasonal ContentBlock is active."
-    )
     bg_color = models.CharField(
         max_length=50,
         choices=BACKGROUND_COLOR_CHOICES,
@@ -368,75 +363,12 @@ class Banner(TimeStampedModel):
         active = [img for img in self.images.all() if img.is_active]
         return random.choice(active) if active else None
 
-    def as_context(self, seasonal_body=None):
-        """
-        Returns the dict shape that banner_full.html expects.
-        Pass seasonal_body (a safe HTML string) to overlay seasonal
-        ContentBlock copy over the boilerplate content field.
-
-        image is selected randomly from active BannerImage records so each
-        page load can show a different photo when multiple images are assigned.
-        """
-        image = self.images.filter(is_active=True).order_by('?').first()
-        return {
-            'title': self.title,
-            'content': seasonal_body if seasonal_body is not None else self.content,
-            'bg_color': self.bg_color,
-            'text_color': self.text_color,
-            'image': image.media_item if image else None,
-            'image_opacity': str(self.image_opacity),
-            'image_only': self.image_only,
-            'buttons': [
-                b.as_dict()
-                for b in self.buttons.filter(is_active=True).order_by('order')
-            ],
-        }
-
-
-class BannerButton(TimeStampedModel):
-    banner = models.ForeignKey(
-        Banner,
-        on_delete=models.CASCADE,
-        related_name='buttons',
-    )
-    label = models.CharField(max_length=100)
-    href = models.CharField(max_length=500)
-    bg_color = models.CharField(
-        max_length=50,
-        choices=BACKGROUND_COLOR_CHOICES,
-        default='bg-secondary',
-    )
-    text_color = models.CharField(
-        max_length=50,
-        choices=TEXT_COLOR_CHOICES,
-        default='text-primary',
-    )
-
-    is_active = models.BooleanField(default=True)
-    order = models.PositiveSmallIntegerField(default=0)
-
-    class Meta:
-        ordering = ['order']
-        verbose_name = 'Button'
-        verbose_name_plural = 'Buttons'
-
-    def __str__(self):
-        return f"{self.banner.label} — {self.label}"
-
-    def as_dict(self):
-        return {
-            'label': self.label,
-            'href': self.href,
-            'bg_color': self.bg_color,
-            'text_color': self.text_color,
-        }
-
 
 class BannerImage(TimeStampedModel):
     """
     Associates one or more MediaItem images with a Banner.
-    When multiple images are active, Banner.as_context() picks one at random
-    on each page load — creating a lightweight rotating hero effect.
+    When multiple images are active, Banner.random_image picks one per load
+    — creating a lightweight rotating hero effect.
     """
     banner = models.ForeignKey(
         Banner,
@@ -466,12 +398,6 @@ class BannerImage(TimeStampedModel):
 
 
 # ── Panel Side ───────────────────────────────────────────────────────────────
-
-PANEL_MODE_CHOICES = [
-    ('text',  'Text & Button'),
-    ('image', 'Full Image'),
-    ('map',   'Google Maps Embed')
-]
 
 
 class PanelSide(TimeStampedModel):
@@ -517,13 +443,6 @@ class PanelSide(TimeStampedModel):
         help_text="Content group for this panel side. Only used when component is Content.",
     )
 
-    mode = models.CharField(
-        max_length=10,
-        choices=PANEL_MODE_CHOICES,
-        default='text',
-        help_text="Image: full-bleed photo. Text: title, copy, and optional button."
-    )
-
     # ── Shared ────────────────────────────────────────────────────────────────
     bg_color = models.CharField(
         max_length=50,
@@ -531,35 +450,10 @@ class PanelSide(TimeStampedModel):
         default='bg-primary',
         help_text="Background color. For image panels, shows while image loads."
     )
-
-    # ── Text mode fields ──────────────────────────────────────────────────────
-    title = models.CharField(max_length=200, blank=True)
-    content_slot = models.ForeignKey(
-        'content.ContentSlot',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='panel_sides',
-        help_text="Optional ContentSlot for body copy. Active block is resolved at render time."
-    )
     text_color = models.CharField(
         max_length=50,
         choices=TEXT_COLOR_CHOICES,
         default='text-primary',
-    )
-    button_label = models.CharField(max_length=100, blank=True)
-    button_href = models.CharField(max_length=500, blank=True)
-    button_bg_color = models.CharField(
-        max_length=50,
-        choices=BACKGROUND_COLOR_CHOICES,
-        default='bg-secondary',
-        blank=True,
-    )
-    button_text_color = models.CharField(
-        max_length=50,
-        choices=TEXT_COLOR_CHOICES,
-        default='text-primary',
-        blank=True,
     )
 
     # ── Image mode fields ─────────────────────────────────────────────────────
@@ -626,76 +520,6 @@ class PanelSide(TimeStampedModel):
 
     def __str__(self):
         return self.label
-
-    def as_dict(self):
-        """
-        Returns the dict shape that 50_50.html expects for one side.
-        Resolves the active ContentBlock from content_slot if set.
-        """
-        if self.mode == 'image':
-            if self.image:
-                img_src = self.image.file.url
-                alt = self.image.alt_text or ''
-            elif self.image_fallback_url:
-                img_src = self.image_fallback_url
-                alt = ''
-            else:
-                img_src = ''
-                alt = ''
-            return {
-                'full_img': {
-                    'img_src': img_src,
-                    'alt': alt,
-                    'bg_color': self.bg_color,
-                }
-            }
-
-        if self.mode == 'map':
-            from urllib.parse import quote
-            settings = SiteSettings.load()
-            parts = [
-                settings.address_line1,
-                settings.address_line2,
-                settings.city,
-                settings.state,
-                settings.zip_code,
-            ]
-            address_str = ', '.join(p for p in parts if p)
-            encoded = quote(address_str)
-            embed_url = settings.map_embed_url or f"https://maps.google.com/maps?q={encoded}&output=embed&iwloc=near"
-            return {
-                'map': {
-                    'address': address_str,
-                    'embed_url': embed_url,
-                    'directions_url': f"https://maps.google.com/?q={encoded}",
-                    'bg_color': self.bg_color,
-                }
-            }
-
-        # text mode
-        content = ''
-        if self.content_slot:
-            block = self.content_slot.get_active_block()
-            if block:
-                content = block.body
-
-        result = {
-            'title': self.title,
-            'content': content,
-            'bg_color': self.bg_color,
-            'text_color': self.text_color,
-            'vertical_align': self.vertical_align,
-            'horziontal_align': self.horizontal_align,
-            'text_align': self.HALIGN_TO_TEXT.get(self.horizontal_align, 'left'),
-        }
-
-        if self.button_label and self.button_href:
-            result['button'] = {
-                'label': self.button_label,
-                'href': self.button_href,
-                'bg_color': self.button_bg_color,
-                'text_color': self.button_text_color,
-            }
 
 
 # =============================================================================
