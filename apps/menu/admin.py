@@ -5,7 +5,7 @@ from django import forms
 from apps.core.models import ColorScheme
 from .models import (
     MenuCategory, MenuSubCategory,
-    MenuItem, MenuItemVariation, MenuItemAddon,
+    MenuItem, MenuItemVariation, MenuItemAddon, MenuItemImage,
     MenuItemCategoryAssignment,
     Menu, MenuCategoryAssignment,
     PromoSettings,
@@ -173,6 +173,12 @@ class MenuItemAddonInline(admin.TabularInline):
     fields = ['name', 'price', 'is_default', 'is_available', 'order']
 
 
+class MenuItemImageInline(admin.TabularInline):
+    model = MenuItemImage
+    extra = 1
+    fields = ['media_item', 'is_primary', 'display_order', 'caption']
+
+
 class MenuItemCategoryAssignmentInline(admin.TabularInline):
     """
     Used inside MenuItemAdmin — shows which categories this item is placed in.
@@ -210,6 +216,7 @@ class MenuItemAdmin(admin.ModelAdmin):
     search_fields = ['name', 'short_description']
     prepopulated_fields = {'slug': ('name',)}
     inlines = [
+        MenuItemImageInline,
         MenuItemVariationInline,
         MenuItemAddonInline,
         MenuItemCategoryAssignmentInline,
@@ -218,9 +225,6 @@ class MenuItemAdmin(admin.ModelAdmin):
     fieldsets = (
         ('Identity', {
             'fields': ('name', 'slug', 'short_description', 'description'),
-        }),
-        ('Image', {
-            'fields': ('image', 'image_alt'),
         }),
         ('Pricing', {
             'fields': ('price_display', 'price', 'sale_price', 'has_variations', 'has_addons'),
