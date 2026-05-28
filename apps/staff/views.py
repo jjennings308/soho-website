@@ -699,3 +699,62 @@ class ReviewDeleteView(StaffRequiredMixin, View):
         review.delete()
         messages.success(request, 'Review deleted.')
         return redirect('staff:reviews')
+
+
+# ── Menu Items ────────────────────────────────────────────────────────────────
+
+from django import forms as _dforms
+from django.forms import inlineformset_factory
+
+
+def _menu_item_image_formset():
+    from apps.menu.models import MenuItem, MenuItemImage
+    from apps.media.models import MediaItem
+
+    class MenuItemImageForm(_dforms.ModelForm):
+        media_item = _dforms.ModelChoiceField(
+            queryset=MediaItem.objects.filter(owner_type='staff').order_by('name'),
+            label='Image',
+        )
+
+        class Meta:
+            model = MenuItemImage
+            fields = ['media_item', 'display_order', 'is_primary']
+
+    return inlineformset_factory(
+        MenuItem, MenuItemImage,
+        form=MenuItemImageForm,
+        extra=1,
+        can_delete=True,
+    )
+
+
+class MenuItemListView(StaffRequiredMixin, View):
+    def get(self, request):
+        from apps.menu.models import MenuItem
+        items = MenuItem.objects.prefetch_related('images').order_by('name')
+        return render(request, 'staff/menu/item_list.html', {'items': items})
+
+
+class MenuItemImagesView(StaffRequiredMixin, View):
+    def _get_item(self, pk):
+        from apps.menu.models import MenuItem
+        return get_object_or_404(MenuItem, pk=pk)
+
+    def get(self, request, pk):
+        item = self._get_item(pk)
+        formset = _menu_item_image_formset()(instance=item)
+        return render(request, 'staff/menu/item_images.html', {
+            'item': item, 'formset': formset,
+        })
+
+    def post(self, request, pk):
+        item = self._get_item(pk)
+        formset = _menu_item_image_formset()(request.POST, instance=item)
+        if formset.is_valid():
+            formset.save()
+            messages.success(request, f'Images updated for "{item.name}".')
+            return redirect('staff:menu_item_list')
+        return render(request, 'staff/menu/item_images.html', {
+            'item': item, 'formset': formset,
+        })

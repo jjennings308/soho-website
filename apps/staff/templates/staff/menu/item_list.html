@@ -1,0 +1,36 @@
+{% extends "staff/base.html" %}
+{% block title %}Menu Items{% endblock %}
+{% block page_title %}Menu Items{% endblock %}
+
+{% block content %}
+<div class="sp-card">
+  {% if items %}
+    <table class="sp-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Price</th>
+          <th style="text-align:center;">Images</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{% if item.price %}${{ item.price }}{% else %}&mdash;{% endif %}</td>
+          <td style="text-align:center;">{{ item.images.count }}</td>
+          <td style="text-align:right;">
+            <a href="{% url 'staff:menu_item_images' item.pk %}" class="sp-btn sp-btn--outline" style="font-size:0.8rem;padding:0.25rem 0.75rem;">
+              Images
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:var(--color-text-secondary);padding:1rem 0;">No menu items found.</p>
+  {% endif %}
+</div>
+{% endblock %}
