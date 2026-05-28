@@ -1033,17 +1033,57 @@ POST-only view. Calls `call_command('import_media_files')`, captures stdout, sho
 
 Staff uses SFTP (WinSCP on Windows, Cyberduck on Mac, scp/sftp on Linux) to put files in `media/gallery/` or subdirectories on the server, then clicks "Import from Disk" in the portal. The import command scans and creates records.
 
-#### 4. Assignments (`/staff/media/assign/`)
+#### 4. Menu item image assignment (`/staff/menu/items/<pk>/images/`)
 
-Per-model assignment views — staff picks which `MediaItem` is assigned to a specific banner, menu item, etc. Each is a simple form with a media picker widget.
+Menu item images are managed via a dedicated page per menu item — not an inline section on the main edit form. Staff navigates here from an "Images" button/link on the menu item list row.
 
-**Media picker widget:** A searchable grid of `MediaItem` thumbnails filtered to `owner_type='staff'`. Shows name below each thumbnail. Staff clicks to select. Implemented as an Alpine.js modal — button opens modal, modal shows paginated grid, click selects and closes. Selected item's PK written to a hidden input on the parent form.
+**Approach:** Django inline formset (`inlineformset_factory`). Standard page-based form, one Save button, redirect back to menu item list on success. No AJAX, no modal picker.
 
-This widget is reused wherever a `MediaItem` FK appears in the staff portal.
+**Formset:** `inlineformset_factory(MenuItem, MenuItemImage, fields=['media_item', 'display_order', 'is_primary'], extra=1, can_delete=True)`
 
-#### 5. Member submissions (`/staff/media/submissions/`) — Phase 2, do not build yet
+**`media_item` widget queryset:** Always filtered to `MediaItem.objects.filter(owner_type='staff').order_by('name')` — member submissions never appear. Display shows `MediaItem.name` (human-readable) not filename.
+
+**Page layout:**
+```
+Edit Images — {menu item name}
+─────────────────────────────────────
+Primary  Order  Image              Delete
+◉        1      [Burger Hero ▾]    □
+○        2      [Burger Side ▾]    □
+○        3      [Burger Close ▾]   □
+─────────────────────────────────────
+[+ Add another image row]
+[Save]  [Cancel → back to list]
+```
+
+- Primary is a radio input — one per formset. `MenuItemImage.save()` already enforces single primary; do not re-implement in the view.
+- Order is a number input.
+- Delete checkbox uses Django formset standard deletion.
+- If no images exist yet, formset shows one empty row (`extra=1`).
+
+**URL:** `menu:item_images` — `/staff/menu/items/<pk>/images/`
+**View:** `MenuItemImagesView` — `LoginRequiredMixin` + `is_staff` check, same auth pattern as all staff portal views.
+**On save:** redirect to menu item list. On cancel link: same redirect.
+**On error:** re-render formset with validation messages.
+
+#### 5. Other model image assignment
+
+`Banner`, `PanelSide`, `SitePopup`, `MenuCategory` all use single `MediaItem` FKs — edited directly on their existing staff portal edit forms as a standard select dropdown filtered to `owner_type='staff'`. No separate assignment page needed for single-image models.
+
+**`BannerImage` through model** (multiple images for random selection):
+Banner uses `BannerImage` through model instead of single FK. The banner edit page in the staff portal includes an inline formset for `BannerImage` records — same pattern as `MenuItemImage`. Fields: `media_item`, `display_order`, `is_active` (controls whether image is in the random pool).
+
+View logic selects a random active banner image:
+```python
+image = banner.images.filter(is_active=True).order_by('?').first()
+```
+This runs in `get_banner()` in `apps/core/utils.py` and is passed in the context dict.
+
+#### 6. Member submissions (`/staff/media/submissions/`) — Phase 2, do not build yet
 
 Moderation queue for `owner_type='member'` items. Shows pending submissions (`is_approved=False, is_flagged=False`). Staff approves (sets `is_approved=True`, `is_published=True`) or rejects (sets `is_flagged=True`, sends notification email to member). Approved submissions appear in the member photo section of the public gallery.
+
+
 
 ### Migration sequence — follow this order exactly
 
