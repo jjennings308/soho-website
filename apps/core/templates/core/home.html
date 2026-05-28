@@ -126,6 +126,10 @@
   {% endwith %}
 {% endif %}
 
+{% if middle_banner %}
+    {% include "core/components/db_banner_full.html" with banner=middle_banner %}
+{% endif %}
+
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {# FEATURED REVIEWS                                                          #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
