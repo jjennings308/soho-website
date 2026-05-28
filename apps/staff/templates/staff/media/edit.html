@@ -3,7 +3,7 @@
 {% block page_title %}Edit Media Item{% endblock %}
 
 {% block topbar_actions %}
-  <a href="{% url 'staff:media_library' %}" class="sp-btn sp-btn--outline">← Back to Library</a>
+  <a href="{{ back_url }}" class="sp-btn sp-btn--outline">← Back to Library</a>
 {% endblock %}
 
 {% block content %}
@@ -64,6 +64,7 @@
   <div class="sp-card">
     <form method="post">
       {% csrf_token %}
+      <input type="hidden" name="next" value="{{ back_url }}">
 
       <div class="sp-field">
         <label class="sp-label">Name <span style="color:#e87;font-size:0.8rem;">required</span></label>
@@ -120,7 +121,7 @@
 
       <div style="display:flex;gap:0.75rem;margin-top:1.5rem;">
         <button type="submit" class="sp-btn sp-btn--primary">Save Changes</button>
-        <a href="{% url 'staff:media_library' %}" class="sp-btn sp-btn--outline">Cancel</a>
+        <a href="{{ back_url }}" class="sp-btn sp-btn--outline">Cancel</a>
       </div>
     </form>
   </div>
