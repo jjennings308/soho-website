@@ -10,6 +10,10 @@
 
 {% else %}
 
+{% with field_row="display:grid;grid-template-columns:90px 1fr;gap:0.4rem 1rem;align-items:baseline;margin-bottom:0.65rem;" %}
+{% with label_style="font-size:0.78rem;font-weight:600;letter-spacing:0.05em;color:var(--color-text-secondary);text-align:right;padding-top:0.55rem;" %}
+{% with input_style="width:100%;padding:0.5rem 0.75rem;border-radius:4px;background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;box-sizing:border-box;" %}
+
 <form method="post" action="{% url 'core:contact_form' %}"
       x-data="{ loading: false }"
       @submit.prevent="
@@ -27,72 +31,53 @@
   {% csrf_token %}
 
   {# Name #}
-  <div style="margin-bottom:1rem;">
-    <label style="display:block;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;
-                  margin-bottom:0.35rem;color:var(--color-text-primary);">
-      Name <span style="color:#e87;">*</span>
-    </label>
-    <input type="text" name="name" value="{{ data.name|default:'' }}" required
-           style="width:100%;padding:0.6rem 0.9rem;border-radius:4px;
-                  border:1px solid {{ errors.name|yesno:'#e87,var(--color-bg-tertiary)' }};
-                  background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;
-                  box-sizing:border-box;">
-    {% if errors.name %}
-      <p style="font-size:0.75rem;color:#e87;margin-top:0.3rem;">{{ errors.name }}</p>
-    {% endif %}
+  <div style="{{ field_row }}">
+    <label style="{{ label_style }}">Name <span style="color:#e87;">*</span></label>
+    <div>
+      <input type="text" name="name" value="{{ data.name|default:'' }}" required
+             style="{{ input_style }}border:1px solid {{ errors.name|yesno:'#e87,var(--color-bg-tertiary)' }};">
+      {% if errors.name %}<p style="font-size:0.72rem;color:#e87;margin:0.2rem 0 0;">{{ errors.name }}</p>{% endif %}
+    </div>
   </div>
 
   {# Email #}
-  <div style="margin-bottom:1rem;">
-    <label style="display:block;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;
-                  margin-bottom:0.35rem;color:var(--color-text-primary);">
-      Email <span style="color:#e87;">*</span>
-    </label>
-    <input type="email" name="email" value="{{ data.email|default:'' }}" required
-           style="width:100%;padding:0.6rem 0.9rem;border-radius:4px;
-                  border:1px solid {{ errors.email|yesno:'#e87,var(--color-bg-tertiary)' }};
-                  background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;
-                  box-sizing:border-box;">
-    {% if errors.email %}
-      <p style="font-size:0.75rem;color:#e87;margin-top:0.3rem;">{{ errors.email }}</p>
-    {% endif %}
+  <div style="{{ field_row }}">
+    <label style="{{ label_style }}">Email <span style="color:#e87;">*</span></label>
+    <div>
+      <input type="email" name="email" value="{{ data.email|default:'' }}" required
+             style="{{ input_style }}border:1px solid {{ errors.email|yesno:'#e87,var(--color-bg-tertiary)' }};">
+      {% if errors.email %}<p style="font-size:0.72rem;color:#e87;margin:0.2rem 0 0;">{{ errors.email }}</p>{% endif %}
+    </div>
   </div>
 
   {# Phone #}
-  <div style="margin-bottom:1rem;">
-    <label style="display:block;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;
-                  margin-bottom:0.35rem;color:var(--color-text-primary);">
-      Phone <span style="font-weight:400;color:var(--color-text-secondary);">(optional)</span>
-    </label>
+  <div style="{{ field_row }}">
+    <label style="{{ label_style }}">Phone</label>
     <input type="tel" name="phone" value="{{ data.phone|default:'' }}"
-           style="width:100%;padding:0.6rem 0.9rem;border-radius:4px;
-                  border:1px solid var(--color-bg-tertiary);
-                  background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;
-                  box-sizing:border-box;">
+           style="{{ input_style }}border:1px solid var(--color-bg-tertiary);">
   </div>
 
   {# Message #}
-  <div style="margin-bottom:1.5rem;">
-    <label style="display:block;font-size:0.8rem;font-weight:600;letter-spacing:0.05em;
-                  margin-bottom:0.35rem;color:var(--color-text-primary);">
-      Message <span style="color:#e87;">*</span>
-    </label>
-    <textarea name="message" rows="4" required
-              style="width:100%;padding:0.6rem 0.9rem;border-radius:4px;
-                     border:1px solid {{ errors.message|yesno:'#e87,var(--color-bg-tertiary)' }};
-                     background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;
-                     resize:vertical;box-sizing:border-box;">{{ data.message|default:'' }}</textarea>
-    {% if errors.message %}
-      <p style="font-size:0.75rem;color:#e87;margin-top:0.3rem;">{{ errors.message }}</p>
-    {% endif %}
+  <div style="{{ field_row }}">
+    <label style="{{ label_style }}">Message <span style="color:#e87;">*</span></label>
+    <div>
+      <textarea name="message" rows="3" required
+                style="{{ input_style }}border:1px solid {{ errors.message|yesno:'#e87,var(--color-bg-tertiary)' }};resize:vertical;">{{ data.message|default:'' }}</textarea>
+      {% if errors.message %}<p style="font-size:0.72rem;color:#e87;margin:0.2rem 0 0;">{{ errors.message }}</p>{% endif %}
+    </div>
   </div>
 
-  <button type="submit" class="btn btn-primary" style="width:100%;"
-          :disabled="loading" :style="loading ? 'opacity:0.6;cursor:not-allowed;' : ''">
-    <span x-show="!loading">Send Message</span>
-    <span x-show="loading">Sending&hellip;</span>
-  </button>
+  {# Submit — indent to align with inputs #}
+  <div style="display:grid;grid-template-columns:90px 1fr;gap:0 1rem;">
+    <div></div>
+    <button type="submit" class="btn btn-primary" style="width:100%;"
+            :disabled="loading" :style="loading ? 'opacity:0.6;cursor:not-allowed;' : ''">
+      <span x-show="!loading">Send Message</span>
+      <span x-show="loading">Sending&hellip;</span>
+    </button>
+  </div>
 
 </form>
 
+{% endwith %}{% endwith %}{% endwith %}
 {% endif %}
