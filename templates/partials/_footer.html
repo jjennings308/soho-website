@@ -1,7 +1,7 @@
 {# templates/partials/footer.html #}
 {# SoHo Pittsburgh — Site Footer #}
 
-<div x-data="{ contactOpen: false }">
+<div x-data="{ contactOpen: false }" @open-contact.window="contactOpen = true">
 
 {% include 'partials/_contact_modal.html' %}
 
