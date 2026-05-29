@@ -524,9 +524,10 @@ class Menu(RecurrenceMixin, ScheduledModel):
     """
 
     MENU_TYPE_CHOICES = [
-        ('food',   'Food'),
-        ('drinks', 'Drinks'),
-        ('promo',  'Promotion'),
+        ('food',            'Food'),
+        ('drinks',          'Drinks'),
+        ('promo',           'Promotion'),
+        ('weekly_specials', 'Weekly Specials'),
     ]
 
     # ── Identity ──────────────────────────────────────────────────────────────
@@ -536,7 +537,7 @@ class Menu(RecurrenceMixin, ScheduledModel):
 
     # ── Type & default ────────────────────────────────────────────────────────
     menu_type = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=MENU_TYPE_CHOICES,
         default='promo',
         help_text=(
@@ -600,6 +601,16 @@ class Menu(RecurrenceMixin, ScheduledModel):
         )
     )
 
+    # ── Weekly specials date bounds ───────────────────────────────────────────
+    valid_from = models.DateField(
+        null=True, blank=True,
+        help_text="First day this specials menu is valid. Leave blank for non-specials menus."
+    )
+    valid_until = models.DateField(
+        null=True, blank=True,
+        help_text="Last day this specials menu is valid. Menu auto-hides after this date."
+    )
+
     # ── Categories (declared via through table) ───────────────────────────────
     categories = models.ManyToManyField(
         MenuCategory,
@@ -660,6 +671,17 @@ class Menu(RecurrenceMixin, ScheduledModel):
         if category_type:
             qs = qs.filter(category__category_type=category_type)
         return [a.category for a in qs]
+
+    @classmethod
+    def get_current_specials(cls):
+        from django.utils import timezone
+        today = timezone.localdate()
+        return cls.objects.filter(
+            menu_type='weekly_specials',
+            is_active=True,
+            valid_from__lte=today,
+            valid_until__gte=today,
+        ).first()
 
 
 # =============================================================================
