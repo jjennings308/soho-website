@@ -146,6 +146,42 @@ grep -n "background-color\|color:" templates/home.html
 
 The result should be zero matches in page templates. All matches should live only in component templates and `theme.css`.
 
+### Menu color rules — CRITICAL
+
+Menu templates have an additional specific rule about color sources:
+
+**Only `menu_type='promo'` menus may use custom colors.** All other menu types use standard theme variables exclusively.
+
+| menu_type | Color source | How |
+|-----------|-------------|-----|
+| `promo` | `PromoColorScheme` | `menu.resolve_colors()` → `--color-promo-*` CSS vars |
+| `food` | Standard theme | `var(--color-bg-*)`, `var(--color-text-*)` only |
+| `drink` | Standard theme | Same as above |
+| `weekly_specials` | Standard theme | Same as above |
+| `event_food` | Standard theme | Same as above |
+| `event_drinks` | Standard theme | Same as above |
+
+**The `--color-promo-*` compatibility shim** — `homepage_item_card.html` and `promo_subcat_card.html` use `var(--color-promo-*)` CSS variables internally. Non-promo menu sections that reuse these card templates must map those variables to standard theme colors on the section wrapper:
+
+```django
+{#
+  Color note: --color-promo-* mapped to STANDARD THEME COLORS.
+  Compatibility shim so card templates can be reused unchanged.
+  Do NOT replace with custom colors — weekly_specials uses site branding only.
+#}
+<section style="
+  --color-promo-primary: var(--color-text-heading);
+  --color-promo-accent:  var(--color-text-accent);
+  --color-promo-text:    var(--color-text-primary);
+  --color-promo-bg:      var(--color-bg-secondary);
+  background-color: var(--color-bg-secondary);
+">
+```
+
+This mapping must NEVER be replaced with hardcoded hex values, custom color picks, or any value not drawn from the standard `--color-*` theme variables.
+
+**If Claude Code is tempted to choose colors for a non-promo menu** — stop. The colors are not a choice. They are always the standard theme variables listed above. Raise a question if the layout requires something that can't be achieved with theme variables.
+
 ---
 
 ### Menu mode (`apps/menu/`, `apps/events/`)
@@ -167,6 +203,8 @@ Items (`MenuItem`) are a shared library — not owned by any menu. Placement is 
 - `MenuItemCategoryAssignment` — places an item into a category with per-placement `order`, `override_price`, `note`. The `available_game_day` field on this model is deprecated — do not reference it in new code.
 
 The same item can appear in multiple categories at different prices.
+
+`MenuCategory` has a `display_name` field (see Menu enhancements section) — use it in templates instead of `category.name` for public-facing display. `Weekly specials` is a first-class `menu_type` with date bounds — see Menu enhancements section.
 
 ### Page components
 
@@ -676,7 +714,7 @@ When member accounts are active (`apps.members` Phase 2 complete):
 
 ### Decision log
 
-- `menu_type` field already exists on `Menu` — do NOT modify it or its existing choices.
+- `menu_type` field already exists on `Menu` — the `weekly_specials` type has been added. See Menu enhancements section for full spec. Do not add other new types without a spec.
 - Add a `role` field to `Menu` — this is the only model change to `Menu`.
 - The combined `all` menu type is retired. The full menu page renders default food and default drink menus together in the view — no combined menu record is needed. Remove the `all` option from `menu_type` choices only after confirming no menus currently use it and no views/templates reference it. Grep before removing.
 - `available_game_day` on `MenuItemCategoryAssignment` is deprecated and replaced entirely by role-based menu switching. Do NOT use `available_game_day` as the basis for populating event menus — the flag was experimental and the menus have evolved since it was introduced. Event menus are built fresh in the admin with deliberate item selections.
@@ -1894,3 +1932,207 @@ Expected: zero matches (excluding audit_legacy.py itself).
 ### render_button template tag
 
 `render_button` in `ui_tags.py` is still valid — it renders button dicts passed from views. Do NOT remove it. The legacy usage is `BannerButton.as_dict()` feeding it, which goes away. The tag itself stays for any view that constructs button dicts manually.
+
+---
+
+## Menu enhancements (`apps/menu/`)
+
+### `Menu.display_name` field
+
+Add to `Menu` model in `apps/menu/models.py`:
+
+```python
+display_name = models.CharField(
+    max_length=200,
+    blank=True,
+    help_text=(
+        "Public-facing name shown on the menu page and nav. "
+        "Leave blank to use the internal name field. "
+        "Use for seasonal or time-sensitive labels e.g. 'Summer Cocktails' or 'Week of May 25 Specials'."
+    )
+)
+```
+
+Template usage — always use `display_name` for public-facing menu titles, falling back to `name`:
+
+```django
+{{ menu.display_name|default:menu.name }}
+```
+
+Three states:
+- `display_name = "Summer Cocktails"` → shows "Summer Cocktails"
+- `display_name = ""` (blank) → falls back to `menu.name`
+- Weekly specials: `display_name = "Week of May 25 Specials"` → shows the week label
+
+`name` is the internal admin/staff identifier and never changes. `display_name` is the public-facing label staff update freely.
+
+Requires a migration. Safe addition — all existing records get `display_name=''`, no visible change until staff populate it.
+
+---
+
+### `MenuCategory.display_name` field
+
+Add to `MenuCategory` model:
+
+```python
+display_name = models.CharField(
+    max_length=100,
+    blank=True,
+    help_text=(
+        "Public-facing name shown on the menu page. "
+        "Leave blank to hide the category header entirely. "
+        "Use for time-sensitive labels e.g. 'Week of May 25'."
+    )
+)
+```
+
+Template usage — always use `display_name` for public-facing category headers, never `name`:
+
+```django
+{% if category.display_name %}
+    <h3 class="menu-category-header">{{ category.display_name }}</h3>
+{% endif %}
+```
+
+Three states with one field:
+- `display_name = "Burgers"` → shows "Burgers"
+- `display_name = "Week of May 25"` → shows that instead of the internal name
+- `display_name = ""` (blank) → no header rendered at all
+
+`name` is the internal admin/staff label and never changes. `display_name` is what visitors see and can be updated freely.
+
+Requires a migration. Safe addition — all existing records get `display_name=''`, no visible change on the public site until staff populate it.
+
+---
+
+### Weekly specials (`menu_type='weekly_specials'`)
+
+#### Decision log
+
+- `menu_type='weekly_specials'`, `role='none'`. Type describes content (rotating, time-sensitive). Role not needed — views find current specials by type + date range.
+- Uses full existing menu hierarchy: `Menu` → `MenuCategoryAssignment` → `MenuCategory` → `MenuItemCategoryAssignment` → `MenuItem`. No new models needed.
+- Categories within specials use `display_name` for public headers (e.g. "Entrees", "Dirty Sodas"). Leave blank where no header is wanted.
+- Items come from three sources — all handled by the existing `MenuItem` library:
+  - New items — created fresh, assigned to this week's specials
+  - Featured existing items — assigned from library with optional `override_price`
+  - Rotating items — a pool of `MenuItem` records reused week to week
+- `override_price` on `MenuItemCategoryAssignment` handles price differences from the regular menu.
+- Auto-hides when `valid_until` is in the past — staff must set new dates to publish next week's specials. Intentional friction prevents stale specials showing.
+- Staff portal freshness indicator — passive reminder when specials haven't been updated.
+- Nav link only appears when a current valid specials menu exists — context processor driven.
+
+#### `Menu` model additions
+
+Add to `menu_type` choices:
+
+```python
+('weekly_specials', 'Weekly Specials'),
+```
+
+Add fields (nullable — no behaviour change for existing menus):
+
+```python
+valid_from = models.DateField(
+    null=True, blank=True,
+    help_text="First day this specials menu is valid. Leave blank for non-specials menus."
+)
+valid_until = models.DateField(
+    null=True, blank=True,
+    help_text="Last day this specials menu is valid. Menu auto-hides after this date."
+)
+```
+
+Add classmethod:
+
+```python
+@classmethod
+def get_current_specials(cls):
+    from django.utils import timezone
+    today = timezone.localdate()
+    return cls.objects.filter(
+        menu_type='weekly_specials',
+        is_published=True,
+        valid_from__lte=today,
+        valid_until__gte=today,
+    ).first()
+```
+
+#### Context processor
+
+Add to `apps/core/context_processors.py` so `current_specials` is available on every page:
+
+```python
+from apps.menu.models import Menu
+context['current_specials'] = Menu.get_current_specials()
+```
+
+Nav template:
+```django
+{% if current_specials %}
+    <a href="{% url 'menu:weekly_specials' %}" class="nav-dropdown__link">
+        This Week's Specials
+    </a>
+{% endif %}
+```
+
+#### Staff portal freshness indicator
+
+On the staff portal menu list, weekly specials menus show a badge based on `updated_at`:
+
+```python
+days_since = (timezone.now() - menu.updated_at).days
+# green  = <= 7 days
+# amber  = 8-14 days
+# red    = 15+ days
+```
+
+Use existing badge/pill CSS. No new styles needed.
+
+#### View and URL
+
+```python
+# apps/menu/urls.py
+path('specials/', WeeklySpecialsView.as_view(), name='weekly_specials'),
+```
+
+View fetches `Menu.get_current_specials()`. If None — renders a "check back soon" template. If found — passes menu and prefetched categories/items to `menu/weekly_specials.html`.
+
+#### Homepage integration
+
+`current_specials` is already in context via context processor. Homepage includes:
+
+```django
+{% if current_specials %}
+    {% include "menu/partials/specials_homepage_widget.html" with menu=current_specials %}
+{% endif %}
+```
+
+`specials_homepage_widget.html` — shows specials menu name, date range ("Week of May 25 – May 31"), category list preview, and "See Full Specials Menu" link.
+
+#### Staff workflow — updating weekly specials
+
+Each week:
+1. Open the weekly specials `Menu` record in the staff portal
+2. Update `valid_from` and `valid_until` to the new week's dates
+3. Remove last week's `MenuItemCategoryAssignment` records
+4. Add this week's items from the `MenuItem` library (or create new ones)
+5. Update `display_name` on categories if the label changes
+6. Save — goes live automatically when `valid_from` is reached
+
+**Future enhancement (post-launch):** Staff portal weekly specials editor with side-by-side "current specials" and "item library" for fast assignment.
+
+#### Migration sequence
+
+1. Add `display_name` to `Menu` — `makemigrations`, `migrate`. Commit.
+2. Add `display_name` to `MenuCategory` and `MenuSubCategory` — `makemigrations`, `migrate`. Commit.
+3. Add `weekly_specials` choice and `valid_from`/`valid_until` to `Menu` — combine with step 1 if not yet migrated, otherwise separate migration. `makemigrations`, `migrate`. Commit.
+3. Add `get_current_specials()` classmethod. Commit.
+4. Update context processor. Commit.
+5. Add `WeeklySpecialsView` and URL. Commit.
+6. Create `weekly_specials.html` and `specials_homepage_widget.html`. Commit.
+7. Update nav to show specials link conditionally. Commit.
+8. Update homepage to include specials widget. Commit.
+9. Add freshness indicator to staff portal menu list. Commit.
+10. Update all public menu category templates to use `display_name` not `name`. Commit.
+
+Do not combine steps. Template changes (6–10) need no migrations and can be done in any order after 1–5 are deployed.
