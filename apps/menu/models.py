@@ -534,6 +534,15 @@ class Menu(RecurrenceMixin, ScheduledModel):
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     description = models.TextField(blank=True)
+    display_name = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text=(
+            "Public-facing name shown on the menu page and nav. "
+            "Leave blank to use the internal name field. "
+            "Use for seasonal or time-sensitive labels e.g. 'Summer Cocktails' or 'Week of May 25 Specials'."
+        )
+    )
 
     # ── Type & default ────────────────────────────────────────────────────────
     menu_type = models.CharField(
