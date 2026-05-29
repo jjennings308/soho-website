@@ -1,22 +1,22 @@
-{% load menu_tags %}
+{% load menu_tags menu_filters %}
 {# ============================================================ #}
 {# menu/partials/specials_homepage_widget.html                  #}
 {#                                                              #}
-{# Compact homepage callout for the current weekly specials.    #}
+{# Homepage section showing current weekly specials items.      #}
 {# Expects:                                                     #}
 {#   menu — a Menu instance (menu_type='weekly_specials')       #}
 {# ============================================================ #}
 
 {% if menu %}
-<section class="py-10 px-6 text-center"
-         style="background-color: var(--color-bg-secondary);
+<section class="py-10 px-6"
+         style="background-color: var(--color-bg-primary);
                 border-top: var(--gold-rule);
                 border-bottom: var(--gold-rule);">
-  <div class="max-w-2xl mx-auto">
+  <div class="max-w-4xl mx-auto">
 
-    <p class="text-eyebrow mb-2">On The Menu This Week</p>
+    <p class="text-eyebrow text-center mb-2">On The Menu This Week</p>
 
-    <div class="flex items-center gap-6 mb-3">
+    <div class="flex items-center gap-6 mb-2">
       <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
       <h2 class="shrink-0" style="color: var(--color-text-heading);">
         {{ menu.title }}
@@ -24,26 +24,60 @@
       <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
     </div>
 
-    {% if menu.valid_from and menu.valid_until %}
-      <p class="t-description mb-4">
-        {{ menu.valid_from|date:"N j" }} – {{ menu.valid_until|date:"N j, Y" }}
+    {% if menu.valid_from %}
+      <p class="t-description text-center mb-6" style="color: var(--color-text-accent);">
+        {{ menu.valid_from|date:"N j, Y" }}
       </p>
     {% endif %}
 
-    {# Category preview — names only #}
-    {% with cats=menu.menu_category_assignments.all %}
-      {% if cats %}
-        <p class="text-sm mb-6" style="color: var(--color-text-secondary);">
-          {% for cat_assignment in cats %}
-            {{ cat_assignment.category.display_name|default:cat_assignment.category.name }}{% if not forloop.last %}&ensp;·&ensp;{% endif %}
-          {% endfor %}
-        </p>
-      {% endif %}
-    {% endwith %}
-
-    <a href="{% url 'menu:weekly_specials' %}" class="btn btn-primary">
-      See This Week's Specials
-    </a>
+    {% for cat_assignment in menu.menu_category_assignments.all %}
+      {% with category=cat_assignment.category %}
+        {% get_category_assignments category as assignments %}
+        {% if assignments %}
+          {% if category.display_name %}
+            <div class="flex items-center gap-4 mb-3 mt-6">
+              <div style="flex:1;height:1px;background:var(--color-gold-deep);opacity:0.4;"></div>
+              <h3 class="shrink-0 text-sm font-semibold uppercase tracking-widest"
+                  style="color: var(--color-text-accent);">
+                {{ category.display_name }}
+              </h3>
+              <div style="flex:1;height:1px;background:var(--color-gold-deep);opacity:0.4;"></div>
+            </div>
+          {% endif %}
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-2">
+            {% for assignment in assignments %}
+              {% with item=assignment.menu_item %}
+              {% get_primary_media item as primary_image %}
+              <div class="rounded-lg p-4 flex gap-3"
+                   style="background-color: var(--color-bg-secondary);">
+                {% if primary_image %}
+                  <div class="shrink-0 w-14 h-14 rounded overflow-hidden">
+                    <img src="{{ primary_image.file.url }}"
+                         alt="{{ primary_image.alt_text|default:item.name }}"
+                         class="w-full h-full object-cover" loading="lazy">
+                  </div>
+                {% endif %}
+                <div class="flex-1 min-w-0">
+                  <div class="flex justify-between items-start gap-2">
+                    <span class="font-semibold text-sm leading-tight"
+                          style="color: var(--color-text-primary);">{{ item.name }}</span>
+                    <span class="font-bold text-sm shrink-0"
+                          style="color: var(--color-text-accent);">{{ assignment.display_price }}</span>
+                  </div>
+                  {% if item.short_description %}
+                    <p class="text-xs mt-1 opacity-70"
+                       style="color: var(--color-text-secondary);">
+                      {{ item.short_description|truncatechars:80 }}
+                    </p>
+                  {% endif %}
+                </div>
+              </div>
+              {% endwith %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+    {% endfor %}
 
   </div>
 </section>
