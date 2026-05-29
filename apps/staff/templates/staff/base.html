@@ -108,6 +108,11 @@
             <a href="{% url 'staff:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
               &#9670; Settings
             </a>
+            {% if request.user.is_superuser %}
+            <a href="{% url 'admin:index' %}" target="_blank" rel="noopener">
+              &#9670; Django Admin &#8599;
+            </a>
+            {% endif %}
           </div>
         </div>
       </div>
