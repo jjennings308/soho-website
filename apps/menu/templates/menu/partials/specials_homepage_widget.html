@@ -1,16 +1,14 @@
 {% load menu_tags menu_filters %}
-{# ============================================================ #}
-{# menu/partials/specials_homepage_widget.html                  #}
-{#                                                              #}
-{# Homepage section showing current weekly specials items.      #}
-{#
+{% comment %}
+  menu/partials/specials_homepage_widget.html
+  Homepage section showing current weekly specials items.
+
   Color note: --color-promo-* mapped to STANDARD THEME COLORS.
   Compatibility shim so card templates can be reused unchanged.
   Do NOT replace with custom colors — weekly_specials uses site branding only.
-#}
-{# Expects:                                                     #}
-{#   menu — a Menu instance (menu_type='weekly_specials')       #}
-{# ============================================================ #}
+
+  Expects: menu — a Menu instance (menu_type='weekly_specials')
+{% endcomment %}
 
 {% if menu %}
 <section class="py-12 px-4"
