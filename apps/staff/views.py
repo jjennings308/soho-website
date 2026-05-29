@@ -93,6 +93,21 @@ class DashboardView(StaffRequiredMixin, View):
         active_popup = SitePopup.get_active()
         promo_menus = Menu.objects.filter(menu_type='promo').select_related('color_scheme').order_by('title')
 
+        specials_menus = []
+        for m in Menu.objects.filter(menu_type='weekly_specials').order_by('-valid_from'):
+            days = (timezone.now() - m.updated_at).days
+            if days <= 7:
+                badge_class, badge_label = 'sp-pill--green', f'Updated {days}d ago'
+            elif days <= 14:
+                badge_class, badge_label = 'sp-pill--gold', f'Updated {days}d ago'
+            else:
+                badge_class, badge_label = 'sp-pill--red', f'Stale — {days}d ago'
+            specials_menus.append({
+                'menu': m,
+                'badge_class': badge_class,
+                'badge_label': badge_label,
+            })
+
         return render(request, 'staff/dashboard.html', {
             'menu_mode': menu_mode,
             'today_events': today_events,
@@ -104,6 +119,7 @@ class DashboardView(StaffRequiredMixin, View):
             'new_inquiry_count': new_inquiry_count,
             'active_popup': active_popup,
             'promo_menus': promo_menus,
+            'specials_menus': specials_menus,
         })
 
 
