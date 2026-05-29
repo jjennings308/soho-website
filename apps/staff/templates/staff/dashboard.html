@@ -112,25 +112,14 @@
 
   <!-- Weekly Specials -->
   <div class="sp-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-      <h2 style="font-size:0.9rem;font-weight:600;">Weekly Specials</h2>
-      <a href="/admin/menu/menu/?menu_type__exact=weekly_specials"
-         style="font-size:0.8rem;color:var(--color-gold-primary);text-decoration:none;">Manage &rarr;</a>
-    </div>
+    <h2 style="font-size:0.9rem;font-weight:600;margin-bottom:1rem;">Weekly Specials</h2>
     {% if specials_menus %}
       {% for item in specials_menus %}
         {% with menu=item.menu %}
         <div style="padding:0.6rem 0;border-bottom:1px solid var(--color-bg-tertiary);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
             <span style="font-size:0.875rem;font-weight:500;">{{ menu.title }}</span>
-            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-              {% if menu.is_currently_active %}
-                <span class="sp-pill sp-pill--green">Live</span>
-              {% else %}
-                <span class="sp-pill sp-pill--gray">Inactive</span>
-              {% endif %}
-              <span class="sp-pill {{ item.badge_class }}">{{ item.badge_label }}</span>
-            </div>
+            <span class="sp-pill {{ item.badge_class }}">{{ item.badge_label }}</span>
           </div>
           {% if menu.valid_from and menu.valid_until %}
             <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.25rem;">
