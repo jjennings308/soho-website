@@ -4,6 +4,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Prefetch
 from django.views.generic import TemplateView
 from apps.events.models import EventDay
+from django.utils import timezone
 
 from .models import (
     Menu,
@@ -163,6 +164,26 @@ class EventDayMenuView(TemplateView):
         context['drink_menu']  = Menu.objects.filter(role='event_drinks').first()
         context['is_preview']  = not (EventDay.get_current_menu_mode() == 'limited')
         context['active_type'] = active_type
+        return context
+
+
+class WeeklySpecialsView(TemplateView):
+    """
+    Renders the current weekly specials menu.
+    If no valid specials menu exists today, shows a 'check back soon' page.
+    """
+    template_name = 'menu/weekly_specials.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        menu = Menu.get_current_specials()
+        context['menu'] = menu
+        if menu:
+            context['category_assignments'] = (
+                menu.menu_category_assignments
+                .select_related('category')
+                .order_by('display_order')
+            )
         return context
 
 
