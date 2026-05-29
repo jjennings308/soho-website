@@ -3,29 +3,36 @@
 {# menu/partials/specials_homepage_widget.html                  #}
 {#                                                              #}
 {# Homepage section showing current weekly specials items.      #}
+{# Maps --color-promo-* to standard theme colors so the shared  #}
+{# homepage_item_card and promo_subcat_card partials work as-is. #}
 {# Expects:                                                     #}
 {#   menu — a Menu instance (menu_type='weekly_specials')       #}
 {# ============================================================ #}
 
 {% if menu %}
-<section class="py-10 px-6"
-         style="background-color: var(--color-bg-primary);
-                border-top: var(--gold-rule);
-                border-bottom: var(--gold-rule);">
-  <div class="max-w-4xl mx-auto">
+<section class="py-12 px-4"
+         style="
+           --color-promo-primary: var(--color-text-heading);
+           --color-promo-accent:  var(--color-text-accent);
+           --color-promo-text:    var(--color-text-primary);
+           --color-promo-bg:      var(--color-bg-secondary);
+           background-color: var(--color-bg-secondary);
+           color: var(--color-text-primary);
+         ">
+  <div class="max-w-6xl mx-auto">
 
     <p class="text-eyebrow text-center mb-2">On The Menu This Week</p>
 
     <div class="flex items-center gap-6 mb-2">
       <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
-      <h2 class="shrink-0" style="color: var(--color-text-heading);">
+      <h2 class="text-2xl font-bold shrink-0" style="color:var(--color-text-heading);">
         Weekly Specials
       </h2>
       <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
     </div>
 
     {% if menu.valid_from %}
-      <p class="t-description text-center mb-6" style="color: var(--color-text-accent);">
+      <p class="t-description text-center mb-6" style="color:var(--color-text-accent);">
         {{ menu.valid_from|date:"N j, Y" }}
       </p>
     {% endif %}
@@ -34,43 +41,33 @@
       {% with category=cat_assignment.category %}
         {% get_category_assignments category as assignments %}
         {% if assignments %}
+
           {% if category.display_name %}
             <h3 class="text-sm font-semibold uppercase tracking-widest mt-6 mb-3"
-                style="color: var(--color-text-accent);">
+                style="color:var(--color-text-accent);">
               {{ category.display_name }}
             </h3>
           {% endif %}
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-2">
-            {% for assignment in assignments %}
-              {% with item=assignment.menu_item %}
-              {% get_primary_media item as primary_image %}
-              <div class="rounded-lg p-4 flex gap-3"
-                   style="background-color: var(--color-bg-secondary);">
-                {% if primary_image %}
-                  <div class="shrink-0 w-14 h-14 rounded overflow-hidden">
-                    <img src="{{ primary_image.file.url }}"
-                         alt="{{ primary_image.alt_text|default:item.name }}"
-                         class="w-full h-full object-cover" loading="lazy">
-                  </div>
-                {% endif %}
-                <div class="flex-1 min-w-0">
-                  <div class="flex justify-between items-start gap-2">
-                    <span class="font-semibold text-sm leading-tight"
-                          style="color: var(--color-text-primary);">{{ item.name }}</span>
-                    <span class="font-bold text-sm shrink-0"
-                          style="color: var(--color-text-accent);">{{ assignment.display_price }}</span>
-                  </div>
-                  {% if item.short_description %}
-                    <p class="text-xs mt-1 opacity-70"
-                       style="color: var(--color-text-secondary);">
-                      {{ item.short_description|truncatechars:80 }}
-                    </p>
-                  {% endif %}
-                </div>
-              </div>
-              {% endwith %}
-            {% endfor %}
-          </div>
+
+          {% with plain=assignments|without_subcategory subcat_items=assignments|with_subcategory %}
+            {% if plain %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {% for assignment in plain %}
+                {% include "menu/partials/homepage_item_card.html" with assignment=assignment %}
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if subcat_items %}
+            {% regroup subcat_items by subcategory.name as subcategories %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4{% if plain %} mt-4{% endif %}">
+              {% for subcat in subcategories %}
+                {% include "menu/partials/promo_subcat_card.html" %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          {% endwith %}
+
         {% endif %}
       {% endwith %}
     {% endfor %}
