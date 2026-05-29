@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load menu_tags %}
+
+{% block title %}SoHo Pittsburgh — This Week's Specials{% endblock %}
+
+{% block content %}
+
+{# ── Page header ── #}
+<section class="py-8 px-6 text-center"
+         style="background-color: var(--color-bg-tertiary);
+                border-bottom: var(--gold-rule);
+                padding-top: calc(64px + 1.5rem);">
+  <p class="text-eyebrow mb-2">Fresh From Our Kitchen</p>
+  <h1 class="mb-2">This Week's Specials</h1>
+  {% if menu %}
+    {% if menu.valid_from and menu.valid_until %}
+      <p class="t-description">
+        {{ menu.valid_from|date:"N j" }} – {{ menu.valid_until|date:"N j, Y" }}
+      </p>
+    {% endif %}
+    {% if menu.description %}
+      <p class="t-description mt-3 max-w-xl mx-auto">{{ menu.description }}</p>
+    {% endif %}
+  {% endif %}
+</section>
+
+{# ── Specials items ── #}
+{% if menu %}
+  {% include "menu/partials/menu_sections.html" with menu=menu section_offset=0 %}
+{% else %}
+  <section class="menu-category-section py-16 px-12 text-center"
+           style="background-color: var(--color-bg-primary);
+                  color: var(--color-text-primary);">
+    <h2 class="mb-4">Check Back Soon</h2>
+    <p class="t-description max-w-md mx-auto">
+      We update our specials weekly — something new is always on the way.
+    </p>
+    <div class="mt-8">
+      <a href="{% url 'menu:full' %}" class="btn btn-primary">View Full Menu</a>
+    </div>
+  </section>
+{% endif %}
+
+{% include "menu/partials/menu_item_modal.html" %}
+
+{% endblock %}

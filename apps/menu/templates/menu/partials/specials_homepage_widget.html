@@ -1,0 +1,50 @@
+{% load menu_tags %}
+{# ============================================================ #}
+{# menu/partials/specials_homepage_widget.html                  #}
+{#                                                              #}
+{# Compact homepage callout for the current weekly specials.    #}
+{# Expects:                                                     #}
+{#   menu — a Menu instance (menu_type='weekly_specials')       #}
+{# ============================================================ #}
+
+{% if menu %}
+<section class="py-10 px-6 text-center"
+         style="background-color: var(--color-bg-secondary);
+                border-top: var(--gold-rule);
+                border-bottom: var(--gold-rule);">
+  <div class="max-w-2xl mx-auto">
+
+    <p class="text-eyebrow mb-2">On The Menu This Week</p>
+
+    <div class="flex items-center gap-6 mb-3">
+      <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
+      <h2 class="shrink-0" style="color: var(--color-text-heading);">
+        {{ menu.title }}
+      </h2>
+      <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
+    </div>
+
+    {% if menu.valid_from and menu.valid_until %}
+      <p class="t-description mb-4">
+        {{ menu.valid_from|date:"N j" }} – {{ menu.valid_until|date:"N j, Y" }}
+      </p>
+    {% endif %}
+
+    {# Category preview — names only #}
+    {% with cats=menu.menu_category_assignments.all %}
+      {% if cats %}
+        <p class="text-sm mb-6" style="color: var(--color-text-secondary);">
+          {% for cat_assignment in cats %}
+            {{ cat_assignment.category.display_name|default:cat_assignment.category.name }}{% if not forloop.last %}&ensp;·&ensp;{% endif %}
+          {% endfor %}
+        </p>
+      {% endif %}
+    {% endwith %}
+
+    <a href="{% url 'menu:weekly_specials' %}" class="btn btn-primary">
+      See This Week's Specials
+    </a>
+
+  </div>
+</section>
+{% endif %}
