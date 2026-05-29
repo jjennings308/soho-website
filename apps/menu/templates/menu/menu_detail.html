@@ -32,7 +32,7 @@
         {# Per-category heading when there are multiple categories #}
         {% if category_assignments|length > 1 %}
           <h2 class="text-center mt-8 mb-2" style="color: var(--color-promo-accent);">
-            {{ category.name }}
+            {{ category.display_name|default:category.name }}
           </h2>
         {% endif %}
 

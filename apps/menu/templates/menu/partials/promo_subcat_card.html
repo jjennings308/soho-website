@@ -1,3 +1,4 @@
+{% load menu_tags %}
 {# ============================================================ #}
 {# menu/partials/promo_subcat_card.html                         #}
 {#                                                              #}
@@ -12,7 +13,7 @@
 
 <div class="promo-subcat-card rounded-lg shadow p-5 bg-black/5">
   <h4 class="font-semibold text-lg mb-3" style="color: var(--color-promo-accent);">
-    {{ subcat.grouper }}
+    {{ subcat.list.0.subcategory.display_name|default:subcat.grouper }}
   </h4>
   <ul class="space-y-1">
     {% for assignment in subcat.list %}

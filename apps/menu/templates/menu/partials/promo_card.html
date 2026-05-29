@@ -54,7 +54,7 @@
             class="text-center mt-6 mb-2"
             style="color: var(--color-promo-accent);"
           >
-            {{ category.name }}
+            {{ category.display_name|default:category.name }}
           </h3>
         {% endif %}
         {% endwith %}
