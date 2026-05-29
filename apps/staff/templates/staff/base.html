@@ -64,6 +64,9 @@
             <a href="{% url 'staff:menu_item_list' %}" class="{% if 'menu_item' in request.resolver_match.url_name %}active{% endif %}">
               &#9670; Menu Items
             </a>
+            <a href="/admin/menu/menu/?menu_type__exact=weekly_specials">
+              &#9670; Weekly Specials
+            </a>
           </div>
         </div>
 
