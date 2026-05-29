@@ -45,6 +45,15 @@ class MenuCategory(TimeStampedModel):
     ]
 
     name = models.CharField(max_length=100)
+    display_name = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=(
+            "Public-facing name shown on the menu page. "
+            "Leave blank to hide the category header entirely. "
+            "Use for time-sensitive labels e.g. 'Week of May 25'."
+        )
+    )
     slug = models.SlugField(max_length=100, unique=True)
     category_type = models.CharField(
         max_length=10,
@@ -109,6 +118,15 @@ class MenuSubCategory(TimeStampedModel):
         help_text="The category this sub-category belongs to."
     )
     name = models.CharField(max_length=100)
+    display_name = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text=(
+            "Public-facing name shown on the menu page. "
+            "Leave blank to hide the category header entirely. "
+            "Use for time-sensitive labels e.g. 'Week of May 25'."
+        )
+    )
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     order = models.PositiveIntegerField(
