@@ -451,6 +451,15 @@ class MenuAdmin(admin.ModelAdmin):
                 'Primarily useful for promotional menus.'
             ),
         }),
+        ('Weekly Specials Dates', {
+            'fields': ('valid_from', 'valid_until'),
+            'classes': ('collapse',),
+            'description': (
+                'Only used for menu_type=Weekly Specials. '
+                'Set valid_from and valid_until to the week this menu is live. '
+                'The menu auto-hides when valid_until passes.'
+            ),
+        }),
         ('Schedule', {
             'fields': ('is_active', 'active_from', 'active_until', 'days_of_week'),
             'classes': ('collapse',),
