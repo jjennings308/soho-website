@@ -80,6 +80,9 @@
         <a href="{% url 'menu:full' %}?type=food" class="nav-dropdown__link">Food</a>
         <a href="{% url 'menu:full' %}?type=drinks" class="nav-dropdown__link">Drinks</a>
         <a href="{% url 'menu:event_day_menu' %}" class="nav-dropdown__link">Event Day (Limited)</a>
+        {% if current_specials %}
+        <a href="{% url 'menu:weekly_specials' %}" class="nav-dropdown__link">This Week's Specials</a>
+        {% endif %}
       </div>
     </li>
 
@@ -127,6 +130,9 @@
           <li><a href="{% url 'menu:full' %}?type=food" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Food</a></li>
           <li><a href="{% url 'menu:full' %}?type=drinks" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Drinks</a></li>
           <li><a href="{% url 'menu:event_day_menu' %}" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">Event Day (Limited)</a></li>
+          {% if current_specials %}
+          <li><a href="{% url 'menu:weekly_specials' %}" style="font-family:var(--font-nav);font-size:0.7rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--color-gold-deep);">This Week's Specials</a></li>
+          {% endif %}
         </ul>
       </li>
 
