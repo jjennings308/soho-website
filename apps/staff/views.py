@@ -91,7 +91,16 @@ class DashboardView(StaffRequiredMixin, View):
         unpublished_count = MediaItem.objects.filter(owner_type='staff', is_published=False).count()
         new_inquiry_count = EventInquiry.objects.filter(status='new').count()
         active_popup = SitePopup.get_active()
-        promo_menus = Menu.objects.filter(menu_type='promo').select_related('color_scheme').order_by('title')
+        promo_menus = []
+        for m in Menu.objects.filter(menu_type='promo').select_related('color_scheme').order_by('title'):
+            days = (timezone.now() - m.updated_at).days
+            if days <= 7:
+                badge_class, badge_label = 'sp-pill--green', f'Updated {days}d ago'
+            elif days <= 14:
+                badge_class, badge_label = 'sp-pill--gold', f'Updated {days}d ago'
+            else:
+                badge_class, badge_label = 'sp-pill--red', f'Stale — {days}d ago'
+            promo_menus.append({'menu': m, 'badge_class': badge_class, 'badge_label': badge_label})
 
         specials_menus = []
         for m in Menu.objects.filter(menu_type='weekly_specials').order_by('-valid_from'):

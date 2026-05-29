@@ -110,63 +110,56 @@
     {% endif %}
   </div>
 
-  <!-- Weekly Specials -->
+  <!-- Menu Status -->
   <div class="sp-card">
-    <h2 style="font-size:0.9rem;font-weight:600;margin-bottom:1rem;">Weekly Specials</h2>
+    <h2 style="font-size:0.9rem;font-weight:600;margin-bottom:1rem;">Menu Status</h2>
+
+    <h3 style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-mid-gray);margin-bottom:0.5rem;">Weekly Specials</h3>
     {% if specials_menus %}
-      {% for item in specials_menus %}
-        {% with menu=item.menu %}
-        <div style="padding:0.6rem 0;border-bottom:1px solid var(--color-bg-tertiary);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-            <span style="font-size:0.875rem;font-weight:500;">{{ menu.title }}</span>
+      {% for item in specials_menus %}{% with menu=item.menu %}
+      <div style="padding:0.6rem 0;border-bottom:1px solid var(--color-bg-tertiary);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+          <span style="font-size:0.875rem;font-weight:500;">{{ menu.title }}</span>
+          <span class="sp-pill {{ item.badge_class }}">{{ item.badge_label }}</span>
+        </div>
+        {% if menu.valid_from and menu.valid_until %}
+          <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.25rem;">
+            {{ menu.valid_from|date:"M j" }} – {{ menu.valid_until|date:"M j, Y" }}
+          </div>
+        {% endif %}
+      </div>
+      {% endwith %}{% endfor %}
+    {% else %}
+      <p style="font-size:0.875rem;color:var(--color-mid-gray);margin-bottom:0.5rem;">None set.</p>
+    {% endif %}
+
+    <h3 style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-mid-gray);margin-top:1.25rem;margin-bottom:0.5rem;">Promo Menus</h3>
+    {% if promo_menus %}
+      {% for item in promo_menus %}{% with menu=item.menu %}
+      <div style="padding:0.6rem 0;border-bottom:1px solid var(--color-bg-tertiary);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
+          <div style="display:flex;align-items:center;gap:0.5rem;min-width:0;">
+            {% if menu.color_scheme %}
+              <span style="display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;background:{{ menu.color_scheme.primary_color|default:'#ccc' }};"></span>
+            {% endif %}
+            <span style="font-size:0.875rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ menu.title }}</span>
+          </div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            {% if menu.is_currently_active %}<span class="sp-pill sp-pill--green">Active</span>
+            {% elif menu.is_active %}<span class="sp-pill sp-pill--gold">Scheduled</span>
+            {% else %}<span class="sp-pill sp-pill--gray">Off</span>{% endif %}
             <span class="sp-pill {{ item.badge_class }}">{{ item.badge_label }}</span>
           </div>
-          {% if menu.valid_from and menu.valid_until %}
-            <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.25rem;">
-              {{ menu.valid_from|date:"M j" }} – {{ menu.valid_until|date:"M j, Y" }}
-            </div>
-          {% endif %}
         </div>
-        {% endwith %}
-      {% endfor %}
-    {% else %}
-      <p style="font-size:0.875rem;color:var(--color-mid-gray);">No weekly specials menus yet.</p>
-    {% endif %}
-  </div>
-
-  <!-- Promo Menus -->
-  <div class="sp-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-      <h2 style="font-size:0.9rem;font-weight:600;">Promo Menus</h2>
-      <a href="/admin/menu/menu/?menu_type__exact=promo" style="font-size:0.8rem;color:var(--color-gold-primary);text-decoration:none;">Manage &rarr;</a>
-    </div>
-    {% if promo_menus %}
-      {% for menu in promo_menus %}
-        <div style="padding:0.6rem 0;border-bottom:1px solid var(--color-bg-tertiary);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-            <div style="display:flex;align-items:center;gap:0.5rem;min-width:0;">
-              {% if menu.color_scheme %}
-                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;background:{{ menu.color_scheme.primary_color|default:'#ccc' }};"></span>
-              {% endif %}
-              <span style="font-size:0.875rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ menu.title }}</span>
-            </div>
-            {% if menu.is_currently_active %}
-              <span class="sp-pill sp-pill--green">Active</span>
-            {% elif menu.is_active %}
-              <span class="sp-pill sp-pill--gold">Scheduled</span>
-            {% else %}
-              <span class="sp-pill sp-pill--gray">Off</span>
-            {% endif %}
+        {% if menu.active_from or menu.active_until %}
+          <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.25rem;padding-left:{% if menu.color_scheme %}1.25rem{% else %}0{% endif %};">
+            {% if menu.active_from %}From {{ menu.active_from|date:"M j" }}{% endif %}{% if menu.active_from and menu.active_until %} – {% endif %}{% if menu.active_until %}Until {{ menu.active_until|date:"M j" }}{% endif %}
           </div>
-          {% if menu.active_from or menu.active_until %}
-            <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.25rem;padding-left:{% if menu.color_scheme %}1.25rem{% else %}0{% endif %};">
-              {% if menu.active_from %}From {{ menu.active_from|date:"M j" }}{% endif %}{% if menu.active_from and menu.active_until %} – {% endif %}{% if menu.active_until %}Until {{ menu.active_until|date:"M j" }}{% endif %}
-            </div>
-          {% endif %}
-        </div>
-      {% endfor %}
+        {% endif %}
+      </div>
+      {% endwith %}{% endfor %}
     {% else %}
-      <p style="font-size:0.875rem;color:var(--color-mid-gray);">No promo menus yet.</p>
+      <p style="font-size:0.875rem;color:var(--color-mid-gray);">No promo menus.</p>
     {% endif %}
   </div>
 
