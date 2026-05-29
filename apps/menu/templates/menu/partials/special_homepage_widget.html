@@ -1,0 +1,78 @@
+{% load menu_tags menu_filters %}
+{% comment %}
+  menu/partials/specials_homepage_widget.html
+  Homepage section showing current weekly specials items.
+
+  Color note: --color-promo-* mapped to STANDARD THEME COLORS.
+  Compatibility shim so card templates can be reused unchanged.
+  Do NOT replace with custom colors — weekly_specials uses site branding only.
+
+  Expects: menu — a Menu instance (menu_type='weekly_specials')
+{% endcomment %}
+
+{% if menu %}
+<section class="py-12 px-4"
+         style="
+           --color-promo-primary: var(--color-text-heading);
+           --color-promo-accent:  var(--color-text-accent);
+           --color-promo-text:    var(--color-text-primary);
+           --color-promo-bg:      var(--color-bg-secondary);
+           background-color: var(--color-bg-secondary);
+           color: var(--color-text-primary);
+         ">
+  <div class="max-w-6xl mx-auto">
+
+    <p class="text-eyebrow text-center mb-2">On The Menu This Week</p>
+
+    <div class="flex items-center gap-6 mb-2">
+      <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
+      <h2 class="text-2xl font-bold shrink-0" style="color:var(--color-text-heading);">
+        Weekly Specials
+      </h2>
+      <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
+    </div>
+
+    {% if menu.valid_from %}
+      <p class="t-description text-center mb-6" style="color:var(--color-text-accent);">
+        {{ menu.valid_from|date:"N j, Y" }}
+      </p>
+    {% endif %}
+
+    {% for cat_assignment in menu.menu_category_assignments.all %}
+      {% with category=cat_assignment.category %}
+        {% get_category_assignments category as assignments %}
+        {% if assignments %}
+
+          {% if category.display_name %}
+            <h3 class="text-base font-semibold uppercase tracking-widest mt-6 mb-3 text-center"
+                style="color:var(--color-text-accent);">
+              {{ category.display_name }}
+            </h3>
+          {% endif %}
+
+          {% with plain=assignments|without_subcategory subcat_items=assignments|with_subcategory %}
+            {% if plain %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {% for assignment in plain %}
+                {% include "menu/partials/homepage_item_card.html" with assignment=assignment %}
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if subcat_items %}
+            {% regroup subcat_items by subcategory.name as subcategories %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4{% if plain %} mt-4{% endif %}">
+              {% for subcat in subcategories %}
+                {% include "menu/partials/promo_subcat_card.html" %}
+              {% endfor %}
+            </div>
+            {% endif %}
+          {% endwith %}
+
+        {% endif %}
+      {% endwith %}
+    {% endfor %}
+
+  </div>
+</section>
+{% endif %}
