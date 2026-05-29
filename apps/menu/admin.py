@@ -259,7 +259,7 @@ class MenuItemAdmin(admin.ModelAdmin):
             .values_list('category__name', flat=True)
         )
         if not names:
-            return format_html('<span style="color:#aaa;">—unassigned—</span>')
+            return format_html('<span style="color:{}">—unassigned—</span>', '#aaa')
         return ', '.join(names)
 
 
