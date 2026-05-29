@@ -3,8 +3,11 @@
 {# menu/partials/specials_homepage_widget.html                  #}
 {#                                                              #}
 {# Homepage section showing current weekly specials items.      #}
-{# Maps --color-promo-* to standard theme colors so the shared  #}
-{# homepage_item_card and promo_subcat_card partials work as-is. #}
+{#
+  Color note: --color-promo-* mapped to STANDARD THEME COLORS.
+  Compatibility shim so card templates can be reused unchanged.
+  Do NOT replace with custom colors — weekly_specials uses site branding only.
+#}
 {# Expects:                                                     #}
 {#   menu — a Menu instance (menu_type='weekly_specials')       #}
 {# ============================================================ #}
