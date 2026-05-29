@@ -20,14 +20,12 @@
       </div>
 
       {% for group in grid %}
-        <div class="flex items-center gap-4 mt-6 mb-3">
-          <div style="flex:1;height:1px;background:var(--color-promo-accent);"></div>
-          <h3 class="text-sm font-semibold uppercase tracking-widest shrink-0"
-              style="color:var(--color-promo-accent);">
-            {{ group.category.display_name|default:group.category.name }}
-          </h3>
-          <div style="flex:1;height:1px;background:var(--color-promo-accent);"></div>
-        </div>
+        {% if group.category.display_name %}
+        <h3 class="text-sm font-semibold uppercase tracking-widest mt-6 mb-3"
+            style="color:var(--color-promo-accent);">
+          {{ group.category.display_name }}
+        </h3>
+        {% endif %}
 
         {% with plain=group.assignments|without_subcategory subcat_items=group.assignments|with_subcategory %}
           {% if plain %}

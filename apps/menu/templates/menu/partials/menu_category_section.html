@@ -40,11 +40,7 @@
   ">
   {% endif %}
 
-  <div class="flex items-center gap-6 mb-1">
-    <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
-    <h2 class="text-center shrink-0">{{ category.display_name|default:category.name }}</h2>
-    <div style="flex:1;height:1px;background:var(--color-gold-deep);"></div>
-  </div>
+  <h2 class="text-center mb-1">{{ category.display_name|default:category.name }}</h2>
   {% if category.description %}
     <p class="text-center t-description mb-6 max-w-2xl mx-auto">
       {{ category.description }}
