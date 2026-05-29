@@ -13,7 +13,7 @@
 
 <div class="promo-subcat-card rounded-lg shadow p-5 bg-black/5">
   <h4 class="font-semibold text-lg mb-3 text-center" style="color: var(--color-promo-accent);">
-    {{ subcat.list.0.subcategory.display_name|default:subcat.grouper }}
+    {{ subcat.list.0.subcategory.display_name }}
   </h4>
   <ul class="space-y-1">
     {% for assignment in subcat.list %}

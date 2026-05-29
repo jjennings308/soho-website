@@ -32,7 +32,7 @@
 
   {# ── Promo heading ── #}
   <h2 class="text-center mb-1" style="color: var(--color-promo-primary);">
-    {{ menu.title }}
+    {{ menu.display_name }}
   </h2>
 
   {% if menu.description %}
@@ -54,7 +54,7 @@
             class="text-center mt-6 mb-2"
             style="color: var(--color-promo-accent);"
           >
-            {{ category.display_name|default:category.name }}
+            {{ category.display_name }}
           </h3>
         {% endif %}
         {% endwith %}

@@ -14,7 +14,7 @@
 >
 
   <h1 class="text-center mb-1" style="color: var(--color-promo-primary);">
-    {{ menu.title }}
+    {{ menu.display_name }}
   </h1>
 
   {% if menu.description %}
@@ -32,7 +32,7 @@
         {# Per-category heading when there are multiple categories #}
         {% if category_assignments|length > 1 %}
           <h2 class="text-center mt-8 mb-2" style="color: var(--color-promo-accent);">
-            {{ category.display_name|default:category.name }}
+            {{ category.display_name }}
           </h2>
         {% endif %}
 

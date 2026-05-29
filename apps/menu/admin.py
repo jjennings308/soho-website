@@ -424,7 +424,7 @@ class MenuAdminForm(forms.ModelForm):
 class MenuAdmin(admin.ModelAdmin):
     form = MenuAdminForm
     list_display  = [
-        'title', 'menu_type', 'role', 'is_default', 'is_active',
+        'title', 'display_name', 'menu_type', 'role', 'is_default', 'is_active',
         'homepage_slot', 'scheme_preview',
         'active_from', 'active_until',
     ]
@@ -437,7 +437,7 @@ class MenuAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Identity', {
-            'fields': ('title', 'slug', 'description'),
+            'fields': ('title', 'display_name', 'slug', 'description'),
         }),
         ('Type & Role', {
             'fields': ('menu_type', 'is_default', 'role'),
