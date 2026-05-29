@@ -1,5 +1,5 @@
 """
-One-time management command to copy `name` → `display_name` for
+One-time management command to copy name/title → display_name for
 Menu, MenuCategory, and MenuSubCategory records where display_name is blank.
 
 Place at:
@@ -19,7 +19,7 @@ from apps.menu.models import Menu, MenuCategory, MenuSubCategory
 
 class Command(BaseCommand):
     help = (
-        'One-time: copies name → display_name for Menu, MenuCategory, '
+        'One-time: copies name/title to display_name for Menu, MenuCategory, '
         'and MenuSubCategory where display_name is blank. Safe to re-run.'
     )
 
@@ -43,21 +43,26 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING('DRY RUN — no changes will be saved.\n'))
 
-        targets = []
-        if model_choice in ('menu', 'all'):
-            targets.append(('Menu', Menu))
-        if model_choice in ('category', 'all'):
-            targets.append(('MenuCategory', MenuCategory))
-        if model_choice in ('subcategory', 'all'):
-            targets.append(('MenuSubCategory', MenuSubCategory))
+        # (label, Model, source_field, order_by_field)
+        # Menu uses 'title' as its human name field — not 'name'
+        # MenuCategory and MenuSubCategory use 'name'
+        all_targets = [
+            ('menu',        'Menu',            Menu,            'title', 'title'),
+            ('category',    'MenuCategory',    MenuCategory,    'name',  'name'),
+            ('subcategory', 'MenuSubCategory', MenuSubCategory, 'name',  'name'),
+        ]
+
+        targets = [
+            t for t in all_targets
+            if model_choice == 'all' or model_choice == t[0]
+        ]
 
         total_updated = 0
 
-        for label, Model in targets:
-            self.stdout.write(f'\n{label}:')
+        for _key, label, Model, source_field, order_field in targets:
+            self.stdout.write(f'\n{label} (copying from: {source_field!r}):')
 
-            # Only touch records where display_name is blank
-            qs = Model.objects.filter(display_name='').order_by('name')
+            qs = Model.objects.filter(display_name='').order_by(order_field)
             count = qs.count()
 
             if count == 0:
@@ -68,18 +73,19 @@ class Command(BaseCommand):
 
             updated = 0
             for obj in qs:
-                self.stdout.write(f'    [{obj.pk}] {obj.name!r} → display_name = {obj.name!r}')
+                source_value = getattr(obj, source_field, '') or ''
+                self.stdout.write(
+                    f'    [{obj.pk}] {source_value!r} → display_name'
+                )
                 if not dry_run:
-                    obj.display_name = obj.name
+                    obj.display_name = source_value
                     obj.save(update_fields=['display_name'])
                 updated += 1
 
             if dry_run:
                 self.stdout.write(f'  Would update {updated} records.')
             else:
-                self.stdout.write(
-                    self.style.SUCCESS(f'  Updated {updated} records.')
-                )
+                self.stdout.write(self.style.SUCCESS(f'  Updated {updated} records.'))
 
             total_updated += updated
 
