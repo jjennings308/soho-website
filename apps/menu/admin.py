@@ -91,17 +91,17 @@ class CategoryItemAssignmentInline(admin.TabularInline):
 
 @admin.register(MenuCategory)
 class MenuCategoryAdmin(admin.ModelAdmin):
-    list_display  = ['name', 'category_type', 'order', 'is_active', 'bg_image_preview', 'assigned_menu_count', 'item_count']
+    list_display  = ['name', 'display_name', 'category_type', 'order', 'is_active', 'bg_image_preview', 'assigned_menu_count', 'item_count']
     list_editable = ['order', 'is_active']
     list_filter   = ['category_type', 'is_active']
-    search_fields = ['name']
+    search_fields = ['name', 'display_name']
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ['bg_image_thumbnail']
     inlines = [CategoryItemAssignmentInline]
 
     fieldsets = (
         (None, {
-            'fields': ('name', 'slug', 'category_type', 'description', 'order', 'is_active', 'show_disclaimer'),
+            'fields': ('name', 'display_name', 'slug', 'category_type', 'description', 'order', 'is_active', 'show_disclaimer'),
         }),
         ('Background Image', {
             'fields': ('bg_image_thumbnail', 'background_image'),
@@ -150,11 +150,16 @@ class MenuCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(MenuSubCategory)
 class MenuSubCategoryAdmin(admin.ModelAdmin):
-    list_display  = ['name', 'category', 'order', 'is_active']
+    list_display  = ['name', 'display_name', 'category', 'order', 'is_active']
     list_editable = ['order', 'is_active']
     list_filter   = ['category__category_type', 'category']
-    search_fields = ['name']
+    search_fields = ['name', 'display_name']
     prepopulated_fields = {'slug': ('name',)}
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'display_name', 'slug', 'category', 'description', 'order', 'is_active'),
+        }),
+    )
 
 
 # =============================================================================
