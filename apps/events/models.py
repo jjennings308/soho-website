@@ -77,7 +77,7 @@ class EventDay(models.Model):
         max_length=4,
         choices=HOME_AWAY_CHOICES,
         blank=True,
-        help_text="Home or away game. Away games use full menu.",
+        help_text="Home or away game. New away games default to the full menu; switch on limited menu for e.g. a watch party.",
     )
     game_time = models.TimeField(
         blank=True,
@@ -128,7 +128,7 @@ class EventDay(models.Model):
     def save(self, *args, **kwargs):
         # Smart default for limited_menu on creation only — never overrides staff changes.
         # Only applies to game_day events; concerts, private parties, etc. are unaffected.
-        if not self.pk and self.event_type == 'game_day':
+        if not self.pk and self.event_type == 'game':  # the 'Game Day' choice
             if self.home_away == 'home':
                 self.limited_menu = True
             elif self.home_away == 'away':
@@ -172,8 +172,8 @@ class EventDay(models.Model):
         """
         if not self.is_active or not self.limited_menu:
             return False
-        if self.home_away == 'away':
-            return False
+        # No home/away check: away games default to limited_menu=False in
+        # save(), and staff may switch it on (e.g. an away-game watch party).
         if self.game_time is None:
             return True
         now = timezone.localtime(timezone.now())
