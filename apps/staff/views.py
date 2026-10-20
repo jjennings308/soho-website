@@ -63,6 +63,18 @@ class StaffLogoutView(LogoutView):
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
+def _with_freshness_badge(menu):
+    """Dashboard row for a menu: green ≤7 days since update, gold ≤14, red after."""
+    days = (timezone.now() - menu.updated_at).days
+    if days <= 7:
+        badge_class, badge_label = 'sp-pill--green', f'Updated {days}d ago'
+    elif days <= 14:
+        badge_class, badge_label = 'sp-pill--gold', f'Updated {days}d ago'
+    else:
+        badge_class, badge_label = 'sp-pill--red', f'Stale — {days}d ago'
+    return {'menu': menu, 'badge_class': badge_class, 'badge_label': badge_label}
+
+
 class DashboardView(StaffRequiredMixin, View):
     def get(self, request):
         menu_mode = EventDay.get_current_menu_mode()
@@ -78,31 +90,14 @@ class DashboardView(StaffRequiredMixin, View):
         unpublished_count = MediaItem.objects.filter(owner_type='staff', is_published=False).count()
         new_inquiry_count = EventInquiry.objects.filter(status='new').count()
         active_popup = SitePopup.get_active()
-        promo_menus = []
-        for m in Menu.objects.filter(menu_type='promo').select_related('color_scheme').order_by('title'):
-            days = (timezone.now() - m.updated_at).days
-            if days <= 7:
-                badge_class, badge_label = 'sp-pill--green', f'Updated {days}d ago'
-            elif days <= 14:
-                badge_class, badge_label = 'sp-pill--gold', f'Updated {days}d ago'
-            else:
-                badge_class, badge_label = 'sp-pill--red', f'Stale — {days}d ago'
-            promo_menus.append({'menu': m, 'badge_class': badge_class, 'badge_label': badge_label})
-
-        specials_menus = []
-        for m in Menu.objects.filter(menu_type='weekly_specials').order_by('-valid_from'):
-            days = (timezone.now() - m.updated_at).days
-            if days <= 7:
-                badge_class, badge_label = 'sp-pill--green', f'Updated {days}d ago'
-            elif days <= 14:
-                badge_class, badge_label = 'sp-pill--gold', f'Updated {days}d ago'
-            else:
-                badge_class, badge_label = 'sp-pill--red', f'Stale — {days}d ago'
-            specials_menus.append({
-                'menu': m,
-                'badge_class': badge_class,
-                'badge_label': badge_label,
-            })
+        promo_menus = [
+            _with_freshness_badge(m)
+            for m in Menu.objects.filter(menu_type='promo').select_related('color_scheme').order_by('title')
+        ]
+        specials_menus = [
+            _with_freshness_badge(m)
+            for m in Menu.objects.filter(menu_type='weekly_specials').order_by('-valid_from')
+        ]
 
         return render(request, 'staff/dashboard.html', {
             'menu_mode': menu_mode,
@@ -489,22 +484,18 @@ class InquiryDeleteView(StaffRequiredMixin, View):
 # ── Popups ────────────────────────────────────────────────────────────────────
 
 class StaffSettingsView(StaffRequiredMixin, View):
-    def _get_settings(self):
-        return SiteSettings.objects.first()
-
     def get(self, request):
-        site = self._get_settings()
+        site = SiteSettings.load()
         return render(request, 'staff/settings.html', {
             'form': SiteSettingsForm(instance=site),
             'color_schemes': ColorScheme.objects.order_by('-is_default', 'name'),
         })
 
     def post(self, request):
-        site = self._get_settings()
+        site = SiteSettings.load()
         form = SiteSettingsForm(request.POST, instance=site)
         if form.is_valid():
             form.save()
-            from django.contrib import messages
             messages.success(request, 'Settings saved.')
             return redirect('staff:settings')
         return render(request, 'staff/settings.html', {
