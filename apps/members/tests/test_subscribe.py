@@ -1,3 +1,6 @@
+import smtplib
+from unittest import mock
+
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
@@ -26,6 +29,38 @@ class SubscribeTests(TestCase):
     def test_subscribe_form_renders_honeypot_field(self):
         response = self.client.post(self.url, {})
         self.assertContains(response, 'name="hp_check"')
+
+    def test_invalid_email_rejected_without_creating_member(self):
+        response = self.client.post(self.url, {'first_name': 'Pat', 'email': 'not an email'})
+        self.assertIn('valid email', response.context['error'])
+        self.assertFalse(SoHoMember.objects.exists())
+
+    def test_retry_for_unconfirmed_address_updates_first_name(self):
+        SoHoMember.objects.create(email='pat@example.com', first_name='Patt')
+        self.client.post(self.url, {'first_name': 'Pat', 'email': 'pat@example.com'})
+        self.assertEqual(SoHoMember.objects.get().first_name, 'Pat')
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_confirmed_member_told_already_subscribed_without_email(self):
+        SoHoMember.objects.create(email='pat@example.com', first_name='Pat', is_active=True)
+        response = self.client.post(self.url, {'first_name': 'Someone', 'email': 'pat@example.com'})
+        self.assertTrue(response.context['already_subscribed'])
+        self.assertEqual(SoHoMember.objects.get().first_name, 'Pat')
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_smtp_failure_shows_friendly_error_not_500(self):
+        with mock.patch('apps.members.views.send_mail', side_effect=smtplib.SMTPServerDisconnected()), \
+                self.assertLogs('apps.members.views', level='ERROR'):
+            response = self.client.post(self.url, {'first_name': 'Pat', 'email': 'pat@example.com'})
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('try again', response.context['error'])
+
+    def test_after_smtp_failure_retry_sends_immediately(self):
+        with mock.patch('apps.members.views.send_mail', side_effect=ConnectionRefusedError()), \
+                self.assertLogs('apps.members.views', level='ERROR'):
+            self.client.post(self.url, {'first_name': 'Pat', 'email': 'pat@example.com'})
+        self.client.post(self.url, {'first_name': 'Pat', 'email': 'pat@example.com'})
+        self.assertEqual(len(mail.outbox), 1)
 
 
 class SubscribeThrottleTests(TestCase):

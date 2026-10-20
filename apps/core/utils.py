@@ -91,3 +91,8 @@ def is_throttled(key, limit, window):
     count += 1
     cache.set(cache_key, (count, reset_at), timeout=max(1, int(reset_at - now)))
     return count > limit
+
+
+def clear_throttle(key):
+    """Forget the hits recorded against `key` by is_throttled()."""
+    cache.delete(f'throttle:{key}')
