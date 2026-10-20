@@ -10,6 +10,7 @@ from django.core.management import call_command
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 
 from apps.core.models import ColorScheme, EventInquiry, Review, SitePopup, SiteSettings
@@ -20,6 +21,19 @@ from apps.members.newsletter import send_newsletter
 from apps.menu.models import Menu
 
 from .forms import ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
+
+
+def _safe_next(request, *candidates, default):
+    """
+    Return the first candidate URL that stays on this site, else `default`.
+    Guards ?next= / Referer values against open redirects and javascript: URLs.
+    """
+    for url in candidates:
+        if url and url_has_allowed_host_and_scheme(
+            url, allowed_hosts={request.get_host()}, require_https=request.is_secure(),
+        ):
+            return url
+    return default
 
 
 class StaffRequiredMixin(LoginRequiredMixin):
@@ -285,7 +299,8 @@ class MediaToggleView(StaffRequiredMixin, View):
         item.is_published = not item.is_published
         item.save(update_fields=['is_published'])
         # Return to the same page the user was on
-        next_url = request.POST.get('next') or request.META.get('HTTP_REFERER') or reverse('staff:media_library')
+        next_url = _safe_next(request, request.POST.get('next'), request.META.get('HTTP_REFERER'),
+                              default=reverse('staff:media_library'))
         return redirect(next_url)
 
 
@@ -322,7 +337,7 @@ class MediaDeleteView(StaffRequiredMixin, View):
                 f'Cannot delete "{item.name}" — it is used by: {refs}. '
                 'Remove those assignments first, then delete.'
             )
-        next_url = request.POST.get('next') or reverse('staff:media_library')
+        next_url = _safe_next(request, request.POST.get('next'), default=reverse('staff:media_library'))
         return redirect(next_url)
 
 
@@ -332,12 +347,12 @@ class MediaEditView(StaffRequiredMixin, View):
 
     def get(self, request, pk):
         item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
-        back_url = request.GET.get('next') or reverse('staff:media_library')
+        back_url = _safe_next(request, request.GET.get('next'), default=reverse('staff:media_library'))
         return render(request, 'staff/media/edit.html', self._ctx(MediaItemEditForm(instance=item), item, back_url))
 
     def post(self, request, pk):
         item = get_object_or_404(MediaItem, pk=pk, owner_type='staff')
-        back_url = request.POST.get('next') or reverse('staff:media_library')
+        back_url = _safe_next(request, request.POST.get('next'), default=reverse('staff:media_library'))
         form = MediaItemEditForm(request.POST, instance=item)
         if form.is_valid():
             form.save()
@@ -461,7 +476,7 @@ class InquiryStatusView(StaffRequiredMixin, View):
         if status in ('new', 'contacted', 'closed'):
             inquiry.status = status
             inquiry.save(update_fields=['status'])
-        return redirect(request.META.get('HTTP_REFERER', 'staff:inquiries'))
+        return redirect(_safe_next(request, request.META.get('HTTP_REFERER'), default=reverse('staff:inquiries')))
 
 
 class InquiryDeleteView(StaffRequiredMixin, View):
