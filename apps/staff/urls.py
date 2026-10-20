@@ -61,6 +61,7 @@ urlpatterns = [
 
     # Color reference
     path('colors/', views.ColorReferenceView.as_view(), name='colors'),
+    path('help/', views.StaffHelpView.as_view(), name='help'),
 
     # Newsletter
     path('newsletter/', views.NewsletterListView.as_view(), name='newsletter'),

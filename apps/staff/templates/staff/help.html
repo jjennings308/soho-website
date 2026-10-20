@@ -1,0 +1,241 @@
+{% extends "staff/base.html" %}
+{% block title %}Help{% endblock %}
+{% block page_title %}Help{% endblock %}
+{% block page_tip %}{% endblock %}
+
+
+{% block content %}
+<style>
+  .help-toc { display:flex; flex-wrap:wrap; gap:0.4rem 1rem; margin:0; padding:0; list-style:none; font-size:0.875rem; }
+  .help-toc a { color:var(--color-gold-deep); text-decoration:none; }
+  .help-toc a:hover { text-decoration:underline; }
+  .help-topic { scroll-margin-top:1rem; margin-bottom:1.25rem; }
+  .help-topic h2 { font-size:1.05rem; font-weight:600; margin-bottom:0.75rem; color:var(--color-text-tertiary); }
+  .help-topic h3 { font-size:0.9rem; font-weight:600; margin:1rem 0 0.4rem; color:var(--color-text-tertiary); }
+  .help-topic p, .help-topic li { font-size:0.875rem; line-height:1.6; color:var(--color-text-tertiary); }
+  .help-topic p { margin-bottom:0.6rem; }
+  .help-topic ul, .help-topic ol { padding-left:1.25rem; margin-bottom:0.6rem; }
+  .help-topic li { margin-bottom:0.25rem; }
+  .help-topic ul { list-style:disc; }
+  .help-topic ol { list-style:decimal; }
+  .help-note { font-size:0.82rem; color:var(--color-mid-gray); }
+  .help-back { font-size:0.78rem; color:var(--color-gold-deep); text-decoration:none; }
+</style>
+
+<div class="sp-card help-topic">
+  <p style="margin-bottom:0.75rem;">How to use the staff portal. Each page also has a <strong>How this page works</strong> tip at the top that links back here.</p>
+  <ul class="help-toc">
+    {% for topic in topics %}<li><a href="#{{ topic.id }}">{{ topic.title }}</a></li>{% endfor %}
+  </ul>
+</div>
+
+{# ── Getting around ─────────────────────────────────────────────────────── #}
+<section id="getting-around" class="sp-card help-topic">
+  <h2>Getting around the portal</h2>
+  <p>The menu on the left groups pages into <strong>Operations</strong> (day-to-day running of the site){% if staff_is_manager %}, <strong>Content</strong> (photos, newsletter, popups, reviews and inquiries){% endif %} and <strong>Tools</strong>. On a phone, tap <strong>&#9776;</strong> at the top to open it. <strong>Sign out</strong> is at the bottom of the menu.</p>
+  <h3>What you can do</h3>
+  <ul>
+    <li><strong>Staff</strong> can view the dashboard, menu mode, events and menu items.</li>
+    <li><strong>Managers</strong> can also make changes and use the Content pages.</li>
+    <li><strong>Site administrators</strong> can also change site settings.</li>
+  </ul>
+  <p>
+    {% if request.user.is_superuser %}You are a site administrator.
+    {% elif staff_is_manager %}You are a manager.
+    {% else %}Your account is view-only. If something needs changing, ask a manager.{% endif %}
+  </p>
+</section>
+
+{# ── Dashboard ──────────────────────────────────────────────────────────── #}
+<section id="dashboard" class="sp-card help-topic">
+  <h2>Dashboard</h2>
+  <p>The first page you see. The cards along the top show the current <strong>menu mode</strong>, the number of confirmed newsletter <strong>subscribers</strong>, <strong>draft newsletters</strong>, <strong>unpublished photos</strong>, whether a <strong>popup</strong> is live, and <strong>new inquiries</strong> waiting for a reply.</p>
+  <p>Below are <strong>today's events</strong>, the next <strong>upcoming events</strong>, and <strong>menu status</strong>. Menu status shows when the weekly specials and promo menus were last updated: green within a week, gold within two weeks, red after that — a reminder to refresh them.</p>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+
+{# ── Menu mode ──────────────────────────────────────────────────────────── #}
+<section id="menu-mode" class="sp-card help-topic">
+  <h2>Menu mode (full vs. limited menu)</h2>
+  <p>On busy event days the website shows a shorter <strong>limited menu</strong> instead of the full menu. The Menu Mode page shows which one is live right now.</p>
+  <ul>
+    <li><strong>Automatic</strong> (normal setting) — follows the events calendar. The limited menu starts a set number of hours (usually 2) before an event's start time, or all day if the event has no time. Only events with <em>Limited menu</em> ticked count.</li>
+    <li><strong>Force Full Menu</strong> — always show the full menu, e.g. if a game is cancelled.</li>
+    <li><strong>Force Game Day Mode</strong> — show the limited menu now, e.g. for an unexpected rush.</li>
+  </ul>
+  {% if staff_is_manager %}
+  <p>Click an option to switch. <strong>Remember to switch back to Automatic</strong> afterwards — a forced mode stays on until someone changes it.</p>
+  {% else %}
+  <p class="help-note">Managers can change the menu mode.</p>
+  {% endif %}
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+
+{# ── Events ─────────────────────────────────────────────────────────────── #}
+<section id="events" class="sp-card help-topic">
+  <h2>Events calendar</h2>
+  <p>Games, private parties, live music and holidays. Events control when the limited menu is used (see Menu mode) and appear on the public events calendar.</p>
+  {% if staff_is_manager %}
+  <h3>Add an event</h3>
+  <ol>
+    <li>Events &rarr; <strong>+ Add Event</strong>.</li>
+    <li>Choose the <strong>date</strong> and <strong>type</strong>. For games, pick the team and <strong>home or away</strong>.</li>
+    <li>Add a <strong>start time</strong> if there is one — the limited menu starts a couple of hours before it. Leave it blank for all day.</li>
+    <li><strong>Label</strong> is optional — it replaces the default name (e.g. “Steelers vs. Ravens”).</li>
+    <li>Save.</li>
+  </ol>
+  <p><strong>Home games</strong> get the limited menu automatically; <strong>away games</strong> don't. To use the limited menu for an away game (say, a watch party), edit the event after saving and tick <strong>Limited menu</strong>. Untick it for events that keep full service, such as most live music.</p>
+  <h3>Change or remove an event</h3>
+  <ul>
+    <li><strong>Edit</strong> — change any detail.</li>
+    <li><strong>Deactivate</strong> — hide the event and stop it affecting the menu, without deleting it. Activate brings it back.</li>
+    <li><strong>Delete</strong> — remove it for good.</li>
+  </ul>
+  {% else %}
+  <p class="help-note">You can see upcoming and recent events. Managers can add, change and remove them.</p>
+  {% endif %}
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+
+{# ── Menu items ─────────────────────────────────────────────────────────── #}
+<section id="menu-items" class="sp-card help-topic">
+  <h2>Menu items and photos</h2>
+  <p>Every dish and drink on any menu. Search by name, or filter by availability and flags (featured, new, chef's special, seasonal).</p>
+  {% if staff_is_manager %}
+  <h3>Choose an item's photos</h3>
+  <ol>
+    <li>Make sure the photo is in the <a href="#media" class="help-back">media library</a> first.</li>
+    <li>Menu Items &rarr; find the item &rarr; <strong>Images</strong>.</li>
+    <li>In each row pick a photo and an order number. Select <strong>Primary</strong> for the item's main photo.</li>
+    <li>To remove a photo from the item, tick <strong>Delete</strong> on its row. (The photo stays in the media library.)</li>
+    <li>Save.</li>
+  </ol>
+  {% endif %}
+  <p class="help-note">Menu names, prices and descriptions are changed by a site administrator.</p>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+
+{% if 'inquiries' in visible %}
+{# ── Inquiries ──────────────────────────────────────────────────────────── #}
+<section id="inquiries" class="sp-card help-topic">
+  <h2>Event inquiries</h2>
+  <p>Requests from the website's private-event form. Each new inquiry is also emailed to the restaurant's notification address, and the customer automatically gets a “we received your inquiry” email.</p>
+  <ul>
+    <li>Use the status buttons to track progress: <strong>New</strong> &rarr; <strong>Contacted</strong> once you've reached out &rarr; <strong>Closed</strong> when it's booked or declined.</li>
+    <li>Filter by status at the top to see only what still needs attention.</li>
+    <li><strong>Delete</strong> removes an inquiry for good — use it for spam.</li>
+  </ul>
+  <p>Customers say whether they prefer a call or an email — check before reaching out.</p>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+{% endif %}
+
+{% if 'media' in visible %}
+{# ── Media library ──────────────────────────────────────────────────────── #}
+<section id="media" class="sp-card help-topic">
+  <h2>Media library (photos)</h2>
+  <p>Every photo on the site lives here. The public <strong>Gallery</strong> page shows only published photos.</p>
+  <h3>Upload a photo</h3>
+  <ol>
+    <li>Media Library &rarr; <strong>+ Upload</strong>.</li>
+    <li>Choose the file and give it a <strong>name</strong> you'll recognise (e.g. “Burger close-up summer”).</li>
+    <li>Pick a <strong>category</strong> — it decides which gallery tab the photo appears under.</li>
+    <li>Add <strong>alt text</strong>: a short description of the photo for visitors who use screen readers.</li>
+    <li>The <strong>caption</strong> is shown to visitors when they open the photo.</li>
+    <li>Tick <strong>Published</strong> to show it in the gallery straight away, or leave it hidden and publish later.</li>
+  </ol>
+  <h3>Lots of photos at once</h3>
+  <p>Copy the files to the server's <code>media/gallery/</code> folder (ask your site administrator how), then click <strong>Import from Disk</strong>. Imported photos start hidden, named after their file names.</p>
+  <h3>Publish, edit, delete</h3>
+  <ul>
+    <li><strong>Show</strong> / <strong>Hide</strong> on each photo publishes it to the gallery or takes it down.</li>
+    <li><strong>Edit</strong> changes the name, category, alt text, caption and display order.</li>
+    <li><strong>Delete</strong> removes the photo from the library. The file is kept in a <em>deleted</em> folder on the server, so an administrator can recover it.</li>
+    <li>A photo used elsewhere (a banner, popup or menu item) can't be deleted — the message tells you where it's used. Remove it there first.</li>
+  </ul>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+{% endif %}
+
+{% if 'newsletter' in visible %}
+{# ── Newsletter ─────────────────────────────────────────────────────────── #}
+<section id="newsletter" class="sp-card help-topic">
+  <h2>Newsletter</h2>
+  <p>Emails to everyone who signed up on the website and confirmed their address. Each email includes an unsubscribe link automatically.</p>
+  <h3>Write and send</h3>
+  <ol>
+    <li>Newsletter &rarr; <strong>+ Compose</strong>. Enter a subject and write the message — you can add headings, lists, links and images.</li>
+    <li>Save. This creates a <strong>draft</strong>; nothing is sent yet.</li>
+    <li>Check the preview. Use <strong>Edit</strong> to make changes.</li>
+    <li>When it's right, click <strong>Send Now</strong> and confirm. The message says how many people it went to.</li>
+  </ol>
+  <ul>
+    <li><strong>Sending can't be undone.</strong> Clicking Send Now twice won't send it twice.</li>
+    <li>If sending fails completely (for example the mail server is down), the newsletter stays a draft — try again later.</li>
+    <li><strong>Duplicate</strong> starts a new draft from an earlier newsletter.</li>
+    <li>Drafts can be deleted; sent newsletters are kept as a record.</li>
+  </ul>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+{% endif %}
+
+{% if 'popups' in visible %}
+{# ── Popups ─────────────────────────────────────────────────────────────── #}
+<section id="popups" class="sp-card help-topic">
+  <h2>Site popups</h2>
+  <p>A message box that appears a few seconds after a visitor arrives — for an announcement, a special, or newsletter signups.</p>
+  <ol>
+    <li>Popups &rarr; <strong>+ New Popup</strong>. The <strong>title</strong> is just for you; visitors see the <strong>heading</strong> and <strong>body</strong>.</li>
+    <li>Either add a <strong>button</strong> (label and link), or tick <strong>Show email signup form</strong> to collect newsletter signups instead.</li>
+    <li>Choose colors and how many seconds to wait before it appears.</li>
+    <li>Save, then click <strong>Activate</strong> in the list.</li>
+  </ol>
+  <ul>
+    <li>Only <strong>one popup is live at a time</strong> — activating one switches off the others.</li>
+    <li>A visitor who closes the popup won't see it again until their next visit. People who have already subscribed never see it.</li>
+    <li>Deactivate it when the promotion ends.</li>
+  </ul>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+{% endif %}
+
+{% if 'reviews' in visible %}
+{# ── Reviews ────────────────────────────────────────────────────────────── #}
+<section id="reviews" class="sp-card help-topic">
+  <h2>Reviews</h2>
+  <p>Customer reviews shown on the website's Reviews page and homepage.</p>
+  <ul>
+    <li><strong>Import Google</strong> / <strong>Import Yelp</strong> fetch the latest reviews (Google sends up to 5, Yelp up to 3). Reviews already imported are skipped.</li>
+    <li>Imported reviews arrive <strong>Hidden</strong>. Click the Hidden button to make a review <strong>Active</strong> on the Reviews page (click again to hide it).</li>
+    <li><strong>&#9734; Feature</strong> a review to put it on the homepage — the first three featured reviews are shown.</li>
+    <li><strong>Delete</strong> removes a review for good.</li>
+  </ul>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+{% endif %}
+
+{# ── Colors ─────────────────────────────────────────────────────────────── #}
+<section id="colors" class="sp-card help-topic">
+  <h2>Color reference</h2>
+  <p>A swatch chart of the site's named theme colors and the background/text pairs that read well together. It's for reference when picking colors for banners, panels and popups — nothing on it can be changed.</p>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+
+{% if 'settings' in visible %}
+{# ── Settings ───────────────────────────────────────────────────────────── #}
+<section id="settings" class="sp-card help-topic">
+  <h2>Site settings and color schemes</h2>
+  <p>Administrators only. Changes take effect on the site immediately.</p>
+  <ul>
+    <li><strong>Internal notification email</strong> — where inquiry and contact-form alerts go. Not shown on the site.</li>
+    <li><strong>Public contact email</strong> and <strong>phone</strong> — shown on the site and in the footer.</li>
+    <li><strong>Reservations URL</strong> — the link on the homepage reservation bar.</li>
+  </ul>
+  <h3>Color schemes</h3>
+  <p>Named sets of colors used by promo menus and popups. Editing a scheme restyles everything that uses it. Only one scheme can be the <strong>default</strong> (used when nothing else is chosen) — marking a new one as default unmarks the old one.</p>
+  <p class="help-note">Everything else (banners, page text, menus, staff accounts) is managed in Django Admin, linked under Tools. To make someone a manager, open their user in Django Admin and add the <strong>Staff Manager</strong> group.</p>
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+{% endif %}
+
+{% endblock %}

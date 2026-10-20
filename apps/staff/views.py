@@ -21,6 +21,7 @@ from apps.members.newsletter import send_newsletter
 from apps.menu.models import Menu
 
 from .forms import ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
+from .help import TOPICS
 from .permissions import MANAGER, STAFF, SUPERUSER, has_access
 
 
@@ -607,6 +608,23 @@ class PopupDeleteView(StaffRequiredMixin, View):
         popup = get_object_or_404(SitePopup, pk=pk)
         popup.delete()
         return redirect('staff:popups')
+
+
+# ── Help ──────────────────────────────────────────────────────────────────────
+
+class StaffHelpView(StaffRequiredMixin, View):
+    staff_access = STAFF
+
+    def get(self, request):
+        topics = [
+            {'id': topic_id, 'title': title}
+            for topic_id, title, level in TOPICS
+            if has_access(request.user, level, 'GET')  # topics for pages this user can open
+        ]
+        return render(request, 'staff/help.html', {
+            'topics': topics,
+            'visible': {t['id'] for t in topics},
+        })
 
 
 # ── Color Reference ───────────────────────────────────────────────────────────

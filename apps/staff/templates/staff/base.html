@@ -107,6 +107,9 @@
             <a href="{% url 'core:home' %}" target="_blank" rel="noopener">
               &#9670; View Site &#8599;
             </a>
+            <a href="{% url 'staff:help' %}" class="{% if request.resolver_match.url_name == 'help' %}active{% endif %}">
+              &#9670; Help
+            </a>
             {% if request.user.is_superuser %}
             <a href="{% url 'staff:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
               &#9670; Settings
@@ -147,6 +150,7 @@
             </div>
           {% endfor %}
         {% endif %}
+        {% block page_tip %}{% include "staff/partials/_page_tip.html" %}{% endblock %}
         {% block content %}{% endblock %}
       </div>
     </div>

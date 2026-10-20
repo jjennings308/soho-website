@@ -1,0 +1,11 @@
+{% load staff_help %}
+{% staff_page_tip as tip %}
+{% if tip %}
+<details class="sp-tip" style="margin-bottom:1.25rem;border:1px solid var(--color-gold-light);border-left:3px solid var(--color-gold-primary);border-radius:4px;background:var(--color-white);font-size:0.85rem;">
+  <summary style="cursor:pointer;padding:0.55rem 0.9rem;color:var(--color-gold-deep);font-weight:600;list-style-position:inside;">How this page works</summary>
+  <div style="padding:0 0.9rem 0.75rem;color:var(--color-text-tertiary);line-height:1.55;">
+    {{ tip.text }}
+    <a href="{{ tip.url }}" style="color:var(--color-gold-deep);white-space:nowrap;">More in Help &rarr;</a>
+  </div>
+</details>
+{% endif %}
