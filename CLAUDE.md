@@ -24,6 +24,8 @@ npm run dev
 npm run build
 ```
 
+Tailwind runs **only on dev machines**. Commit the built `static/dist/output.css` — `scripts/release.sh` refuses to release if it's stale. Production never runs npm: `collectstatic` copies the committed files and, via `config.staticfiles.HashedStaticFilesStorage`, writes content-hashed copies (`output.<hash>.css`) that `{% static %}` links to, so every deploy busts browser caches. Don't add `?v=` query strings. `static/src/` is excluded from `collectstatic`.
+
 ### Database migrations
 ```bash
 python manage.py makemigrations
@@ -69,13 +71,12 @@ If `.envrc` is blocked, run `direnv allow` from the project root. With direnv ac
 
 | App | Responsibility |
 |-----|---------------|
-| `apps.core` | Site settings singleton, page views, banners, 50/50 panels, home page, color schemes, site popup, event inquiries |
+| `apps.core` | Site settings singleton, page views, banners, 50/50 panels, home page, color schemes, site popup, event inquiries, reviews (see Reviews section) |
 | `apps.menu` | Menu items, categories, menus, promotions; full/limited menu mode |
 | `apps.content` | Content slot/block CMS system for editable copy |
 | `apps.events` | Event calendar driving limited-menu mode (game days, etc.) |
 | `apps.media` | Site-wide media library — images and video. Drives the public `/gallery/` page and supplies media to banners, menu items, categories, popups, and any other use point. Replaces `apps.gallery`. |
 | `apps.members` | Mailing list, member accounts, future photo submissions |
-| `apps.reviews` | Third-party and member reviews with moderation and aggregate ratings |
 | `apps.bookings` | **Planned — not yet built.** Private event lifecycle: inquiry → booking → planning → confirmed → completed. Replaces `EventInquiry` in `apps.core` when built. Covers customer communications, audit trail, templated emails, custom event menus, and staff assignment. |
 | `apps.staff` | Purpose-built staff portal — no Django admin required for day-to-day ops |
 
@@ -440,6 +441,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
 | `/staff/popups/` | List, add, edit, delete site popups |
 | `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
+| `/staff/help/` | Task-based help for every tier (topics filtered by tier). Each portal page shows a collapsible "How this page works" tip linking to its topic. Content: `apps/staff/help.py` (topics + per-page tips) and `staff/help.html` — tests fail if a portal page has no tip or the two drift apart |
 | `/staff/settings/` | Edit `SiteSettings` (notification email, phone, reservations URL, etc.); manage color schemes (add/edit/delete) |
 
 **Media library page retention:** Edit/cancel/delete on the media edit page all return to the URL that launched the edit. The list page passes `?next={{ request.get_full_path|urlencode }}` on edit links; the edit view threads it through a hidden `<input name="next">` field so POST redirects land back on the same filtered/paginated page. `safe='/'` on the `urlencode` filter keeps path slashes readable.
@@ -448,7 +450,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 
 ### Design decisions
 
-- No models of its own — no migrations needed for this app.
+- No models of its own. One data migration (`staff/0001`) creates the `Staff Manager` group used for access tiers (`apps/staff/permissions.py`).
 - All styles are inline CSS using brand CSS custom properties (`--color-gold-primary`, etc.) — no dependency on Tailwind compilation order when adding new templates.
 - Alpine.js collapsible sidebar sections (Operations, Content, Tools) with state persisted in `sessionStorage`.
 - Newsletter body is a plain `<textarea>` in the staff portal (the `Newsletter` model stores it as `CKEditor5Field`, but staff don't need rich text for basic sends). Django admin still available for rich-text composition if needed.
@@ -457,22 +459,16 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 
 VPS: `209.46.125.163`, app root `/var/www/soho/`, runs as `www-data`. Service name: `soho.service`.
 
-`main` branch = what's deployed. Work on `dev`, merge to `main` before deploying.
+`main` branch = what's deployed. Work on `dev`; `main` only ever fast-forwards to `dev`.
 
-**Standard deploy** — `soho_full` alias on the VPS:
-```bash
-sudo -u www-data git pull \
-  && sudo -u www-data /var/www/soho/.venv/bin/python manage.py migrate \
-  && sudo -u www-data /var/www/soho/.venv/bin/python manage.py collectstatic --noinput \
-  && sudo systemctl restart soho.service
-```
+**Release (local):** `scripts/release.sh` — checks you're on an up-to-date `dev`, no missing migrations, Tailwind `output.css` committed, tests pass; then pushes `dev` → `main`. `--deploy` (with `SOHO_SSH=user@host`) also runs the VPS deploy over SSH; `--skip-tests` if the test DB is unavailable.
 
-**After a Django version upgrade** — pip install first, then `soho_full`, then force a fresh static collect:
+**Deploy (VPS):** `/var/www/soho/scripts/deploy.sh` (replaces the old `soho_full` alias). Fast-forward pull → `pip install` if requirements changed → `check --deploy` → `migrate` → `createcachetable` → `collectstatic` → restart `soho.service` → health check against gunicorn on `127.0.0.1:8000` (bypasses nginx's staff-preview basic auth). Logs to `logs/deploy.log`; on failure prints rollback commands. `--force` re-runs all steps when already up to date.
+
+The VPS runs its *current* copy of `deploy.sh` — changes to the script take effect on the following deploy.
+
+**After a Django version upgrade** — if admin CSS looks wrong, force a full recollect:
 ```bash
-sudo -u www-data git pull
-sudo -u www-data /var/www/soho/.venv/bin/pip install -r requirements/base.txt
-soho_full
-# if admin CSS looks wrong, force full recollect:
 sudo -u www-data /var/www/soho/.venv/bin/python manage.py collectstatic --clear --noinput
 sudo systemctl restart soho.service
 ```
@@ -490,223 +486,46 @@ Do not set `EMAIL_BACKEND` in the VPS `.env` — `production.py` hardcodes smtp.
 
 ---
 
-## Reviews app (`apps/reviews/`)
+## Reviews (`apps/core/`)
 
-### Decision log
+Reviews live in `apps.core` — there is no separate `apps.reviews` app. The original plan for one (aggregate ratings, scrapers, member reviews) is kept below under *Future*; nothing there is built.
 
-- Single `Review` model handles both third-party (Google, Yelp, OpenTable, Rewards Network) and future member-written reviews. They share display logic and are differentiated by `source` field — not separate models.
-- Ratings normalized to 1–5 decimal scale on ingest regardless of source platform scale.
-- Display: half-star rendering (SVG, no JS library needed). Numeric value stored as `DecimalField(max_digits=3, decimal_places=1)` — supports 3.5, 4.5 etc.
-- Homepage widget: 3–4 featured reviews from mixed sources + aggregate rating summary (pulled from Google Places API separately).
-- Dedicated `/reviews/` page: all published reviews, filterable by source, with aggregate summary header.
-- Source badges: platform logo (Google, Yelp, OpenTable, Rewards Network) displayed on each card for attribution. Fair use for attribution is acceptable.
-- Scraping strategy: one-time import script for initial population; manual curation via admin thereafter. Ongoing automated scraping is fragile and not worth maintaining at restaurant scale.
-- **Phase 2 (future, do not build yet):** member-written reviews linked to `SoHoMember`. Rewards Network reviews are verified-diner by nature (card-linked transaction); member reviews use honor system initially.
+### Model — `Review` (`apps/core/models.py`)
 
-### Model
-
-#### `Review`
-Inherits `TimeStampedModel`.
+Inherits `TimeStampedModel`. Default ordering: `['display_order', '-created_at']`.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `source` | CharField(choices) | `google` / `yelp` / `opentable` / `rewards_network` / `member` |
-| `source_id` | CharField(200, blank=True) | Platform's own review ID — used for dedup on re-import |
-| `source_url` | URLField(blank=True) | Link back to original review on the platform |
-| `author_name` | CharField(200, blank=True) | Display name for third-party reviews |
-| `member` | FK → `members.SoHoMember` (null=True, blank=True) | Phase 2 — member-written reviews only |
-| `rating` | DecimalField(max_digits=3, decimal_places=1) | Normalized to 1.0–5.0 regardless of source |
-| `title` | CharField(200, blank=True) | Not all platforms include titles |
-| `body` | TextField | Review text |
-| `review_date` | DateField | When the customer wrote it — not when we imported it |
-| `is_published` | BooleanField(default=False) | Third-party: hand-curated. Member: set True after approval |
-| `is_featured` | BooleanField(default=False) | Pins to homepage widget and top of /reviews/ |
-| `is_verified_diner` | BooleanField(default=False) | True for OpenTable (reservation) and Rewards Network (card transaction). Always False for Google/Yelp. Phase 2: cross-reference for member reviews TBD |
-| `display_order` | PositiveIntegerField(default=0) | Manual ordering within published set |
-| `is_approved` | BooleanField(default=False) | Phase 2 member reviews — starts False, set True by staff |
-| `is_flagged` | BooleanField(default=False) | Phase 2 — flagged for review |
-| `flagged_reason` | TextField(blank=True) | Phase 2 |
-| `approved_by` | FK → User (null=True, blank=True) | Staff user who approved |
-| `approved_at` | DateTimeField(null=True, blank=True) | |
-| `scraped_at` | DateTimeField(null=True, blank=True) | Null for member reviews |
-| `raw_data` | JSONField(default=dict, blank=True) | Original scraped/imported payload — for reference, not displayed |
+| `source` | CharField choices | `manual` / `google` / `yelp` / `opentable` / `rewardsnetwork` (default `google`) |
+| `source_id` | CharField(200, blank, indexed) | Platform's review ID — dedup key for imports |
+| `reviewer_name` | CharField(100) | |
+| `reviewer_location` | CharField(100, blank) | |
+| `rating` | PositiveSmallIntegerField 1–5 | Whole stars only; `star_range` / `empty_star_range` properties drive the template |
+| `body` | TextField | |
+| `is_active` | BooleanField(default=True) | Shown on the site. Imported reviews arrive `False` for staff to curate. This is the "published" flag — there is no `is_published` |
+| `is_featured` | BooleanField(default=False) | Eligible for the homepage widget |
+| `display_order` | PositiveIntegerField(default=0) | |
 
-Default ordering: `['-is_featured', 'display_order', '-review_date']`
+Review-platform links ("Review on Google" etc. buttons) are `SiteSettings` fields: `google_review_url`, `yelp_review_url`, `opentable_review_url`, `rewardsnetwork_review_url`.
 
-#### `AggregateRating`
-Stores the platform-level summary rating (e.g. "4.7 stars based on 312 Google reviews"). Updated periodically via management command, not per review import.
+### Where reviews appear
 
-| Field | Type | Notes |
-|-------|------|-------|
-| `source` | CharField(choices) | Same choices as `Review.source` (excludes `member`) |
-| `rating` | DecimalField(max_digits=3, decimal_places=1) | Platform aggregate, e.g. 4.7 |
-| `review_count` | PositiveIntegerField | Total reviews on the platform |
-| `last_updated` | DateTimeField(auto_now=True) | |
-| `source_url` | URLField(blank=True) | Link to the business profile on the platform |
+- **Homepage:** `HomeView` passes `featured_reviews` = active + featured, first 3. Rendered by `{% include "core/components/reviews_section.html" with reviews=featured_reviews %}` (hidden when empty; links to `/reviews/`).
+- **`/reviews/`** (`core:reviews`): all active reviews via `{% include "core/components/reviews_section.html" with reviews=reviews as_page=True %}` — adds the h1, leave-a-review buttons and empty state.
+- Each card: `core/partials/review_card.html` (text ★ stars coloured with theme variables, source label).
 
-One record per source. Used in the homepage widget header and `/reviews/` page aggregate summary bar.
+### Managing reviews
 
-### Admin (`apps/reviews/admin.py`)
+- **Staff portal** `/staff/reviews/` (Staff Manager tier): list, activate/deactivate, feature/unfeature, delete, and "Import from Google/Yelp" buttons.
+- **Django admin** `ReviewAdmin`: `list_editable` for `is_featured`, `is_active`, `display_order`; filters by source, featured, active, rating.
+- **Import:** `python manage.py import_reviews --source=google|yelp`. Google Places API (≤5 reviews/call) and Yelp Fusion API (≤3). Dedups on `source` + `source_id`; ratings clamped to 1–5; imports arrive `is_active=False`. Keys from `.env` via decouple: `GOOGLE_PLACES_API_KEY`, `GOOGLE_PLACE_ID`, `YELP_API_KEY`, `YELP_BUSINESS_ID`.
 
-#### `ReviewAdmin`
-- `list_display`: author (name or member email), source (with icon), star_display, review_date, is_published, is_featured, is_verified_diner
-- `list_filter`: source, is_published, is_featured, is_verified_diner, is_approved
-- `search_fields`: author_name, body, member__email
-- `list_editable`: is_published, is_featured, display_order
-- `readonly_fields`: source_id, scraped_at, raw_data, approved_by, approved_at
-- Bulk actions: `publish_selected`, `unpublish_selected`, `feature_selected`, `unfeature_selected`
-- Custom method `star_display` renders a text approximation of the star rating in list view (e.g. `★★★★½`)
+### Future (not built — do not build without a spec update)
 
-#### `AggregateRatingAdmin`
-- `list_display`: source, rating, review_count, last_updated, source_url
-- `readonly_fields`: last_updated
-- Simple — mainly used to verify the refresh command ran correctly
-
-### URLs / views
-
-| URL | View | Name | Notes |
-|-----|------|------|-------|
-| `/reviews/` | `ReviewListView` | `reviews:index` | All published reviews; filterable by source via `?source=` param |
-
-No detail view needed — review body is shown in full on the list page (cards).
-
-Homepage widget is a template partial included in the homepage view context — not a separate URL.
-
-### Template structure
-
-```
-apps/reviews/templates/reviews/
-    index.html              # /reviews/ page — aggregate summary + full card grid
-    partials/
-        review_card.html    # single review card (shared by homepage and /reviews/)
-        star_rating.html    # SVG half-star renderer — takes `rating` variable (1.0–5.0)
-        aggregate_bar.html  # summary row: "4.7 ★ · 312 Google reviews · View on Google"
-        homepage_widget.html # 3–4 featured cards + link to /reviews/
-```
-
-Homepage includes:
-```django
-{% include 'reviews/partials/homepage_widget.html' %}
-```
-
-### Star rating rendering
-
-SVG-based, no JS library. `star_rating.html` takes a `rating` float and renders 5 stars with full, half, or empty fill. Use inline SVG with CSS custom properties for color theming. Example logic:
-
-```
-For each of 5 positions:
-  if rating >= position → full star
-  elif rating >= position - 0.5 → half star
-  else → empty star
-```
-
-Pass as template tag or include with context: `{% include 'reviews/partials/star_rating.html' with rating=review.rating %}`.
-
-Do NOT use a JS star library — SVG keeps it server-rendered, no flash of unstyled content, works without JS.
-
-### Source badges
-
-Each platform has a badge shown on the review card. Use inline SVG or a small PNG for logos. Badge includes the platform name as alt text for accessibility. Displayed in the card footer alongside the verified diner checkmark (if applicable).
-
-```
-[Google logo] Google   ✓ Verified Diner
-```
-
-SVG logos for Google, Yelp, OpenTable, Rewards Network — store in `apps/reviews/static/reviews/img/`. Do not hotlink from platform CDNs.
-
-### Scraper architecture (`apps/reviews/scrapers/`)
-
-```
-apps/reviews/scrapers/
-    __init__.py
-    base.py           # BaseReviewScraper — normalize_rating(), build_Review_dict(), dedup check
-    google.py         # Google Places API client
-    yelp.py           # Yelp Fusion API client
-    opentable.py      # Playwright-based (fragile — use for one-time import only)
-    rewards_network.py # Portal export parser (CSV or Playwright TBD — check merchant portal)
-```
-
-#### `base.py`
-```python
-class BaseReviewScraper:
-    source: str  # subclasses set this
-
-    def normalize_rating(self, raw_rating: float, scale: float = 5.0) -> Decimal:
-        """Normalize any platform scale to 1.0–5.0."""
-        return round(Decimal(raw_rating / scale * 5), 1)
-
-    def is_duplicate(self, source_id: str) -> bool:
-        return Review.objects.filter(source=self.source, source_id=source_id).exists()
-
-    def fetch(self) -> list[dict]:
-        raise NotImplementedError
-
-    def run(self) -> tuple[int, int]:
-        """Returns (imported_count, skipped_count)."""
-```
-
-#### `google.py`
-Uses Google Places API (requires `GOOGLE_PLACES_API_KEY` in `.env`). Returns up to 5 reviews per call (API limit). Also fetches aggregate rating and review count for `AggregateRating`.
-
-```python
-GOOGLE_PLACE_ID = env('GOOGLE_PLACE_ID')  # find via Places API or Google Maps URL
-```
-
-#### `yelp.py`
-Uses Yelp Fusion API (requires `YELP_API_KEY` in `.env`). Returns up to 3 reviews. Also fetches aggregate rating.
-
-```python
-YELP_BUSINESS_ID = env('YELP_BUSINESS_ID')  # from Yelp business URL slug
-```
-
-#### `opentable.py` and `rewards_network.py`
-Playwright-based for one-time import. Mark clearly in code as fragile/manual-use-only. Check Rewards Network merchant portal first — if CSV export is available, parse that instead of scraping.
-
-### Management commands
-
-`python manage.py import_reviews --source=google`
-`python manage.py import_reviews --source=yelp`
-`python manage.py import_reviews --source=opentable`
-`python manage.py import_reviews --source=rewards_network`
-`python manage.py import_reviews --source=all`
-
-All imported reviews arrive with `is_published=False` — staff curates which to publish via admin. Command prints import/skip counts. Safe to re-run (dedup via `source_id`).
-
-`python manage.py refresh_aggregate_ratings`
-
-Calls Google Places API and Yelp Fusion API to update `AggregateRating` records. Run periodically (weekly cron or manual). Does not touch individual `Review` records.
-
-### Environment variables to add to `.env.example`
-
-```
-GOOGLE_PLACES_API_KEY=
-GOOGLE_PLACE_ID=
-YELP_API_KEY=
-YELP_BUSINESS_ID=
-```
-
-### Homepage widget context
-
-The homepage view (`apps/core/views.py`) should pass:
-```python
-context['featured_reviews'] = (
-    Review.objects
-    .filter(is_published=True, is_featured=True)
-    .select_related('member')
-    .order_by('display_order', '-review_date')[:4]
-)
-context['aggregate_ratings'] = AggregateRating.objects.all()
-```
-
-### Phase 2 — Member reviews (future, do not build yet)
-
-When member accounts are active (`apps.members` Phase 2 complete):
-- Add `/reviews/submit/` — `MemberReviewSubmitView`, requires member login
-- `Review.member` FK populated; `Review.author_name` left blank (display uses `member.first_name`)
-- `is_published=False` on submit; staff approves via admin approval queue (filter: `source=member, is_approved=False`)
-- Approval triggers email notification to member via `send_mail()`
-- `is_verified_diner` logic TBD — honor system at launch, possible Rewards Network cross-reference later
-- Add `MemberReviewForm` to `apps/reviews/forms.py` — fields: rating (1–5 integer selector), title (optional), body (required, min 20 chars)
+- `AggregateRating` per platform ("4.7 ★ · 312 Google reviews") refreshed by a `refresh_aggregate_ratings` command, shown on the homepage and `/reviews/`.
+- Half-star ratings (DecimalField) with SVG rendering; platform logo badges and a "Verified Diner" mark (OpenTable / Rewards Network).
+- One-time imports for OpenTable / Rewards Network (prefer a portal CSV export over scraping).
+- Member-written reviews (`/reviews/submit/`, requires member accounts — Members Phase 2) with a moderation queue. If built, decide then whether reviews move to their own app.
 
 ---
 
@@ -755,12 +574,12 @@ Reassigning a role to a new menu automatically demotes the previous holder to `r
 
 ### `EventDay.save()` smart default
 
-`EventDay` has `event_type` (choices include `game_day`) and `home_away` (optional, choices include `home` and `away`). Add to `EventDay.save()` **before** `super().save()`:
+`EventDay` has `event_type` (the "Game Day" choice is stored as `'game'`) and `home_away` (optional, choices include `home` and `away`). Add to `EventDay.save()` **before** `super().save()`:
 
 ```python
 def save(self, *args, **kwargs):
     # Smart default for limited_menu on creation only — never overrides staff changes
-    if not self.pk and self.event_type == 'game_day':
+    if not self.pk and self.event_type == 'game':  # the 'Game Day' choice
         if self.home_away == 'home':
             self.limited_menu = True
         elif self.home_away == 'away':
@@ -771,7 +590,7 @@ def save(self, *args, **kwargs):
 
 Key rules:
 - `if not self.pk` — fires on creation only, never on subsequent saves
-- Only applies to `event_type == 'game_day'` — concerts, private parties, and other event types are unaffected and get no automatic default
+- Only applies to `event_type == 'game'` — concerts, private parties, and other event types are unaffected and get no automatic default
 - Staff can override `limited_menu` freely after creation — the smart default is a convenience, not a constraint
 - Example: Steelers make the Super Bowl — away game defaults to `limited_menu=False` on creation; staff flips it to `True` for the watch party. Both steps work correctly
 - This logic belongs in the model `save()` not in admin `save_model()` — it must apply everywhere (admin, management commands, shell)
@@ -2136,3 +1955,84 @@ Each week:
 10. Update all public menu category templates to use `display_name` not `name`. Commit.
 
 Do not combine steps. Template changes (6–10) need no migrations and can be done in any order after 1–5 are deployed.
+
+---
+
+## Staff portal phasing (`apps/staff/`)
+
+### Current state (Phase 1)
+
+The staff portal dashboard is built and functional. Do not add features beyond what is already there until Phase 3 planning is complete. The current portal is sufficient for launch.
+
+**What is already built — do not remove or modify without explicit instruction:**
+- Dashboard with stat cards (menu mode, subscribers, draft newsletters, unpublished photos, popup status, new inquiries)
+- Today's Events and Upcoming Events panels
+- Menu Status panel with weekly specials freshness indicator and promo menu status
+- Operations nav section: Menu Mode, Events, Menu Items
+- Content nav section: Inquiries, Media Library, Newsletter, Popups, Reviews
+- Tools nav section: Analytics (external link), View Site (external link)
+- **Django admin link — visible to superusers only.** This link appears in the Tools section (or similar) and is conditionally rendered based on `request.user.is_superuser`. DO NOT REMOVE THIS LINK. It is intentional and required for superuser workflow. If you find this link in the template, leave it exactly as-is.
+
+### Access tiers
+
+**Tier 1 — Manager/Owner**
+- Full portal access
+- Can change menu mode, manage events, upload media, send newsletters, manage inquiries
+- Cannot access SiteSettings, user management, or anything on the superuser-only list
+
+**Tier 2 — General Staff**
+- Read-only portal access
+- Dashboard view — events, menu mode, status indicators
+- Cannot make changes
+- Nav items hidden by tier where not applicable
+
+**Superuser**
+- Full Django admin access
+- Staff portal access (all tiers)
+- Django admin link visible in portal Tools section
+
+### Phase 2 — Portal + scoped Django admin (post-launch, after training)
+
+Staff get one login, two interfaces. The rule:
+
+> **Portal** — day-to-day operational tasks (events, specials, gallery, inquiries, newsletter)
+> **Django admin** — content and configuration that changes infrequently (menu items, banners, page content, popups)
+
+**Django admin access to grant to Tier 1 staff in Phase 2:**
+- `EventDay` — add, change, view
+- `Menu` (weekly_specials type only) — change, view
+- `GalleryItem` / `MediaItem` — change, view (publish/unpublish)
+- `Newsletter` — add, change, view
+- `ContentBlock` — change, view (for page copy updates)
+- `SitePopup` — change, view
+
+**Django admin access that stays superuser-only — never delegate:**
+- `SiteSettings` — one wrong field breaks the site
+- `User` / auth — security
+- `Banner` / `PanelSide` — layout-breaking if misconfigured
+- `ColorScheme` / `PromoColorScheme` — site-wide visual impact
+- All migration-related operations
+- API keys, credentials, secret fields
+
+Implementation: assign permissions to a `Staff Manager` Django group. Add Tier 1 users to the group. Do not assign permissions individually per user.
+
+### Phase 3 — Staff portal expansion (future, planned)
+
+Do not build Phase 3 features until the process and flow have been designed here first. The portal must be mobile-first (50%+ mobile usage expected). Navigation must be role-aware — hide sections the user's tier cannot access rather than showing disabled links.
+
+**Candidate features for Phase 3 (not yet specced — do not build):**
+- Weekly specials editor (side-by-side item library + current specials)
+- Full menu management in portal
+- ContentBlock / page content editor
+- Member photo moderation queue
+- Booking/event inquiry management (links to `apps.bookings`)
+- Role management UI for Tier 1 to manage Tier 2 staff accounts
+
+### What Claude Code must never do to the staff portal without explicit instruction
+
+- Remove the superuser-only Django admin link from the Tools section
+- Add Django admin links for non-superusers
+- Build Phase 3 features not yet specced
+- Grant menu editing access to the staff portal before Phase 3 is planned
+- Change the nav groupings (Operations / Content / Tools) without discussion
+- Add inline color styles to portal templates — the same design system enforcement rules apply
