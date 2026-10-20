@@ -54,7 +54,16 @@ log_result() {
 # Once the checkout has moved, any failure prints how to get back.
 on_failure() {
     log_result FAILED
-    if [[ -n $PREV_COMMIT && $PREV_COMMIT != "$NEW_COMMIT" ]]; then
+    local head
+    head=$(as_app git rev-parse HEAD 2>/dev/null || true)
+    if [[ -n $PREV_COMMIT && $head == "$PREV_COMMIT" ]]; then
+        cat >&2 <<EOF
+
+Deploy FAILED before the code changed — the server is still on ${PREV_COMMIT:0:7}
+and the service was not restarted. Nothing to roll back; fix the error above
+and re-run.
+EOF
+    elif [[ -n $PREV_COMMIT && $PREV_COMMIT != "$NEW_COMMIT" ]]; then
         cat >&2 <<EOF
 
 Deploy FAILED after the code was updated (${PREV_COMMIT:0:7} -> ${NEW_COMMIT:0:7}).
