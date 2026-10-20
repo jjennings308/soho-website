@@ -23,10 +23,9 @@ node_modules/
 tmp.txt
 .DS_Store
 
-config/settings/development.py
-
 # VS Code
-.vscode/db.sqlite3
+.vscode/
+
 db.sqlite3
 
 # direnv — local dev only; on the VPS it would select development settings

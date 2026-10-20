@@ -118,6 +118,10 @@ $dirty"
     trap on_failure ERR
 
     step "Updating code"
+    # Older commits tracked staticfiles/, which collectstatic rewrites. Discard
+    # any such edits so the merge can't be blocked; collectstatic regenerates
+    # them below. (No-op once staticfiles/ is untracked.)
+    as_app git checkout -- staticfiles 2>/dev/null || true
     as_app git merge --ff-only --quiet "origin/$BRANCH"
 
     if $force || ! as_app git diff --quiet "$PREV_COMMIT" "$NEW_COMMIT" -- requirements/; then
