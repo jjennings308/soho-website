@@ -70,7 +70,8 @@
       <div>
         <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Estimated Guests</label>
         <input type="number" name="guest_count" value="{{ data.guest_count|default:'' }}" min="1"
-               style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--color-footer-divider);border-radius:4px;background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;" placeholder="e.g. 30">
+               style="width:100%;padding:0.5rem 0.75rem;border:1px solid {% if errors.guest_count %}var(--color-accent-red){% else %}var(--color-footer-divider){% endif %};border-radius:4px;background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;" placeholder="e.g. 30">
+        {% if errors.guest_count %}<div style="font-size:0.75rem;color:var(--color-accent-red);margin-top:0.25rem;">{{ errors.guest_count }}</div>{% endif %}
       </div>
     </div>
 
@@ -78,7 +79,8 @@
       <div>
         <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Preferred Date</label>
         <input type="date" name="preferred_date" value="{{ data.preferred_date|default:'' }}"
-               style="width:100%;padding:0.5rem 0.75rem;border:1px solid var(--color-footer-divider);border-radius:4px;background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;">
+               style="width:100%;padding:0.5rem 0.75rem;border:1px solid {% if errors.preferred_date %}var(--color-accent-red){% else %}var(--color-footer-divider){% endif %};border-radius:4px;background:var(--color-bg-primary);color:var(--color-text-primary);font-size:0.9rem;">
+        {% if errors.preferred_date %}<div style="font-size:0.75rem;color:var(--color-accent-red);margin-top:0.25rem;">{{ errors.preferred_date }}</div>{% endif %}
       </div>
       <div>
         <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Menu Preference</label>

@@ -5,7 +5,8 @@ from django.template.loader import render_to_string
 from django.views import View
 from django.views.generic import TemplateView
 from django.db.models import Prefetch
-from .models import EventInquiry, Review, SitePopup, SiteSettings
+from .forms import ContactForm, EventInquiryForm
+from .models import Review, SitePopup, SiteSettings
 from .utils import get_banner, get_panel_side
 from apps.content.models import ContentGroup
 from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
@@ -191,25 +192,19 @@ def accessibility(request):
     return render(request, 'core/legal/accessibility.html')
 
 
+def _first_errors(form):
+    """Flatten form errors to {field: first message} for the form partials."""
+    return {field: errs[0] for field, errs in form.errors.items()}
+
+
 class ContactFormView(View):
     def post(self, request):
-        errors = {}
-        data = {
-            'name':    request.POST.get('name', '').strip(),
-            'email':   request.POST.get('email', '').strip(),
-            'phone':   request.POST.get('phone', '').strip(),
-            'message': request.POST.get('message', '').strip(),
-        }
-
-        if not data['name']:
-            errors['name'] = 'Please enter your name.'
-        if not data['email']:
-            errors['email'] = 'Please enter your email.'
-        if not data['message']:
-            errors['message'] = 'Please enter a message.'
-
-        if errors:
-            return render(request, 'core/partials/contact_form.html', {'errors': errors, 'data': data})
+        form = ContactForm(request.POST)
+        if not form.is_valid():
+            return render(request, 'core/partials/contact_form.html', {
+                'errors': _first_errors(form), 'data': request.POST,
+            })
+        data = form.cleaned_data
 
         site = SiteSettings.load()
         recipient = site.notification_email or site.email
@@ -233,40 +228,13 @@ class ContactFormView(View):
 
 class EventInquiryView(View):
     def post(self, request):
-        errors = {}
-        data = {
-            'name': request.POST.get('name', '').strip(),
-            'email': request.POST.get('email', '').strip(),
-            'phone': request.POST.get('phone', '').strip(),
-            'preferred_contact': request.POST.get('preferred_contact', 'email'),
-            'event_type': request.POST.get('event_type', 'private_party'),
-            'guest_count': request.POST.get('guest_count', '').strip() or None,
-            'preferred_date': request.POST.get('preferred_date', '').strip() or None,
-            'menu_preference': request.POST.get('menu_preference', 'not_sure'),
-            'message': request.POST.get('message', '').strip(),
-        }
+        form = EventInquiryForm(request.POST)
+        if not form.is_valid():
+            return render(request, 'core/partials/event_inquiry_form.html', {
+                'errors': _first_errors(form), 'data': request.POST,
+            })
 
-        if not data['name']:
-            errors['name'] = 'Please enter your name.'
-        if not data['email']:
-            errors['email'] = 'Please enter your email.'
-        if not data['phone']:
-            errors['phone'] = 'Please enter your phone number.'
-
-        if errors:
-            return render(request, 'core/partials/event_inquiry_form.html', {'errors': errors, 'data': data})
-
-        inquiry = EventInquiry.objects.create(
-            name=data['name'],
-            email=data['email'],
-            phone=data['phone'],
-            preferred_contact=data['preferred_contact'],
-            event_type=data['event_type'],
-            guest_count=data['guest_count'],
-            preferred_date=data['preferred_date'],
-            menu_preference=data['menu_preference'],
-            message=data['message'],
-        )
+        inquiry = form.save()
 
         site = SiteSettings.load()
         restaurant_email = site.notification_email or site.email

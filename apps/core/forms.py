@@ -1,5 +1,65 @@
 from django import forms
+from .models import EventInquiry
 from .widgets import DaysOfWeekWidget
+
+
+def _single_line(value):
+    """Collapse whitespace so a name can't inject email header lines."""
+    return ' '.join(value.split())
+
+
+class ContactForm(forms.Form):
+    name = forms.CharField(max_length=200, error_messages={'required': 'Please enter your name.'})
+    email = forms.EmailField(error_messages={
+        'required': 'Please enter your email.',
+        'invalid': 'Please enter a valid email address.',
+    })
+    phone = forms.CharField(max_length=30, required=False)
+    message = forms.CharField(max_length=5000, error_messages={'required': 'Please enter a message.'})
+
+    def clean_name(self):
+        return _single_line(self.cleaned_data['name'])
+
+
+class EventInquiryForm(forms.ModelForm):
+    # Select fields fall back to the model default when omitted, since the
+    # partial has no place to show an error for them.
+    OPTIONAL_CHOICE_FIELDS = ('preferred_contact', 'event_type', 'menu_preference')
+
+    guest_count = forms.IntegerField(
+        required=False, min_value=1, max_value=10000,
+        error_messages={'invalid': 'Please enter a number of guests.'},
+    )
+    message = forms.CharField(required=False, max_length=5000)
+
+    class Meta:
+        model = EventInquiry
+        fields = [
+            'name', 'email', 'phone', 'preferred_contact', 'event_type',
+            'guest_count', 'preferred_date', 'menu_preference', 'message',
+        ]
+        error_messages = {
+            'name':           {'required': 'Please enter your name.'},
+            'email':          {'required': 'Please enter your email.',
+                               'invalid': 'Please enter a valid email address.'},
+            'phone':          {'required': 'Please enter your phone number.'},
+            'preferred_date': {'invalid': 'Please enter a valid date.'},
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name in self.OPTIONAL_CHOICE_FIELDS:
+            self.fields[name].required = False
+
+    def clean_name(self):
+        return _single_line(self.cleaned_data['name'])
+
+    def clean(self):
+        cleaned = super().clean()
+        for name in self.OPTIONAL_CHOICE_FIELDS:
+            if not cleaned.get(name):
+                cleaned[name] = EventInquiry._meta.get_field(name).default
+        return cleaned
 
 
 class DaysOfWeekField(forms.Field):
