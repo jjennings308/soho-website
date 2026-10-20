@@ -40,3 +40,16 @@ def get_panel_side(slug):
         .prefetch_related('content_group__slots__blocks')
         .first()
     )
+
+
+HONEYPOT_FIELD = 'hp_check'  # deliberately not a name browsers autofill
+
+
+def honeypot_tripped(request):
+    """
+    True if the hidden honeypot field (core/partials/_honeypot.html) was
+    filled in. Real visitors never see it; naive bots fill every input.
+    Callers should return their normal success response without acting,
+    so bots get no signal.
+    """
+    return bool(request.POST.get(HONEYPOT_FIELD, '').strip())

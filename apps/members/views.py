@@ -7,11 +7,16 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
+from apps.core.utils import honeypot_tripped
+
 from .models import SoHoMember
 
 
 class SubscribeView(View):
     def post(self, request):
+        if honeypot_tripped(request):
+            return render(request, 'members/partials/subscribe_form.html', {'success': True})
+
         email = request.POST.get('email', '').strip().lower()
         first_name = request.POST.get('first_name', '').strip()
 

@@ -29,6 +29,7 @@
         .finally(() => { loading = false; });
       ">
   {% csrf_token %}
+  {% include 'core/partials/_honeypot.html' %}
 
   {# Name #}
   <div style="{{ field_row }}">

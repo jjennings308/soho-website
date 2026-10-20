@@ -26,6 +26,7 @@
             .finally(() => { loading = false; });
         ">
     {% csrf_token %}
+    {% include 'core/partials/_honeypot.html' %}
 
     {% if error %}
       <p style="margin-bottom:0.75rem;font-size:0.875rem;color:var(--color-accent-red);">{{ error }}</p>

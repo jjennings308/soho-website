@@ -108,3 +108,30 @@ class ContactFormTests(PublicFormTestCase):
         response = self.client.post(self.url, {**VALID_CONTACT, 'email': 'nope'})
         self.assertIn('email', response.context['errors'])
         self.assertEqual(len(mail.outbox), 0)
+
+
+class SpamProtectionTests(PublicFormTestCase):
+    def test_inquiry_confirmation_does_not_echo_message(self):
+        spam = 'Buy cheap watches at spam.example'
+        self.client.post(reverse('core:event_inquiry'), {**VALID_INQUIRY, 'message': spam})
+        confirmation = next(m for m in mail.outbox if m.to == ['pat@example.com'])
+        self.assertNotIn(spam, confirmation.body)
+        self.assertNotIn(spam, confirmation.alternatives[0][0])
+        # Staff still get the full message.
+        notification = next(m for m in mail.outbox if m.to == ['staff@example.com'])
+        self.assertIn(spam, notification.body)
+
+    def test_inquiry_honeypot_fakes_success_without_acting(self):
+        response = self.client.post(reverse('core:event_inquiry'), {**VALID_INQUIRY, 'hp_check': 'x'})
+        self.assertTrue(response.context['success'])
+        self.assertFalse(EventInquiry.objects.exists())
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_contact_honeypot_fakes_success_without_acting(self):
+        response = self.client.post(reverse('core:contact_form'), {**VALID_CONTACT, 'hp_check': 'x'})
+        self.assertTrue(response.context['success'])
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_forms_render_honeypot_field(self):
+        response = self.client.post(reverse('core:contact_form'), {})
+        self.assertContains(response, 'name="hp_check"')

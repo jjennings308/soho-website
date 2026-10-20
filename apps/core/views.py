@@ -7,7 +7,7 @@ from django.views.generic import TemplateView
 from django.db.models import Prefetch
 from .forms import ContactForm, EventInquiryForm
 from .models import Review, SitePopup, SiteSettings
-from .utils import get_banner, get_panel_side
+from .utils import get_banner, get_panel_side, honeypot_tripped
 from apps.content.models import ContentGroup
 from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
 
@@ -199,6 +199,9 @@ def _first_errors(form):
 
 class ContactFormView(View):
     def post(self, request):
+        if honeypot_tripped(request):
+            return render(request, 'core/partials/contact_form.html', {'success': True})
+
         form = ContactForm(request.POST)
         if not form.is_valid():
             return render(request, 'core/partials/contact_form.html', {
@@ -228,6 +231,9 @@ class ContactFormView(View):
 
 class EventInquiryView(View):
     def post(self, request):
+        if honeypot_tripped(request):
+            return render(request, 'core/partials/event_inquiry_form.html', {'success': True})
+
         form = EventInquiryForm(request.POST)
         if not form.is_valid():
             return render(request, 'core/partials/event_inquiry_form.html', {

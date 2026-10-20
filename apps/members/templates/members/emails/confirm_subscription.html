@@ -5,7 +5,7 @@
 {% block body %}
   <h1 style="margin:0 0 20px 0;font-size:22px;font-weight:normal;color:#1a1a1a;font-family:Georgia,serif;">Confirm your subscription</h1>
 
-  <p style="margin:0 0 16px 0;font-size:16px;color:#333333;line-height:1.7;font-family:Georgia,serif;">Hi {{ member.first_name }},</p>
+  <p style="margin:0 0 16px 0;font-size:16px;color:#333333;line-height:1.7;font-family:Georgia,serif;">Hi {{ member.first_name|truncatechars:40 }},</p>
 
   <p style="margin:0 0 24px 0;font-size:16px;color:#333333;line-height:1.7;font-family:Georgia,serif;">
     It looks like you signed up for the SoHo Pittsburgh email list. Click the button below to confirm your subscription.

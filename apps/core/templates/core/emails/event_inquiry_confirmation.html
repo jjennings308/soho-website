@@ -3,7 +3,7 @@
 {% block subject %}We received your inquiry — SoHo Pittsburgh{% endblock %}
 
 {% block body %}
-  <h1 style="margin:0 0 20px 0;font-size:22px;font-weight:normal;color:#1a1a1a;font-family:Georgia,serif;">Thanks, {{ inquiry.name }}!</h1>
+  <h1 style="margin:0 0 20px 0;font-size:22px;font-weight:normal;color:#1a1a1a;font-family:Georgia,serif;">Thanks, {{ inquiry.name|truncatechars:40 }}!</h1>
 
   <p style="margin:0 0 16px 0;font-size:16px;color:#333333;line-height:1.7;font-family:Georgia,serif;">
     We received your event inquiry and will be in touch via <strong>{{ inquiry.get_preferred_contact_display|lower }}</strong> shortly.
@@ -30,9 +30,9 @@
     </tr>
   </table>
 
-  {% if inquiry.message %}
-    <p style="margin:0 0 24px 0;font-size:15px;color:#555555;line-height:1.7;font-style:italic;font-family:Georgia,serif;">"{{ inquiry.message }}"</p>
-  {% endif %}
+  {# The visitor's message is deliberately not echoed: this email goes to an
+     unverified address, and echoing free text would let anyone send arbitrary
+     content from our domain. #}
 
   <p style="margin:0;font-size:15px;color:#555555;line-height:1.7;font-family:Georgia,serif;">
     If you have any questions in the meantime, feel free to call us or stop by.<br>
