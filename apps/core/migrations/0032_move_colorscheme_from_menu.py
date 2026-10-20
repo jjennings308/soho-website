@@ -5,6 +5,9 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('core', '0031_sitepopup_primary_color'),
+        # The RunSQL below renames menu_colorscheme, which menu 0008 creates.
+        # Without this, a fresh database (e.g. the test DB) can run this first.
+        ('menu', '0008_rename_promocolorscheme_to_colorscheme'),
     ]
 
     operations = [
