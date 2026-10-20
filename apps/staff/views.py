@@ -21,6 +21,7 @@ from apps.members.newsletter import send_newsletter
 from apps.menu.models import Menu
 
 from .forms import ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
+from .permissions import MANAGER, STAFF, SUPERUSER, has_access
 
 
 def _safe_next(request, *candidates, default):
@@ -38,11 +39,14 @@ def _safe_next(request, *candidates, default):
 
 class StaffRequiredMixin(LoginRequiredMixin):
     login_url = '/staff/login/'
+    # Access tier required — see apps/staff/permissions.py. Defaults to
+    # manager so a new view is never accidentally open to read-only staff.
+    staff_access = MANAGER
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return self.handle_no_permission()
-        if not request.user.is_staff:
+        if not has_access(request.user, self.staff_access, request.method):
             raise PermissionDenied
         return super().dispatch(request, *args, **kwargs)
 
@@ -76,6 +80,8 @@ def _with_freshness_badge(menu):
 
 
 class DashboardView(StaffRequiredMixin, View):
+    staff_access = STAFF
+
     def get(self, request):
         menu_mode = EventDay.get_current_menu_mode()
         today_events = EventDay.get_todays_events()
@@ -117,6 +123,8 @@ class DashboardView(StaffRequiredMixin, View):
 # ── Menu Mode ─────────────────────────────────────────────────────────────────
 
 class MenuModeView(StaffRequiredMixin, View):
+    staff_access = STAFF
+
     def get(self, request):
         site = SiteSettings.load()
         menu_mode = EventDay.get_current_menu_mode()
@@ -144,6 +152,8 @@ class MenuModeView(StaffRequiredMixin, View):
 # ── Events ────────────────────────────────────────────────────────────────────
 
 class EventListView(StaffRequiredMixin, View):
+    staff_access = STAFF
+
     def get(self, request):
         upcoming = (
             EventDay.objects
@@ -484,6 +494,8 @@ class InquiryDeleteView(StaffRequiredMixin, View):
 # ── Popups ────────────────────────────────────────────────────────────────────
 
 class StaffSettingsView(StaffRequiredMixin, View):
+    staff_access = SUPERUSER
+
     def get(self, request):
         site = SiteSettings.load()
         return render(request, 'staff/settings.html', {
@@ -505,6 +517,8 @@ class StaffSettingsView(StaffRequiredMixin, View):
 
 
 class ColorSchemeAddView(StaffRequiredMixin, View):
+    staff_access = SUPERUSER
+
     def get(self, request):
         return render(request, 'staff/color_scheme_form.html', {'form': ColorSchemeForm(), 'title': 'Add Color Scheme'})
 
@@ -517,6 +531,8 @@ class ColorSchemeAddView(StaffRequiredMixin, View):
 
 
 class ColorSchemeEditView(StaffRequiredMixin, View):
+    staff_access = SUPERUSER
+
     def get(self, request, pk):
         scheme = get_object_or_404(ColorScheme, pk=pk)
         return render(request, 'staff/color_scheme_form.html', {'form': ColorSchemeForm(instance=scheme), 'scheme': scheme, 'title': f'Edit — {scheme.name}'})
@@ -531,6 +547,8 @@ class ColorSchemeEditView(StaffRequiredMixin, View):
 
 
 class ColorSchemeDeleteView(StaffRequiredMixin, View):
+    staff_access = SUPERUSER
+
     def post(self, request, pk):
         get_object_or_404(ColorScheme, pk=pk).delete()
         return redirect('staff:settings')
@@ -594,6 +612,8 @@ class PopupDeleteView(StaffRequiredMixin, View):
 # ── Color Reference ───────────────────────────────────────────────────────────
 
 class ColorReferenceView(StaffRequiredMixin, View):
+    staff_access = STAFF
+
     def get(self, request):
         backgrounds = [
             {'var': '--color-bg-primary',           'label': 'Page background'},
@@ -717,6 +737,8 @@ def _menu_item_image_formset():
 
 
 class MenuItemListView(StaffRequiredMixin, View):
+    staff_access = STAFF
+
     def get(self, request):
         from apps.menu.models import MenuItem
 

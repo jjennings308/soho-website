@@ -31,6 +31,7 @@ class StaffPagesTests(TestCase):
         self.assertEqual(self.client.get(reverse('staff:dashboard')).status_code, 200)
 
     def test_settings_page_works_with_no_settings_row(self):
+        self.client.force_login(get_user_model().objects.create_superuser('root', 'root@example.com', 'x'))
         SiteSettings.objects.all().delete()
         self.assertEqual(self.client.get(reverse('staff:settings')).status_code, 200)
 

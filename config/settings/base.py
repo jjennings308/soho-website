@@ -82,6 +82,7 @@ TEMPLATES = [
                 'django.template.context_processors.media',
                 'apps.core.context_processors.site_settings',
                 'apps.core.context_processors.site_version',
+                'apps.staff.permissions.staff_access',
             ],
         },
     },

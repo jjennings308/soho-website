@@ -67,7 +67,8 @@
           </div>
         </div>
 
-        {# Content #}
+        {# Content — Staff Manager tier and above #}
+        {% if staff_is_manager %}
         <div x-data="navSection('content', true)">
           <button class="sp-nav__section" @click="toggle()">
             <span>Content</span>
@@ -91,6 +92,7 @@
             </a>
           </div>
         </div>
+        {% endif %}
 
         {# Tools #}
         <div x-data="navSection('tools', true)">
@@ -105,10 +107,10 @@
             <a href="{% url 'core:home' %}" target="_blank" rel="noopener">
               &#9670; View Site &#8599;
             </a>
+            {% if request.user.is_superuser %}
             <a href="{% url 'staff:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
               &#9670; Settings
             </a>
-            {% if request.user.is_superuser %}
             <a href="{% url 'admin:index' %}" target="_blank" rel="noopener">
               &#9670; Django Admin &#8599;
             </a>

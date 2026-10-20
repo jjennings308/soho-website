@@ -2,12 +2,14 @@ import smtplib
 from unittest import mock
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 
 from apps.members.models import Newsletter, SoHoMember
 from apps.members.newsletter import html_to_text, send_newsletter
+from apps.staff.permissions import MANAGER_GROUP
 
 BASE_URL = 'https://soho.example.com/'
 
@@ -119,6 +121,7 @@ class HtmlToTextTests(TestCase):
 class StaffNewsletterSendViewTests(TestCase):
     def setUp(self):
         self.staff = get_user_model().objects.create_user('staff', password='x', is_staff=True)
+        self.staff.groups.add(Group.objects.get(name=MANAGER_GROUP))
         self.client.force_login(self.staff)
         self.newsletter = Newsletter.objects.create(subject='Hi', body='<p>Hello</p>')
         self.url = reverse('staff:newsletter_send', args=[self.newsletter.pk])

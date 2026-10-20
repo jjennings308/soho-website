@@ -1,14 +1,17 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.urls import reverse
 
 from apps.core.models import EventInquiry
 from apps.media.models import MediaItem
+from apps.staff.permissions import MANAGER_GROUP
 
 
 class SafeRedirectTests(TestCase):
     def setUp(self):
         staff = get_user_model().objects.create_user('staff', password='x', is_staff=True)
+        staff.groups.add(Group.objects.get(name=MANAGER_GROUP))
         self.client.force_login(staff)
         self.item = MediaItem.objects.create(name='Burger', owner_type='staff')
         self.library = reverse('staff:media_library')

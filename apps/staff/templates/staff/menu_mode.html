@@ -25,6 +25,7 @@
     </div>
   </div>
 
+  {% if staff_is_manager %}
   <div class="sp-card">
     <h2 style="font-size:0.9rem;font-weight:600;margin-bottom:1.25rem;">Change Menu Mode</h2>
 
@@ -51,6 +52,11 @@
 
     </form>
   </div>
+  {% else %}
+  <div class="sp-card">
+    <p style="font-size:0.875rem;color:var(--color-mid-gray);">Ask a manager if the menu mode needs to change.</p>
+  </div>
+  {% endif %}
 
 </div>
 {% endblock %}
