@@ -16,7 +16,7 @@
 #
 # Environment overrides:
 #     SOHO_HEALTH_URL   URL that must return 2xx/3xx after restart
-#                       (default https://sohopittsburgh.com/)
+#                       (default https://soho.tazcomputer.com/ — the current production host)
 
 set -Eeuo pipefail  # -E: the ERR trap also fires inside helper functions
 
@@ -27,7 +27,7 @@ BRANCH=main
 PYTHON="$APP_DIR/.venv/bin/python"
 PIP="$APP_DIR/.venv/bin/pip"
 REQUIREMENTS=requirements/production.txt
-HEALTH_URL="${SOHO_HEALTH_URL:-https://sohopittsburgh.com/}"
+HEALTH_URL="${SOHO_HEALTH_URL:-https://soho.tazcomputer.com/}"
 LOG_FILE="$APP_DIR/logs/deploy.log"
 LOCK_FILE=/tmp/soho-deploy.lock
 
