@@ -59,8 +59,14 @@ EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
-# Static files - served by Nginx directly, no WhiteNoise needed
+# Static files - served by Nginx directly, no WhiteNoise needed.
+# collectstatic writes content-hashed copies for automatic cache-busting
+# (see config/staticfiles.py). Tailwind is never built here.
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': 'config.staticfiles.HashedStaticFilesStorage'},
+}
 
 # Logging — errors go to logs/django_errors.log; server errors (500s) are
 # also emailed to ADMINS (set ADMIN_EMAIL in .env).
