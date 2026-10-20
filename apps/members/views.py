@@ -1,5 +1,6 @@
 import logging
 import smtplib
+import uuid
 
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ValidationError
@@ -10,6 +11,8 @@ from django.shortcuts import get_object_or_404, render
 from django.template.loader import render_to_string
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django.views import View
 
 from apps.core.utils import clear_throttle, client_ip, honeypot_tripped, is_throttled
@@ -49,13 +52,14 @@ class SubscribeView(View):
             defaults={'first_name': first_name},
         )
 
-        if not created and member.is_active:
+        if member.is_active and member.is_email_subscribed:
             return render(request, 'members/partials/subscribe_form.html', {
                 'already_subscribed': True,
             })
 
         if not created:
-            # Unconfirmed sign-up being retried — keep the latest name
+            # Unconfirmed sign-up being retried, or a past subscriber who
+            # unsubscribed coming back. Either way they re-confirm by email.
             member.first_name = first_name
             member.save(update_fields=['first_name'])
 
@@ -106,17 +110,32 @@ class SubscribeView(View):
 class ConfirmView(View):
     def get(self, request, token):
         member = get_object_or_404(SoHoMember, confirmation_token=token)
-        if not member.is_active:
+        if not member.is_active or not member.is_email_subscribed:
             member.is_active = True
+            member.is_email_subscribed = True
             member.confirmed_at = timezone.now()
-            member.save(update_fields=['is_active', 'confirmed_at'])
+            member.save(update_fields=['is_active', 'is_email_subscribed', 'confirmed_at'])
         return render(request, 'members/confirm_success.html', {'member': member})
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class UnsubscribeView(View):
+    """
+    GET shows a confirmation page; POST unsubscribes. GET must not act, because
+    mail security scanners fetch every link in an email. POST is CSRF-exempt so
+    mail clients can use RFC 8058 one-click unsubscribe (List-Unsubscribe-Post);
+    the secret token in the URL is the authorization.
+    """
+
     def get(self, request, token):
+        member = get_object_or_404(SoHoMember, unsubscribe_token=token)
+        return render(request, 'members/unsubscribe_confirm.html', {'member': member})
+
+    def post(self, request, token):
         member = get_object_or_404(SoHoMember, unsubscribe_token=token)
         if member.is_email_subscribed:
             member.is_email_subscribed = False
-            member.save(update_fields=['is_email_subscribed'])
+            # Retire the old confirmation link so it can't silently re-subscribe them
+            member.confirmation_token = uuid.uuid4()
+            member.save(update_fields=['is_email_subscribed', 'confirmation_token'])
         return render(request, 'members/unsubscribe_success.html', {'member': member})

@@ -78,3 +78,51 @@ class SubscribeThrottleTests(TestCase):
         response = self.client.post(self.url, {'first_name': 'Pat', 'email': 'pat9@example.com'})
         self.assertIn('try again later', response.context['error'])
         self.assertEqual(len(mail.outbox), 3)
+
+
+class UnsubscribeTests(TestCase):
+    def setUp(self):
+        self.member = SoHoMember.objects.create(
+            email='pat@example.com', first_name='Pat', is_active=True, is_email_subscribed=True,
+        )
+        self.url = reverse('members:unsubscribe', kwargs={'token': self.member.unsubscribe_token})
+
+    def test_get_only_shows_confirmation(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, 'Unsubscribe from SoHo emails?')
+        self.member.refresh_from_db()
+        self.assertTrue(self.member.is_email_subscribed)
+
+    def test_post_unsubscribes_and_retires_confirmation_link(self):
+        old_confirm_token = self.member.confirmation_token
+        self.client.post(self.url)
+        self.member.refresh_from_db()
+        self.assertFalse(self.member.is_email_subscribed)
+        self.assertNotEqual(self.member.confirmation_token, old_confirm_token)
+        response = self.client.get(reverse('members:confirm', kwargs={'token': old_confirm_token}))
+        self.assertEqual(response.status_code, 404)
+
+    def test_one_click_post_works_without_csrf_token(self):
+        client = self.client_class(enforce_csrf_checks=True)
+        response = client.post(self.url, {'List-Unsubscribe': 'One-Click'})
+        self.assertEqual(response.status_code, 200)
+        self.member.refresh_from_db()
+        self.assertFalse(self.member.is_email_subscribed)
+
+
+class ResubscribeTests(TestCase):
+    url = reverse('members:subscribe')
+
+    def test_unsubscribed_member_can_resubscribe_via_confirmation(self):
+        member = SoHoMember.objects.create(
+            email='pat@example.com', first_name='Pat', is_active=True, is_email_subscribed=False,
+        )
+        response = self.client.post(self.url, {'first_name': 'Pat', 'email': 'pat@example.com'})
+        self.assertTrue(response.context['success'])
+        member.refresh_from_db()
+        self.assertFalse(member.is_email_subscribed)  # not until they confirm
+        self.assertEqual(len(mail.outbox), 1)
+
+        self.client.get(reverse('members:confirm', kwargs={'token': member.confirmation_token}))
+        member.refresh_from_db()
+        self.assertTrue(member.is_email_subscribed)
