@@ -15,8 +15,11 @@
 # commands), because migrations that already ran may need reversing by hand.
 #
 # Environment overrides:
-#     SOHO_HEALTH_URL   URL that must return 2xx/3xx after restart
-#                       (default https://soho.tazcomputer.com/ — the current production host)
+#     SOHO_HEALTH_URL   URL that must return 2xx/3xx after restart. Defaults to
+#                       gunicorn directly (http://127.0.0.1:8000/), bypassing nginx
+#                       and its staff-preview basic auth, which would return 401.
+#     SOHO_HEALTH_HOST  Host header sent with the health check; must be in
+#                       ALLOWED_HOSTS (default soho.tazcomputer.com)
 
 set -Eeuo pipefail  # -E: the ERR trap also fires inside helper functions
 
@@ -27,7 +30,8 @@ BRANCH=main
 PYTHON="$APP_DIR/.venv/bin/python"
 PIP="$APP_DIR/.venv/bin/pip"
 REQUIREMENTS=requirements/production.txt
-HEALTH_URL="${SOHO_HEALTH_URL:-https://soho.tazcomputer.com/}"
+HEALTH_URL="${SOHO_HEALTH_URL:-http://127.0.0.1:8000/}"
+HEALTH_HOST="${SOHO_HEALTH_HOST:-soho.tazcomputer.com}"
 LOG_FILE="$APP_DIR/logs/deploy.log"
 LOCK_FILE=/tmp/soho-deploy.lock
 
@@ -141,10 +145,12 @@ $dirty"
     systemctl is-active --quiet "$SERVICE" \
         || { sudo systemctl status "$SERVICE" --no-pager -n 20 || true; false; }
 
-    step "Health check: $HEALTH_URL"
+    step "Health check: $HEALTH_URL (Host: $HEALTH_HOST)"
     local code=""
     for _ in 1 2 3 4 5; do
-        code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$HEALTH_URL" || true)
+        # X-Forwarded-Proto mimics nginx so Django treats the request as https.
+        code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 \
+            -H "Host: $HEALTH_HOST" -H "X-Forwarded-Proto: https" "$HEALTH_URL" || true)
         [[ $code =~ ^[23] ]] && break
         sleep 2
     done
