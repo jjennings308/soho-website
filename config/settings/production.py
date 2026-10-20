@@ -30,6 +30,10 @@ DATABASES = {
 
 # Security Settings
 SECURE_SSL_REDIRECT = False  # Nginx handles SSL termination
+# Trust nginx's scheme header so request.is_secure() and build_absolute_uri()
+# produce https:// links (email confirm/unsubscribe URLs). Requires nginx:
+#   proxy_set_header X-Forwarded-Proto $scheme;
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_BROWSER_XSS_FILTER = True
