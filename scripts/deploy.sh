@@ -121,7 +121,7 @@ $dirty"
         as_app git merge-base --is-ancestor HEAD "origin/$BRANCH" \
             || die "origin/$BRANCH is not a fast-forward of the server checkout. Investigate manually."
         echo "Incoming commits:"
-        as_app git --no-pager log --oneline "HEAD..origin/$BRANCH"
+        as_app git --no-pager log --oneline --no-decorate "HEAD..origin/$BRANCH"
     fi
 
     trap on_failure ERR
