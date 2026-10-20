@@ -28,3 +28,6 @@ config/settings/development.py
 # VS Code
 .vscode/db.sqlite3
 db.sqlite3
+
+# direnv — local dev only; on the VPS it would select development settings
+.envrc

@@ -122,7 +122,8 @@ $dirty"
 
     if $force || ! as_app git diff --quiet "$PREV_COMMIT" "$NEW_COMMIT" -- requirements/; then
         step "Installing requirements ($REQUIREMENTS)"
-        as_app "$PIP" install --quiet -r "$REQUIREMENTS"
+        # --no-cache-dir: www-data cannot write /var/www/.cache
+        as_app "$PIP" install --quiet --no-cache-dir -r "$REQUIREMENTS"
     else
         echo "Requirements unchanged — skipping pip install."
     fi
