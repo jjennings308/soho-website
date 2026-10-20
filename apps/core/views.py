@@ -161,12 +161,6 @@ def contact(request):
     from django.shortcuts import redirect
     return redirect('/about/#contact')
 
-def theme_test(request):
-    return render(request, 'core/theme_test.html')
-
-def gallery(request):
-    return render(request, 'core/gallery.html')
-
 def online_delivery(request):
     return render(request, 'core/online_delivery.html')
 
