@@ -7,7 +7,7 @@ from django.views.generic import TemplateView
 from django.db.models import Prefetch
 from .forms import ContactForm, EventInquiryForm
 from .models import Review, SitePopup, SiteSettings
-from .utils import get_banner, get_panel_side, honeypot_tripped
+from .utils import client_ip, get_banner, get_panel_side, honeypot_tripped, is_throttled
 from apps.content.models import ContentGroup
 from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
 
@@ -192,6 +192,14 @@ def accessibility(request):
     return render(request, 'core/legal/accessibility.html')
 
 
+# Valid submissions allowed per visitor IP per hour on each public form.
+FORM_SUBMISSIONS_PER_HOUR = 5
+THROTTLED_MESSAGE = (
+    "We've received several messages from you recently. "
+    "Please try again later, or give us a call."
+)
+
+
 def _first_errors(form):
     """Flatten form errors to {field: first message} for the form partials."""
     return {field: errs[0] for field, errs in form.errors.items()}
@@ -206,6 +214,10 @@ class ContactFormView(View):
         if not form.is_valid():
             return render(request, 'core/partials/contact_form.html', {
                 'errors': _first_errors(form), 'data': request.POST,
+            })
+        if is_throttled(f'contact:{client_ip(request)}', FORM_SUBMISSIONS_PER_HOUR, 3600):
+            return render(request, 'core/partials/contact_form.html', {
+                'errors': {'form': THROTTLED_MESSAGE}, 'data': request.POST,
             })
         data = form.cleaned_data
 
@@ -238,6 +250,11 @@ class EventInquiryView(View):
         if not form.is_valid():
             return render(request, 'core/partials/event_inquiry_form.html', {
                 'errors': _first_errors(form), 'data': request.POST,
+            })
+
+        if is_throttled(f'inquiry:{client_ip(request)}', FORM_SUBMISSIONS_PER_HOUR, 3600):
+            return render(request, 'core/partials/event_inquiry_form.html', {
+                'errors': {'form': THROTTLED_MESSAGE}, 'data': request.POST,
             })
 
         inquiry = form.save()

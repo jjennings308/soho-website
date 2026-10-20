@@ -1,5 +1,9 @@
 # core/utils.py
 
+import time
+
+from django.core.cache import cache
+
 from apps.content.models import ContentSlot
 
 
@@ -53,3 +57,37 @@ def honeypot_tripped(request):
     so bots get no signal.
     """
     return bool(request.POST.get(HONEYPOT_FIELD, '').strip())
+
+
+def client_ip(request):
+    """
+    The visitor's IP. Behind nginx REMOTE_ADDR is always the proxy, so use
+    the right-most X-Forwarded-For entry — the one nginx appended, which the
+    client cannot spoof.
+    """
+    forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    if forwarded:
+        return forwarded.split(',')[-1].strip()
+    return request.META.get('REMOTE_ADDR', '')
+
+
+_clock = time.time  # module-level so tests can patch it without touching the cache backend
+
+
+def is_throttled(key, limit, window):
+    """
+    Record one hit against `key` and return True once more than `limit` hits
+    have landed within a fixed `window` (seconds) starting at the first hit.
+
+    Stores (count, reset_at) rather than using cache.incr(), because
+    BaseCache.incr() re-saves with the default timeout and would keep
+    extending the window. Not atomic — fine for spam limiting.
+    """
+    cache_key = f'throttle:{key}'
+    now = _clock()
+    count, reset_at = cache.get(cache_key) or (0, now + window)
+    if reset_at <= now:
+        count, reset_at = 0, now + window
+    count += 1
+    cache.set(cache_key, (count, reset_at), timeout=max(1, int(reset_at - now)))
+    return count > limit

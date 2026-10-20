@@ -31,6 +31,8 @@
   {% csrf_token %}
   {% include 'core/partials/_honeypot.html' %}
 
+  {% if errors.form %}<p style="font-size:0.85rem;color:#e87;margin:0 0 0.65rem;">{{ errors.form }}</p>{% endif %}
+
   {# Name #}
   <div style="{{ field_row }}">
     <label style="{{ label_style }}">Name <span style="color:#e87;">*</span></label>

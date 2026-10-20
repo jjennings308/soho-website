@@ -26,3 +26,20 @@ class SubscribeTests(TestCase):
     def test_subscribe_form_renders_honeypot_field(self):
         response = self.client.post(self.url, {})
         self.assertContains(response, 'name="hp_check"')
+
+
+class SubscribeThrottleTests(TestCase):
+    url = reverse('members:subscribe')
+
+    def test_repeat_signup_for_same_address_sends_one_email(self):
+        for _ in range(3):
+            response = self.client.post(self.url, {'first_name': 'Pat', 'email': 'pat@example.com'})
+            self.assertTrue(response.context['success'])
+        self.assertEqual(len(mail.outbox), 1)
+
+    def test_ip_limited_to_three_confirmation_emails_per_hour(self):
+        for i in range(3):
+            self.client.post(self.url, {'first_name': 'Pat', 'email': f'pat{i}@example.com'})
+        response = self.client.post(self.url, {'first_name': 'Pat', 'email': 'pat9@example.com'})
+        self.assertIn('try again later', response.context['error'])
+        self.assertEqual(len(mail.outbox), 3)

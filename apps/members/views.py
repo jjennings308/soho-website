@@ -7,9 +7,15 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views import View
 
-from apps.core.utils import honeypot_tripped
+from apps.core.utils import client_ip, honeypot_tripped, is_throttled
 
 from .models import SoHoMember
+
+
+# Confirmation emails allowed per visitor IP per hour, and the minimum gap
+# between confirmation emails to any one address.
+SUBSCRIBE_EMAILS_PER_IP_PER_HOUR = 3
+SUBSCRIBE_EMAIL_RESEND_SECONDS = 15 * 60
 
 
 class SubscribeView(View):
@@ -39,6 +45,15 @@ class SubscribeView(View):
             member.first_name = first_name
 
         if not member.is_active:
+            if is_throttled(f'subscribe-ip:{client_ip(request)}', SUBSCRIBE_EMAILS_PER_IP_PER_HOUR, 3600):
+                return render(request, 'members/partials/subscribe_form.html', {
+                    'error': 'Too many sign-up attempts. Please try again later.',
+                })
+            if is_throttled(f'subscribe-email:{member.email}', 1, SUBSCRIBE_EMAIL_RESEND_SECONDS):
+                # A confirmation went to this address recently. Don't send
+                # another, and don't reveal that to whoever is submitting.
+                return render(request, 'members/partials/subscribe_form.html', {'success': True})
+
             # (Re-)send the confirmation email whether new or previously unconfirmed
             confirm_url = request.build_absolute_uri(
                 reverse('members:confirm', kwargs={'token': member.confirmation_token})

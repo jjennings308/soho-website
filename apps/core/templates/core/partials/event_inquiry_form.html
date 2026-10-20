@@ -25,6 +25,8 @@
     {% csrf_token %}
     {% include 'core/partials/_honeypot.html' %}
 
+    {% if errors.form %}<div style="font-size:0.85rem;color:var(--color-accent-red);margin-bottom:0.75rem;">{{ errors.form }}</div>{% endif %}
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
       <div>
         <label style="display:block;font-size:0.78rem;font-weight:500;margin-bottom:0.3rem;color:var(--color-text-secondary);">Name *</label>
