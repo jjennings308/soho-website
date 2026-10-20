@@ -1,0 +1,11 @@
+{% autoescape off %}{{ newsletter.subject }}
+
+{{ body_text }}
+
+--
+SoHo Pittsburgh
+{{ site_url }}
+
+You're receiving this because you subscribed to SoHo Pittsburgh emails.
+Unsubscribe: {{ unsubscribe_url }}
+{% endautoescape %}

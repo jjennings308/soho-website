@@ -1,12 +1,10 @@
 import csv
 
 from django.contrib import admin, messages
-from django.core.mail import EmailMessage
 from django.http import HttpResponse
-from django.template.loader import render_to_string
-from django.utils import timezone
 
 from .models import Newsletter, SoHoMember
+from .newsletter import send_newsletter
 
 
 @admin.register(SoHoMember)
@@ -52,40 +50,21 @@ class NewsletterAdmin(admin.ModelAdmin):
 
     @admin.action(description='Send to all active subscribers')
     def send_to_subscribers(self, request, queryset):
+        base_url = request.build_absolute_uri('/')
         for newsletter in queryset:
-            if not newsletter.is_draft:
+            result = send_newsletter(newsletter, sent_by=request.user, base_url=base_url)
+            if result is None:
+                self.message_user(request, f'"{newsletter.subject}" has already been sent — skipped.',
+                                  level=messages.WARNING)
+            elif result.sent == 0 and result.failed == 0:
+                self.message_user(request, 'No active subscribers to send to.', level=messages.WARNING)
+            elif result.sent == 0:
+                self.message_user(request, f'"{newsletter.subject}" failed for every subscriber — still a draft.',
+                                  level=messages.ERROR)
+            else:
+                failed = f'; {result.failed} failed (see error log)' if result.failed else ''
                 self.message_user(
                     request,
-                    f'"{newsletter.subject}" has already been sent — skipped.',
-                    level=messages.WARNING,
+                    f'"{newsletter.subject}" sent to {result.sent} subscriber(s){failed}.',
+                    level=messages.WARNING if result.failed else messages.SUCCESS,
                 )
-                continue
-
-            recipients = list(
-                SoHoMember.objects.filter(is_active=True, is_email_subscribed=True)
-                .values_list('email', flat=True)
-            )
-            if not recipients:
-                self.message_user(request, 'No active subscribers to send to.', level=messages.WARNING)
-                continue
-
-            html_body = render_to_string('members/emails/newsletter.html', {'newsletter': newsletter})
-
-            email = EmailMessage(
-                subject=newsletter.subject,
-                body=html_body,
-                from_email=None,  # uses DEFAULT_FROM_EMAIL
-                bcc=recipients,
-            )
-            email.content_subtype = 'html'
-            email.send()
-
-            newsletter.sent_at = timezone.now()
-            newsletter.recipient_count = len(recipients)
-            newsletter.sent_by = request.user
-            newsletter.save(update_fields=['sent_at', 'recipient_count', 'sent_by'])
-
-            self.message_user(
-                request,
-                f'"{newsletter.subject}" sent to {len(recipients)} subscriber(s).',
-            )

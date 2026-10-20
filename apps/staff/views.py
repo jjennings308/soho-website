@@ -1,4 +1,3 @@
-import re
 import shutil
 from io import StringIO
 from pathlib import Path
@@ -7,43 +6,17 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
-from django.core.mail import EmailMessage
 from django.core.management import call_command
 from django.shortcuts import get_object_or_404, redirect, render
-from django.template.loader import render_to_string
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views import View
-
-
-def _prepare_newsletter_html(html, base_url):
-    """Make newsletter HTML safe for email clients."""
-    # Relative media URLs → absolute so email clients can load images
-    html = html.replace('src="/media/', f'src="{base_url}media/')
-    html = html.replace('href="/media/', f'href="{base_url}media/')
-
-    # CKEditor5 wraps resized images in <figure style="width:X%">.
-    # Email clients ignore figure styles, so move width onto the img tag.
-    def unwrap_figure(m):
-        figure_attrs = m.group(1)
-        content = m.group(2)
-        w = re.search(r'width\s*:\s*([\d.]+%)', figure_attrs)
-        width_style = f'width:{w.group(1)};' if w else ''
-        content = re.sub(
-            r'<img\b',
-            f'<img style="{width_style}max-width:100%;height:auto;"',
-            content,
-            count=1,
-        )
-        return content
-
-    html = re.sub(r'<figure\b([^>]*)>(.*?)</figure>', unwrap_figure, html, flags=re.DOTALL | re.IGNORECASE)
-    return html
 
 from apps.core.models import ColorScheme, EventInquiry, Review, SitePopup, SiteSettings
 from apps.events.models import EventDay
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter, SoHoMember
+from apps.members.newsletter import send_newsletter
 from apps.menu.models import Menu
 
 from .forms import ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
@@ -428,39 +401,18 @@ class NewsletterEditView(StaffRequiredMixin, View):
 class NewsletterSendView(StaffRequiredMixin, View):
     def post(self, request, pk):
         newsletter = get_object_or_404(Newsletter, pk=pk)
-        if not newsletter.is_draft:
-            return redirect('staff:newsletter_detail', pk=pk)
-
-        members = list(
-            SoHoMember.objects.filter(is_active=True, is_email_subscribed=True)
-        )
-
-        if members:
-            base_url = request.build_absolute_uri('/')
-            for member in members:
-                unsubscribe_url = request.build_absolute_uri(
-                    reverse('members:unsubscribe', kwargs={'token': member.unsubscribe_token})
-                )
-                html_body = render_to_string('members/emails/newsletter.html', {
-                    'newsletter': newsletter,
-                    'member': member,
-                    'unsubscribe_url': unsubscribe_url,
-                })
-                html_body = _prepare_newsletter_html(html_body, base_url)
-                msg = EmailMessage(
-                    subject=newsletter.subject,
-                    body=html_body,
-                    from_email=None,
-                    to=[member.email],
-                )
-                msg.content_subtype = 'html'
-                msg.send(fail_silently=True)
-
-        newsletter.sent_at = timezone.now()
-        newsletter.recipient_count = len(members)
-        newsletter.sent_by = request.user
-        newsletter.save(update_fields=['sent_at', 'recipient_count', 'sent_by'])
-
+        result = send_newsletter(newsletter, sent_by=request.user, base_url=request.build_absolute_uri('/'))
+        if result is None:
+            messages.warning(request, 'This newsletter has already been sent.')
+        elif result.sent == 0 and result.failed == 0:
+            messages.warning(request, 'There are no active subscribers — nothing was sent.')
+        elif result.sent == 0:
+            messages.error(request, 'Sending failed for every subscriber — the newsletter is still a draft. '
+                                    'Check the mail settings and try again.')
+        elif result.failed:
+            messages.warning(request, f'Sent to {result.sent} subscriber(s); {result.failed} failed (see error log).')
+        else:
+            messages.success(request, f'Sent to {result.sent} subscriber(s).')
         return redirect('staff:newsletter_detail', pk=pk)
 
 
