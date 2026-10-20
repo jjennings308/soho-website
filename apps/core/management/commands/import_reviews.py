@@ -1,9 +1,9 @@
 import json
-import os
 import urllib.request
 import urllib.error
 from datetime import date
 
+from decouple import config
 from django.core.management.base import BaseCommand, CommandError
 
 from apps.core.models import Review
@@ -36,8 +36,8 @@ class Command(BaseCommand):
     # ── Google Places API ────────────────────────────────────────────────────
 
     def _import_google(self):
-        api_key = os.environ.get('GOOGLE_PLACES_API_KEY', '').strip()
-        place_id = os.environ.get('GOOGLE_PLACE_ID', '').strip()
+        api_key = config('GOOGLE_PLACES_API_KEY', default='').strip()
+        place_id = config('GOOGLE_PLACE_ID', default='').strip()
 
         if not api_key or not place_id:
             raise CommandError(
@@ -93,8 +93,8 @@ class Command(BaseCommand):
     # ── Yelp Fusion API ──────────────────────────────────────────────────────
 
     def _import_yelp(self):
-        api_key = os.environ.get('YELP_API_KEY', '').strip()
-        business_id = os.environ.get('YELP_BUSINESS_ID', '').strip()
+        api_key = config('YELP_API_KEY', default='').strip()
+        business_id = config('YELP_BUSINESS_ID', default='').strip()
 
         if not api_key or not business_id:
             raise CommandError(

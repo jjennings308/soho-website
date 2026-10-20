@@ -5,21 +5,17 @@ Base settings shared across all environments.
 
 from pathlib import Path
 from decouple import config
-import os
-from dotenv import load_dotenv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# decouple's config() reads BASE_DIR/.env (and real environment variables).
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
-load_dotenv(BASE_DIR / ".env")
 
 with open(BASE_DIR / 'VERSION') as f:
     VERSION = f.read().strip()
 
-# Build paths inside the project
-#BASE_DIR = Path(__file__).resolve().parent.parent.parent
-
 # SECURITY WARNING: keep the secret key used in production secret!
+# The default is for local development only; production.py requires a real key.
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production')
 
 # Application definition
@@ -183,13 +179,7 @@ THUMBNAIL_ALIASES = {
     },
 }
 
-# Admin settings
-ADMINS = [
-    ('Admin', config('ADMIN_EMAIL', default='admin@restaurant.com')),
-]
-
-# Restaurant Settings (can be overridden in database via SiteSettings model)
-RESTAURANT_NAME = config('RESTAURANT_NAME', default='Your Restaurant2')
-RESTAURANT_PHONE = config('RESTAURANT_PHONE', default='')
-RESTAURANT_EMAIL = config('RESTAURANT_EMAIL', default='')
-RESTAURANT_ADDRESS = config('RESTAURANT_ADDRESS', default='')
+# Admin settings — server error (500) reports are emailed here in production.
+# Restaurant name/phone/address live in the SiteSettings model, not settings.
+ADMIN_EMAIL = config('ADMIN_EMAIL', default='')
+ADMINS = [('SoHo Admin', ADMIN_EMAIL)] if ADMIN_EMAIL else []
