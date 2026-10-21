@@ -2094,8 +2094,10 @@ Match key = how a row finds an existing record (match → update, no match → c
 | 7 | `menu_categories` (`MenuCategoryAssignment`) | `menu` + `category` | menu (slug), category (slug or name), display_order |
 | 8 | `placements` (`MenuItemCategoryAssignment`) | `item` + `category` | item, category, subcategory, order, override_price, note, is_active |
 
-- Recurrence fields from `RecurrenceMixin` (`days_of_week`, etc.) are **not** in the first version
-  of `items` / `menus`; **Ask James** if promo menus need them in the CSV.
+- Recurrence fields from `RecurrenceMixin` (`days_of_week`, etc.) are **not** in any CSV — James,
+  2026-10-21: a minor setting, edited per menu instead. (Today that's the Django admin Menu form,
+  superusers only; the staff portal has no menu editing. Adding it to the portal is a separate,
+  unspecced request.)
 - An unknown column is an error (catches typos); missing optional columns are fine.
 - A lookup that matches nothing (e.g. a placement naming a category that doesn't exist) is a row
   error with the value shown — never a silent create.
@@ -2175,7 +2177,7 @@ Match key = how a row finds an existing record (match → update, no match → c
 - Export (`whole_menu.export_csv()`): every placement in every category on every menu, in display
   order; items in categories on no menu are not included. Portal kind `whole_menu` (first option on
   `/staff/import/`), `export_menu` writes `0-whole-menu.csv`, `import_menu whole_menu <file>`.
-- Recurrence fields remain out of all sheets (still an open question for James).
+- Recurrence fields stay out of all sheets (James decided, see *Kinds, order and columns*).
 
 ### Phases
 
