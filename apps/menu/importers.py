@@ -398,6 +398,7 @@ class Row:
     errors: list = field(default_factory=list)
     instance: object = None
     form: object = None
+    sheet_lines: list = field(default_factory=list)  # whole-menu sheet lines this row came from
 
 
 @dataclass
