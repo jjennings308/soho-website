@@ -442,6 +442,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/popups/` | List, add, edit, delete site popups |
 | `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
 | `/staff/help/` | Task-based help for every tier (topics filtered by tier). Each portal page shows a collapsible "How this page works" tip linking to its topic. Content: `apps/staff/help.py` (topics + per-page tips) and `staff/help.html` — tests fail if a portal page has no tip or the two drift apart |
+| `/staff/import/` | **Superusers only.** Menu CSV import (upload → preview → confirm) and per-kind CSV export/templates — see *Menu CSV import / export* |
 | `/staff/settings/` | Edit `SiteSettings` (notification email, phone, reservations URL, etc.); manage color schemes (add/edit/delete) |
 
 **Media library page retention:** Edit/cancel/delete on the media edit page all return to the URL that launched the edit. The list page passes `?next={{ request.get_full_path|urlencode }}` on edit links; the edit view threads it through a hidden `<input name="next">` field so POST redirects land back on the same filtered/paginated page. `safe='/'` on the `urlencode` filter keeps path slashes readable.
@@ -2037,7 +2038,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
 
-## Menu CSV import / export (`apps/menu/importers.py`) — M1 BUILT, M2–M3 PLANNED
+## Menu CSV import / export (`apps/menu/importers.py`) — M1–M2 BUILT, M3 PLANNED
 
 Spec written 2026-10-21. Modelled on the CSV import in James's ShareBucketList site
 (`apps/admin_tools/importers.py` there: one description of each kind, rows validated by the
@@ -2137,6 +2138,18 @@ Match key = how a row finds an existing record (match → update, no match → c
   kept, so a round trip never loses formatting.
 - `export_menu` writes `1-categories.csv` … `8-placements.csv` (default folder
   `menu-export-YYYY-MM-DD/`); `import_menu` exits non-zero on errors.
+
+### M2 implementation notes (2026-10-21)
+
+- Views `MenuImportView`, `MenuImportPreviewView`, `MenuImportTemplateView`, `MenuExportView` in
+  `apps/staff/views.py`, all `staff_access = SUPERUSER`. URL names `staff:menu_import`,
+  `staff:menu_import_preview`, `staff:menu_import_template` / `staff:menu_export` (`<slug:kind>.csv`).
+- The upload (decoded text, kind, filename) waits in `request.session['menu_import']` until
+  Confirm or Cancel; uploads over 2 MB are refused. The preview lists only new / changed / error rows
+  (unchanged rows are counted). Confirm runs `apply()`, so it re-validates; on refusal the session is
+  kept and the errors shown.
+- `KIND_DESCRIPTIONS` and `KIND_EXAMPLES` in `importers.py` feed the upload page and the templates.
+- Tools nav link "Menu Import / Export" sits in the superuser-only block with Settings and Django Admin.
 
 ### Phases
 
