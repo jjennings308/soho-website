@@ -8,8 +8,7 @@ from apps.staff.permissions import MANAGER_GROUP
 
 # Pages a read-only (Tier 2) staff user may GET. Everything else is denied.
 TIER2_READABLE = {'dashboard', 'menu_mode', 'events', 'menu_item_list', 'colors', 'help'}
-SUPERUSER_ONLY = {'settings', 'color_scheme_add', 'color_scheme_edit', 'color_scheme_delete',
-                  'menu_import', 'menu_import_preview', 'menu_import_template', 'menu_export'}
+SUPERUSER_ONLY = {'settings', 'color_scheme_add', 'color_scheme_edit', 'color_scheme_delete'}
 PUBLIC = {'login', 'logout'}
 
 
@@ -62,15 +61,15 @@ class EveryStaffUrlTests(TierTestCase):
                 if name in SUPERUSER_ONLY:
                     self.assertEqual(status, 403)
                 else:
-                    # 404/405 are fine (pk=1 doesn't exist; some views are POST-only)
-                    self.assertIn(status, (200, 404, 405))
+                    # 404/405 are fine (pk=1 doesn't exist; some views are POST-only);
+                    # 302: the import preview redirects when nothing is uploaded
+                    self.assertIn(status, (200, 302, 404, 405))
 
     def test_superuser_reaches_settings(self):
         self.client.force_login(self.superuser())
         for name in SUPERUSER_ONLY:
             with self.subTest(name=name):
-                # 302: the import preview redirects when nothing is uploaded
-                self.assertIn(self.client.get(url_for(name)).status_code, (200, 302, 404, 405))
+                self.assertIn(self.client.get(url_for(name)).status_code, (200, 404, 405))
 
 
 class TierActionTests(TierTestCase):

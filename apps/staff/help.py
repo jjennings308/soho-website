@@ -21,7 +21,7 @@ TOPICS = [
     ('reviews', 'Reviews', MANAGER),
     ('colors', 'Color reference', STAFF),
     ('settings', 'Site settings and color schemes', SUPERUSER),
-    ('menu-import', 'Menu import / export (spreadsheets)', SUPERUSER),
+    ('menu-import', 'Menu import / export (spreadsheets)', MANAGER),
 ]
 
 # url_name → (topic id, one-line tip). Every portal page should have an entry.

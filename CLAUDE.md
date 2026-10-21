@@ -442,7 +442,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/popups/` | List, add, edit, delete site popups |
 | `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
 | `/staff/help/` | Task-based help for every tier (topics filtered by tier). Each portal page shows a collapsible "How this page works" tip linking to its topic. Content: `apps/staff/help.py` (topics + per-page tips) and `staff/help.html` — tests fail if a portal page has no tip or the two drift apart |
-| `/staff/import/` | **Superusers only.** Menu CSV import (upload → preview → confirm) and per-kind CSV export/templates — see *Menu CSV import / export* |
+| `/staff/import/` | **Staff Manager tier and above.** Menu CSV import (upload → preview → confirm) and per-kind CSV export/templates — see *Menu CSV import / export* |
 | `/staff/settings/` | Edit `SiteSettings` (notification email, phone, reservations URL, etc.); manage color schemes (add/edit/delete) |
 
 **Media library page retention:** Edit/cancel/delete on the media edit page all return to the URL that launched the edit. The list page passes `?next={{ request.get_full_path|urlencode }}` on edit links; the edit view threads it through a hidden `<input name="next">` field so POST redirects land back on the same filtered/paginated page. `safe='/'` on the `urlencode` filter keeps path slashes readable.
@@ -1979,6 +1979,7 @@ The staff portal dashboard is built and functional. Do not add features beyond w
 **Tier 1 — Manager/Owner**
 - Full portal access
 - Can change menu mode, manage events, upload media, send newsletters, manage inquiries
+- Can import/export the menu as CSV (`/staff/import/`) — James, 2026-10-21
 - Cannot access SiteSettings, user management, or anything on the superuser-only list
 
 **Tier 2 — General Staff**
@@ -2034,7 +2035,8 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Remove the superuser-only Django admin link from the Tools section
 - Add Django admin links for non-superusers
 - Build Phase 3 features not yet specced
-- Grant menu editing access to the staff portal before Phase 3 is planned
+- Grant menu editing access to the staff portal before Phase 3 is planned (the CSV import for
+  Tier 1 is the one approved exception)
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
 
@@ -2072,8 +2074,9 @@ promo menu, a whole seasonal change. Export the current menu, edit it in Excel/S
   `/staff/menu/items/<pk>/images/` page.
 - **`MenuItem.description` (CKEditor) is imported as plain text** wrapped in `<p>` per paragraph;
   export writes it back as plain text (tags stripped). `short_description` is the main text column.
-- **Access: superuser only** (see *Staff portal phasing*: menu editing is not delegated to the
-  portal before Phase 3). **Ask James** if Tier 1 managers should get it later.
+- **Access: Staff Manager tier (Tier 1) and superusers** — decided by James 2026-10-21, an explicit
+  exception to *Staff portal phasing*'s "no menu editing in the portal before Phase 3". Read-only
+  (Tier 2) staff never see the pages or link.
 - `available_game_day` (deprecated) is never read or written.
 
 ### Kinds, order and columns
@@ -2109,12 +2112,12 @@ Match key = how a row finds an existing record (match → update, no match → c
   re-validates — M2 keeps the uploaded text in the session. `export_csv(kind)` writes the same
   columns (UTF-8 with BOM for Excel); `read_csv_bytes()` accepts UTF-8 (± BOM) or Windows-1252.
   Pure enough to test without views (`apps/menu/tests/test_importers.py`).
-- Views in `apps/staff/` (superuser-only, `StaffRequiredMixin` plus a superuser check):
+- Views in `apps/staff/` (`StaffRequiredMixin`, `staff_access = MANAGER`):
   `/staff/import/` (choose kind, upload), `/staff/import/preview/` (table of rows: New / Update /
   Error, changed fields highlighted, Confirm disabled while any row has an error),
   `/staff/import/template/<kind>.csv` (header row + one example row) and
   `/staff/export/<kind>.csv` (current data, same columns). Linked from the portal's **Tools**
-  section, rendered only for superusers (same rule as the Django admin link — never shown to others).
+  section, rendered for the Staff Manager tier and superusers (`staff_is_manager`).
 - Management commands: `python manage.py export_menu [dir]` (all kinds, one CSV each) and
   `python manage.py import_menu <kind> <file> [--apply]` (dry run by default, prints the preview).
 - The portal help (`apps/staff/help.py`): add a topic and a "How this page works" tip for the new
@@ -2142,14 +2145,15 @@ Match key = how a row finds an existing record (match → update, no match → c
 ### M2 implementation notes (2026-10-21)
 
 - Views `MenuImportView`, `MenuImportPreviewView`, `MenuImportTemplateView`, `MenuExportView` in
-  `apps/staff/views.py`, all `staff_access = SUPERUSER`. URL names `staff:menu_import`,
+  `apps/staff/views.py`, all `staff_access = MANAGER` (superuser-only in the first M2 build). URL names `staff:menu_import`,
   `staff:menu_import_preview`, `staff:menu_import_template` / `staff:menu_export` (`<slug:kind>.csv`).
 - The upload (decoded text, kind, filename) waits in `request.session['menu_import']` until
   Confirm or Cancel; uploads over 2 MB are refused. The preview lists only new / changed / error rows
   (unchanged rows are counted). Confirm runs `apply()`, so it re-validates; on refusal the session is
   kept and the errors shown.
 - `KIND_DESCRIPTIONS` and `KIND_EXAMPLES` in `importers.py` feed the upload page and the templates.
-- Tools nav link "Menu Import / Export" sits in the superuser-only block with Settings and Django Admin.
+- Tools nav link "Menu Import / Export" shows for managers and superusers (above the superuser-only
+  Settings and Django Admin links).
 
 ### Phases
 
@@ -2157,7 +2161,7 @@ Match key = how a row finds an existing record (match → update, no match → c
   `import_menu --apply`. Tests: each kind create/update/blank-keeps/`-`-clears; choice code and
   label; booleans; unknown column; unmatched lookup; whole file refused on one bad row; round trip
   (export → import → no changes); `role` rules enforced through the form.
-- **M2 — Staff portal pages.** Upload, preview, confirm, templates, export; superuser-only; help
+- **M2 — Staff portal pages.** Upload, preview, confirm, templates, export; Staff Manager tier; help
   topic and tips. Tests: non-superuser staff get 403 and see no Tools link; preview saves nothing;
   confirm saves; session cleared after confirm; CSV templates download with the right headers.
 - **M3 — "Whole menu" sheet** (only if James says yes above).
@@ -2165,5 +2169,5 @@ Match key = how a row finds an existing record (match → update, no match → c
 ### What Claude Code must not do here
 
 - Delete records from an import.
-- Show the import/export pages or links to non-superusers (until James says otherwise).
+- Show the import/export pages or links to read-only (Tier 2) staff.
 - Touch `available_game_day`, images, or the menu-mode logic.

@@ -613,7 +613,7 @@ class PopupDeleteView(StaffRequiredMixin, View):
         return redirect('staff:popups')
 
 
-# ── Menu CSV import / export (superuser only) ─────────────────────────────────
+# ── Menu CSV import / export (Staff Manager tier) ─────────────────────────────────
 
 MENU_IMPORT_SESSION_KEY = 'menu_import'
 MENU_IMPORT_MAX_BYTES = 2 * 1024 * 1024
@@ -633,7 +633,7 @@ def _csv_download(text, filename):
 
 class MenuImportView(StaffRequiredMixin, View):
     """Choose a kind and upload a CSV; it waits in the session for the preview."""
-    staff_access = SUPERUSER
+    staff_access = MANAGER
 
     def _render(self, request, error=None, selected=''):
         kinds = [
@@ -666,7 +666,7 @@ class MenuImportView(StaffRequiredMixin, View):
 
 class MenuImportPreviewView(StaffRequiredMixin, View):
     """Show what the upload would change; Confirm saves it all, or nothing."""
-    staff_access = SUPERUSER
+    staff_access = MANAGER
 
     def _render(self, request, pending, result):
         rows = [r for r in result.rows if r.action != 'unchanged']
@@ -706,7 +706,7 @@ class MenuImportPreviewView(StaffRequiredMixin, View):
 
 
 class MenuImportTemplateView(StaffRequiredMixin, View):
-    staff_access = SUPERUSER
+    staff_access = MANAGER
 
     def get(self, request, kind):
         kind = _menu_kind_or_404(kind)
@@ -714,7 +714,7 @@ class MenuImportTemplateView(StaffRequiredMixin, View):
 
 
 class MenuExportView(StaffRequiredMixin, View):
-    staff_access = SUPERUSER
+    staff_access = MANAGER
 
     def get(self, request, kind):
         kind = _menu_kind_or_404(kind)

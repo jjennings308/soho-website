@@ -22,20 +22,27 @@ def upload(text, name='items.csv'):
 
 
 class MenuImportAccessTests(TestCase):
-    def test_non_superusers_get_403_and_see_no_link(self):
+    URLS = [
+        ('get', 'staff:menu_import', []), ('get', 'staff:menu_import_preview', []),
+        ('get', 'staff:menu_import_template', ['items']), ('get', 'staff:menu_export', ['items']),
+    ]
+
+    def test_read_only_staff_get_403_and_see_no_link(self):
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
+        for _, name, args in self.URLS:
+            self.assertEqual(self.client.get(reverse(name, args=args)).status_code, 403, name)
+        self.assertEqual(self.client.post(reverse('staff:menu_import')).status_code, 403)
+        self.assertNotContains(self.client.get(reverse('staff:dashboard')), reverse('staff:menu_import'))
+
+    def test_managers_can_use_it_and_see_the_link(self):
         manager = User.objects.create_user('mgr', password='x', is_staff=True)
         manager.groups.add(Group.objects.get(name=MANAGER_GROUP))
-        viewer = User.objects.create_user('viewer', password='x', is_staff=True)
-        for user in (manager, viewer):
-            with self.subTest(user=user.username):
-                self.client.force_login(user)
-                for url in (reverse('staff:menu_import'), reverse('staff:menu_import_preview'),
-                            reverse('staff:menu_import_template', args=['items']),
-                            reverse('staff:menu_export', args=['items'])):
-                    self.assertEqual(self.client.get(url).status_code, 403, url)
-                self.assertEqual(self.client.post(reverse('staff:menu_import')).status_code, 403)
-                dashboard = self.client.get(reverse('staff:dashboard'))
-                self.assertNotContains(dashboard, reverse('staff:menu_import'))
+        self.client.force_login(manager)
+        for _, name, args in self.URLS:
+            self.assertIn(self.client.get(reverse(name, args=args)).status_code, (200, 302), name)
+        dashboard = self.client.get(reverse('staff:dashboard'))
+        self.assertContains(dashboard, reverse('staff:menu_import'))
+        self.assertNotContains(dashboard, reverse('staff:settings'))  # still superuser-only
 
     def test_superuser_sees_tools_link(self):
         self.client.force_login(User.objects.create_superuser('root', 'root@example.com', 'x'))
@@ -146,14 +153,14 @@ class MenuCsvDownloadTests(TestCase):
 
 
 class MenuImportHelpTests(TestCase):
-    def test_pages_have_tips_and_superusers_see_help_topic(self):
+    def test_pages_have_tips_and_managers_see_help_topic(self):
         self.assertIn('menu_import', PAGE_TIPS)
         self.assertIn('menu_import_preview', PAGE_TIPS)
-        self.client.force_login(User.objects.create_superuser('root', 'root@example.com', 'x'))
-        self.assertContains(self.client.get(reverse('staff:help')), 'id="menu-import"')
-
-    def test_managers_do_not_see_help_topic(self):
         manager = User.objects.create_user('mgr', password='x', is_staff=True)
         manager.groups.add(Group.objects.get(name=MANAGER_GROUP))
         self.client.force_login(manager)
+        self.assertContains(self.client.get(reverse('staff:help')), 'id="menu-import"')
+
+    def test_read_only_staff_do_not_see_help_topic(self):
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
         self.assertNotContains(self.client.get(reverse('staff:help')), 'id="menu-import"')
