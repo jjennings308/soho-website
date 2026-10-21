@@ -2040,7 +2040,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
 
-## Menu CSV import / export (`apps/menu/importers.py`) — M1–M2 BUILT, M3 PLANNED
+## Menu CSV import / export (`apps/menu/importers.py`) — M1–M3 BUILT
 
 Spec written 2026-10-21. Modelled on the CSV import in James's ShareBucketList site
 (`apps/admin_tools/importers.py` there: one description of each kind, rows validated by the
@@ -2155,6 +2155,28 @@ Match key = how a row finds an existing record (match → update, no match → c
 - Tools nav link "Menu Import / Export" shows for managers and superusers (above the superuser-only
   Settings and Django Admin links).
 
+### M3 implementation notes — "whole menu" sheet (2026-10-21, James approved)
+
+- `apps/menu/whole_menu.py`. One row per item placement on a menu. Columns: `menu`, `menu_type`,
+  `category`, `category_type`, `category_order`, `subcategory`, `item`, `price`, `special_price`,
+  `item_order`, `short_description`, `note`, `available`, `featured`, `new`, `chef_special`,
+  `seasonal`, `vegan`, `gluten_free`, `dairy_free`, `nut_free`, `shown` (mapping in `COLUMN_MAP`).
+- Each row is split into rows for kinds categories → items → menus → menu_categories →
+  placements, merged per record and run through the engine in that order inside one transaction
+  (each stage saved so the next can find it). `parse_sheet()` runs everything then rolls back — an
+  exact preview; `apply_sheet()` keeps it or raises `SheetRefused`. Stops at the first stage with
+  errors (`stopped_at`); errors carry the sheet's line numbers (`Row.sheet_lines`).
+- Unknown `menu` / `category` / `item` names **create** records; a new menu needs `menu_type`
+  (the model default would make it a promo). Subcategories must already exist.
+- `price` = the item's own price; `special_price` = `override_price` for that placement.
+- Repeated values must agree across rows (canonical compare, so `12` = `12.00`); blank never conflicts.
+- Order is explicit: `category_order` / `item_order`; blank keeps, and new links go after the
+  existing ones in sheet order — so an unchanged export re-imports with no changes.
+- Export (`whole_menu.export_csv()`): every placement in every category on every menu, in display
+  order; items in categories on no menu are not included. Portal kind `whole_menu` (first option on
+  `/staff/import/`), `export_menu` writes `0-whole-menu.csv`, `import_menu whole_menu <file>`.
+- Recurrence fields remain out of all sheets (still an open question for James).
+
 ### Phases
 
 - **M1 — Import/export engine + commands.** `importers.py`, kinds 1–8, `export_menu`,
@@ -2164,7 +2186,7 @@ Match key = how a row finds an existing record (match → update, no match → c
 - **M2 — Staff portal pages.** Upload, preview, confirm, templates, export; Staff Manager tier; help
   topic and tips. Tests: non-superuser staff get 403 and see no Tools link; preview saves nothing;
   confirm saves; session cleared after confirm; CSV templates download with the right headers.
-- **M3 — "Whole menu" sheet** (only if James says yes above).
+- **M3 — "Whole menu" sheet.** Built — see M3 implementation notes.
 
 ### What Claude Code must not do here
 
