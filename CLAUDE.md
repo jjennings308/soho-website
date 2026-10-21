@@ -2037,7 +2037,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
 
-## Menu CSV import / export (`apps/menu/importers.py`) — PLANNED, NOT YET BUILT
+## Menu CSV import / export (`apps/menu/importers.py`) — M1 BUILT, M2–M3 PLANNED
 
 Spec written 2026-10-21. Modelled on the CSV import in James's ShareBucketList site
 (`apps/admin_tools/importers.py` there: one description of each kind, rows validated by the
@@ -2101,9 +2101,13 @@ Match key = how a row finds an existing record (match → update, no match → c
 
 ### Where it lives
 
-- `apps/menu/importers.py` — `KINDS`: for each kind its model, form, match key, columns, lookups
-  and export queryset; `parse(kind, file)` → rows with `new` / `update` / `error` and the field
-  changes; `apply(kind, rows)` in one transaction. Pure enough to test without views.
+- `apps/menu/importers.py` — `KINDS`: for each kind its model, match key, columns, lookups and
+  export order; `parse(kind, csv_text)` → rows with `new` / `update` / `unchanged` / `error`, the
+  field changes (old → new) and notes; `apply(kind, csv_text)` re-parses and saves all rows in one
+  transaction or raises `ImportRefused`. Takes the raw text (not parsed rows) so confirm always
+  re-validates — M2 keeps the uploaded text in the session. `export_csv(kind)` writes the same
+  columns (UTF-8 with BOM for Excel); `read_csv_bytes()` accepts UTF-8 (± BOM) or Windows-1252.
+  Pure enough to test without views (`apps/menu/tests/test_importers.py`).
 - Views in `apps/staff/` (superuser-only, `StaffRequiredMixin` plus a superuser check):
   `/staff/import/` (choose kind, upload), `/staff/import/preview/` (table of rows: New / Update /
   Error, changed fields highlighted, Confirm disabled while any row has an error),
@@ -2116,6 +2120,23 @@ Match key = how a row finds an existing record (match → update, no match → c
   pages — the existing tests fail if a portal page has no tip.
 - Portal templates follow the existing rules: brand CSS custom properties, no inline colours,
   mobile-first.
+
+### M1 implementation decisions (2026-10-21)
+
+- **Validation per row uses a ModelForm of exactly the fields that row sets** (all columns on a
+  create). That is how blank-keeps works, and it means a stored value that no longer passes today's
+  rules (e.g. the legacy `soho-menu` with `menu_type='combined'`) still round-trips while unchanged.
+- **Ambiguous names are errors**: an `item`/`category` lookup by name that matches more than one
+  record asks for the slug (two items are named "Crispy Arancini").
+- **Menu roles**: the same non-`none` role on two rows of one file is an error; taking a role from a
+  menu not in the file is allowed and shown as a note (`Menu.save()` then demotes the old holder).
+- **New subcategory slugs** default to `<category-slug>-<name>` (existing convention, e.g. `wine-red`).
+- **Menu `active_from` / `active_until`** are date-times: `YYYY-MM-DD HH:MM` Eastern; a bare date
+  means midnight.
+- **Description**: if the imported plain text equals the stored HTML with tags stripped, the HTML is
+  kept, so a round trip never loses formatting.
+- `export_menu` writes `1-categories.csv` … `8-placements.csv` (default folder
+  `menu-export-YYYY-MM-DD/`); `import_menu` exits non-zero on errors.
 
 ### Phases
 
