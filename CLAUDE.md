@@ -2036,3 +2036,100 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Grant menu editing access to the staff portal before Phase 3 is planned
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
+
+## Menu CSV import / export (`apps/menu/importers.py`) — PLANNED, NOT YET BUILT
+
+Spec written 2026-10-21. Modelled on the CSV import in James's ShareBucketList site
+(`apps/admin_tools/importers.py` there: one description of each kind, rows validated by the
+normal ModelForms, preview → confirm, export in the same columns). Build in the phases at the end
+of this section, one branch each. **Ask James** items must be answered before the phase that needs
+them.
+
+### Purpose
+
+Load and update the menu from spreadsheets instead of the admin: new items, price changes, a new
+promo menu, a whole seasonal change. Export the current menu, edit it in Excel/Sheets, re-import.
+
+### Decision log
+
+- **Upload → preview → confirm.** Nothing is saved until the user confirms the preview. The upload
+  waits in the session between the two steps.
+- **One file per kind**, imported in dependency order; each kind looks up the ones before it by
+  slug or name. Export writes the same columns, so an export can be edited and re-imported.
+- **Validation goes through ModelForms** (one small form per kind in `apps/menu/importers.py`, or the
+  existing admin/staff forms where they exist), so imports obey the same rules as manual edits —
+  including `Menu.role` rules and the `unique_together` constraints.
+- **Blank cells keep existing values** on an update. To clear a field, use the literal `-`.
+- **Imports never delete.** Rows missing from a file are left alone. (Deactivate with
+  `is_active = no`.)
+- **One transaction per import.** Any row error → the whole file is refused at preview; confirm
+  re-validates and saves all rows or none.
+- **Choice columns accept the code or the label** (`default_food` or `Default Food Menu`);
+  booleans accept `yes/no`, `true/false`, `1/0`, `y/n` (blank = keep). Prices are plain numbers
+  (`12.50`, no currency sign). Dates `YYYY-MM-DD`, times `HH:MM` (24 h).
+- **Images are not in the CSV.** They stay in the media library and the existing
+  `/staff/menu/items/<pk>/images/` page.
+- **`MenuItem.description` (CKEditor) is imported as plain text** wrapped in `<p>` per paragraph;
+  export writes it back as plain text (tags stripped). `short_description` is the main text column.
+- **Access: superuser only** (see *Staff portal phasing*: menu editing is not delegated to the
+  portal before Phase 3). **Ask James** if Tier 1 managers should get it later.
+- `available_game_day` (deprecated) is never read or written.
+
+### Kinds, order and columns
+
+Match key = how a row finds an existing record (match → update, no match → create).
+
+| # | Kind | Match key | Columns |
+|---|------|-----------|---------|
+| 1 | `categories` (`MenuCategory`) | `slug` (else slugified `name`) | name, display_name, slug, category_type, description, order, is_active, show_disclaimer |
+| 2 | `subcategories` (`MenuSubCategory`) | `category` + `name` | category (slug or name), name, display_name, slug, description, order, is_active |
+| 3 | `items` (`MenuItem`) | `slug` (else slugified `name`) | name, slug, short_description, description, price_display, price, sale_price, dietary_type, is_gluten_free, is_vegan, is_dairy_free, is_nut_free, contains_shellfish, allergen_info, spice_level, calories, preparation_time, is_featured, is_chef_special, is_new, is_seasonal, is_available, available_from, available_until, has_variations, has_addons |
+| 4 | `variations` (`MenuItemVariation`) | `item` + `name` | item (slug or name), name, description, price, size, quantity, order, is_default, is_available |
+| 5 | `addons` (`MenuItemAddon`) | `item` + `name` | item, name, description, price, order, is_default, is_available |
+| 6 | `menus` (`Menu`) | `slug` (else slugified `title`) | title, display_name, slug, description, menu_type, role, is_default, color_scheme (name), homepage_slot, valid_from, valid_until, is_active, active_from, active_until |
+| 7 | `menu_categories` (`MenuCategoryAssignment`) | `menu` + `category` | menu (slug), category (slug or name), display_order |
+| 8 | `placements` (`MenuItemCategoryAssignment`) | `item` + `category` | item, category, subcategory, order, override_price, note, is_active |
+
+- Recurrence fields from `RecurrenceMixin` (`days_of_week`, etc.) are **not** in the first version
+  of `items` / `menus`; **Ask James** if promo menus need them in the CSV.
+- An unknown column is an error (catches typos); missing optional columns are fine.
+- A lookup that matches nothing (e.g. a placement naming a category that doesn't exist) is a row
+  error with the value shown — never a silent create.
+- **Ask James:** also offer a single **"whole menu" sheet** for staff (one row per item placement:
+  menu, category, subcategory, item, price, short description, flags) that creates/updates kinds 1, 3,
+  6, 7 and 8 in one go? Recommended as Phase M3, after the per-kind import works.
+
+### Where it lives
+
+- `apps/menu/importers.py` — `KINDS`: for each kind its model, form, match key, columns, lookups
+  and export queryset; `parse(kind, file)` → rows with `new` / `update` / `error` and the field
+  changes; `apply(kind, rows)` in one transaction. Pure enough to test without views.
+- Views in `apps/staff/` (superuser-only, `StaffRequiredMixin` plus a superuser check):
+  `/staff/import/` (choose kind, upload), `/staff/import/preview/` (table of rows: New / Update /
+  Error, changed fields highlighted, Confirm disabled while any row has an error),
+  `/staff/import/template/<kind>.csv` (header row + one example row) and
+  `/staff/export/<kind>.csv` (current data, same columns). Linked from the portal's **Tools**
+  section, rendered only for superusers (same rule as the Django admin link — never shown to others).
+- Management commands: `python manage.py export_menu [dir]` (all kinds, one CSV each) and
+  `python manage.py import_menu <kind> <file> [--apply]` (dry run by default, prints the preview).
+- The portal help (`apps/staff/help.py`): add a topic and a "How this page works" tip for the new
+  pages — the existing tests fail if a portal page has no tip.
+- Portal templates follow the existing rules: brand CSS custom properties, no inline colours,
+  mobile-first.
+
+### Phases
+
+- **M1 — Import/export engine + commands.** `importers.py`, kinds 1–8, `export_menu`,
+  `import_menu --apply`. Tests: each kind create/update/blank-keeps/`-`-clears; choice code and
+  label; booleans; unknown column; unmatched lookup; whole file refused on one bad row; round trip
+  (export → import → no changes); `role` rules enforced through the form.
+- **M2 — Staff portal pages.** Upload, preview, confirm, templates, export; superuser-only; help
+  topic and tips. Tests: non-superuser staff get 403 and see no Tools link; preview saves nothing;
+  confirm saves; session cleared after confirm; CSV templates download with the right headers.
+- **M3 — "Whole menu" sheet** (only if James says yes above).
+
+### What Claude Code must not do here
+
+- Delete records from an import.
+- Show the import/export pages or links to non-superusers (until James says otherwise).
+- Touch `available_game_day`, images, or the menu-mode logic.
