@@ -63,6 +63,12 @@ urlpatterns = [
     path('colors/', views.ColorReferenceView.as_view(), name='colors'),
     path('help/', views.StaffHelpView.as_view(), name='help'),
 
+    # Menu CSV import / export (superuser only)
+    path('import/', views.MenuImportView.as_view(), name='menu_import'),
+    path('import/preview/', views.MenuImportPreviewView.as_view(), name='menu_import_preview'),
+    path('import/template/<slug:kind>.csv', views.MenuImportTemplateView.as_view(), name='menu_import_template'),
+    path('export/<slug:kind>.csv', views.MenuExportView.as_view(), name='menu_export'),
+
     # Newsletter
     path('newsletter/', views.NewsletterListView.as_view(), name='newsletter'),
     path('newsletter/compose/', views.NewsletterComposeView.as_view(), name='newsletter_compose'),

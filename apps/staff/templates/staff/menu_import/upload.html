@@ -1,0 +1,71 @@
+{% extends "staff/base.html" %}
+{% block title %}Menu Import / Export{% endblock %}
+{% block page_title %}Menu Import / Export{% endblock %}
+
+{% block content %}
+{% if pending %}
+<div class="sp-card" style="border-left:3px solid var(--color-gold-primary);margin-bottom:1.25rem;">
+  <p style="font-size:0.875rem;margin-bottom:0.75rem;">
+    <strong>{{ pending.filename }}</strong> ({{ pending.kind }}) is uploaded but not imported yet.
+  </p>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <a href="{% url 'staff:menu_import_preview' %}" class="sp-btn sp-btn--primary sp-btn--sm">Back to preview</a>
+    <form method="post" action="{% url 'staff:menu_import_preview' %}">
+      {% csrf_token %}
+      <button type="submit" name="action" value="cancel" class="sp-btn sp-btn--outline sp-btn--sm">Discard it</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<div class="sp-grid-2" style="align-items:start;">
+
+  <div class="sp-card">
+    <h2 style="font-size:0.95rem;font-weight:600;margin-bottom:1rem;">Upload a CSV</h2>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="sp-field">
+        <label class="sp-label" for="kind">The file contains</label>
+        <select class="sp-select" id="kind" name="kind" required>
+          <option value="">Choose…</option>
+          {% for kind in kinds %}
+            <option value="{{ kind.name }}" {% if kind.name == selected %}selected{% endif %}>{{ kind.step }}. {{ kind.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="sp-field">
+        <label class="sp-label" for="file">CSV file</label>
+        <input class="sp-input" type="file" id="file" name="file" accept=".csv,text/csv" required>
+      </div>
+      {% if error %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ error }}</div>{% endif %}
+      <button type="submit" class="sp-btn sp-btn--primary">Upload and preview</button>
+      <p style="font-size:0.78rem;color:var(--color-mid-gray);margin-top:0.75rem;line-height:1.5;">
+        Nothing is saved until you confirm the preview. Imports add and update — they never delete.
+      </p>
+    </form>
+  </div>
+
+  <div class="sp-card">
+    <h2 style="font-size:0.95rem;font-weight:600;margin-bottom:0.4rem;">Files, in import order</h2>
+    <p style="font-size:0.8rem;color:var(--color-mid-gray);margin-bottom:1rem;line-height:1.5;">
+      Each file refers to the ones above it, so import new categories before the items placed in them.
+      <strong>Export</strong> downloads the current data to edit; <strong>Template</strong> is a blank sheet with one example row.
+    </p>
+    <table class="sp-table">
+      <tbody>
+        {% for kind in kinds %}
+        <tr>
+          <td style="white-space:nowrap;vertical-align:top;"><strong>{{ kind.step }}. {{ kind.name }}</strong></td>
+          <td style="font-size:0.8rem;color:var(--color-mid-gray);">{{ kind.description }}</td>
+          <td style="white-space:nowrap;text-align:right;vertical-align:top;">
+            <a href="{% url 'staff:menu_export' kind.name %}" class="sp-btn sp-btn--outline sp-btn--sm">Export</a>
+            <a href="{% url 'staff:menu_import_template' kind.name %}" class="sp-btn sp-btn--outline sp-btn--sm">Template</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

@@ -13,7 +13,7 @@ from apps.staff.permissions import MANAGER_GROUP
 User = get_user_model()
 
 # Portal pages that need no tip: auth, the help page itself, and POST-only actions.
-NO_TIP = {'login', 'logout', 'help'}
+NO_TIP = {'login', 'logout', 'help', 'menu_import_template', 'menu_export'}  # + CSV downloads
 POST_ONLY_SUFFIXES = ('_toggle', '_delete', '_send', '_copy', '_import', '_status', '_feature')
 
 

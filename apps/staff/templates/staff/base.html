@@ -114,6 +114,9 @@
             <a href="{% url 'staff:settings' %}" class="{% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
               &#9670; Settings
             </a>
+            <a href="{% url 'staff:menu_import' %}" class="{% if 'menu_import' in request.resolver_match.url_name %}active{% endif %}">
+              &#9670; Menu Import / Export
+            </a>
             <a href="{% url 'admin:index' %}" target="_blank" rel="noopener">
               &#9670; Django Admin &#8599;
             </a>

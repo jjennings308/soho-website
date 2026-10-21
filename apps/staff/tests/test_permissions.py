@@ -8,7 +8,8 @@ from apps.staff.permissions import MANAGER_GROUP
 
 # Pages a read-only (Tier 2) staff user may GET. Everything else is denied.
 TIER2_READABLE = {'dashboard', 'menu_mode', 'events', 'menu_item_list', 'colors', 'help'}
-SUPERUSER_ONLY = {'settings', 'color_scheme_add', 'color_scheme_edit', 'color_scheme_delete'}
+SUPERUSER_ONLY = {'settings', 'color_scheme_add', 'color_scheme_edit', 'color_scheme_delete',
+                  'menu_import', 'menu_import_preview', 'menu_import_template', 'menu_export'}
 PUBLIC = {'login', 'logout'}
 
 
@@ -18,7 +19,8 @@ def staff_url_names():
 
 def url_for(name):
     pattern = next(p for p in staff_urls.urlpatterns if getattr(p, 'name', None) == name)
-    kwargs = {'pk': 1} if 'pk' in str(pattern.pattern) else {}
+    route = str(pattern.pattern)
+    kwargs = {'pk': 1} if '<int:pk>' in route else {'kind': 'items'} if '<slug:kind>' in route else {}
     return reverse(f'staff:{name}', kwargs=kwargs)
 
 
@@ -67,7 +69,8 @@ class EveryStaffUrlTests(TierTestCase):
         self.client.force_login(self.superuser())
         for name in SUPERUSER_ONLY:
             with self.subTest(name=name):
-                self.assertIn(self.client.get(url_for(name)).status_code, (200, 404, 405))
+                # 302: the import preview redirects when nothing is uploaded
+                self.assertIn(self.client.get(url_for(name)).status_code, (200, 302, 404, 405))
 
 
 class TierActionTests(TierTestCase):

@@ -349,6 +349,39 @@ KINDS = {k.name: k for k in [
 ]}
 KIND_ORDER = list(KINDS)
 
+# One line per kind for the portal's import page.
+KIND_DESCRIPTIONS = {
+    'categories': 'Menu sections such as Burgers or Beer.',
+    'subcategories': 'Groupings inside a category, such as On Tap or Red wine.',
+    'items': 'Dishes and drinks: names, descriptions, prices, dietary flags.',
+    'variations': "Sizes or versions of an item with their own price (Pint, Pitcher).",
+    'addons': 'Extras that can be added to an item (Add bacon).',
+    'menus': 'The menus themselves: food, drinks, promotions, weekly specials.',
+    'menu_categories': 'Which categories each menu shows, and in what order.',
+    'placements': 'Which items appear in each category, with optional special price.',
+}
+
+# Example row for each kind's downloadable template (header + this row).
+KIND_EXAMPLES = {
+    'categories': {'name': 'Burgers', 'display_name': 'Burgers', 'slug': 'burgers',
+                   'category_type': 'food', 'order': '10', 'is_active': 'yes', 'show_disclaimer': 'no'},
+    'subcategories': {'category': 'beer', 'name': 'On Tap', 'slug': 'beer-on-tap', 'order': '1',
+                      'is_active': 'yes'},
+    'items': {'name': 'Classic Burger', 'slug': 'classic-burger',
+              'short_description': 'Half-pound patty, cheddar, house sauce',
+              'description': 'Our signature burger.', 'price_display': 'price', 'price': '14.50',
+              'dietary_type': 'none', 'is_gluten_free': 'no', 'spice_level': '0',
+              'is_featured': 'no', 'is_available': 'yes'},
+    'variations': {'item': 'classic-burger', 'name': 'Double', 'price': '18.50', 'order': '1',
+                   'is_default': 'no', 'is_available': 'yes'},
+    'addons': {'item': 'classic-burger', 'name': 'Bacon', 'price': '2.00', 'order': '1',
+               'is_default': 'no', 'is_available': 'yes'},
+    'menus': {'title': 'Food Menu', 'slug': 'food-menu', 'menu_type': 'food', 'role': 'default_food',
+              'is_default': 'no', 'homepage_slot': 'none', 'is_active': 'yes'},
+    'menu_categories': {'menu': 'food-menu', 'category': 'burgers', 'display_order': '1'},
+    'placements': {'item': 'classic-burger', 'category': 'burgers', 'order': '1', 'is_active': 'yes'},
+}
+
 
 # ── Parse / apply ─────────────────────────────────────────────────────────────
 
@@ -589,6 +622,18 @@ def export_rows(kind_name):
     qs = kind.model.objects.select_related(*related).order_by(*kind.export_order)
     for obj in qs:
         yield [c.export(obj) for c in kind.columns]
+
+
+def template_csv(kind_name):
+    """Header row plus one example row, for staff to fill in."""
+    columns = [c.name for c in KINDS[kind_name].columns]
+    example = KIND_EXAMPLES[kind_name]
+    out = io.StringIO()
+    out.write('\ufeff')
+    writer = csv.writer(out)
+    writer.writerow(columns)
+    writer.writerow([example.get(name, '') for name in columns])
+    return out.getvalue()
 
 
 def export_csv(kind_name):

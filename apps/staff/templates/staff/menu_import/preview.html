@@ -1,0 +1,79 @@
+{% extends "staff/base.html" %}
+{% block title %}Import Preview{% endblock %}
+{% block page_title %}Import Preview — {{ pending.kind }}{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'staff:menu_import' %}" class="sp-btn sp-btn--outline">← Import / Export</a>
+{% endblock %}
+
+{% block content %}
+<div class="sp-card" style="margin-bottom:1.25rem;">
+  <p style="font-size:0.875rem;margin-bottom:0.75rem;"><strong>{{ pending.filename }}</strong></p>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <span class="sp-pill sp-pill--green">{{ counts.new }} new</span>
+    <span class="sp-pill sp-pill--gold">{{ counts.update }} to update</span>
+    <span class="sp-pill sp-pill--gray">{{ counts.unchanged }} unchanged</span>
+    {% if counts.error %}<span class="sp-pill sp-pill--red">{{ counts.error }} with errors</span>{% endif %}
+  </div>
+
+  {% for err in result.errors %}
+    <div class="sp-field-error" style="margin-bottom:0.5rem;">{{ err }}</div>
+  {% endfor %}
+
+  <form method="post" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+    {% csrf_token %}
+    {% if result.ok %}
+      {% if counts.new or counts.update %}
+        <button type="submit" name="action" value="confirm" class="sp-btn sp-btn--primary">Confirm import</button>
+      {% else %}
+        <span style="font-size:0.85rem;color:var(--color-mid-gray);">Nothing to change — every row matches what's saved.</span>
+      {% endif %}
+    {% else %}
+      <button type="submit" class="sp-btn sp-btn--primary" disabled title="Fix the errors and upload again">Confirm import</button>
+      <span style="font-size:0.8rem;color:var(--color-accent-red-deep);">Fix the errors in the file and upload it again. Nothing has been saved.</span>
+    {% endif %}
+    <button type="submit" name="action" value="cancel" class="sp-btn sp-btn--outline" formnovalidate>Cancel</button>
+  </form>
+</div>
+
+{% if rows %}
+<div class="sp-card" style="overflow-x:auto;">
+  <table class="sp-table">
+    <thead>
+      <tr><th>Line</th><th>Result</th><th>Record</th><th>Changes</th></tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td style="color:var(--color-mid-gray);vertical-align:top;">{{ row.line }}</td>
+        <td style="vertical-align:top;">
+          {% if row.action == 'new' %}<span class="sp-pill sp-pill--green">New</span>
+          {% elif row.action == 'update' %}<span class="sp-pill sp-pill--gold">Update</span>
+          {% else %}<span class="sp-pill sp-pill--red">Error</span>{% endif %}
+        </td>
+        <td style="vertical-align:top;font-weight:500;">{{ row.label }}</td>
+        <td style="font-size:0.8rem;line-height:1.6;">
+          {% for err in row.errors %}
+            <div style="color:var(--color-accent-red-deep);">{{ err }}</div>
+          {% endfor %}
+          {% if row.action == 'update' %}
+            {% for col, change in row.changes.items %}
+              <div><strong>{{ col }}</strong>:
+                <span style="color:var(--color-mid-gray);text-decoration:line-through;">{{ change.0|default:"(empty)"|truncatechars:80 }}</span>
+                &rarr; <span style="background:var(--color-gold-light);padding:0 0.2rem;border-radius:2px;">{{ change.1|default:"(empty)"|truncatechars:80 }}</span>
+              </div>
+            {% endfor %}
+          {% elif row.action == 'new' %}
+            {% for col, change in row.changes.items %}{% if change.1 %}<span style="margin-right:0.6rem;"><strong>{{ col }}</strong>: {{ change.1|truncatechars:40 }}</span>{% endif %}{% endfor %}
+          {% endif %}
+          {% for note in row.notes %}
+            <div style="color:var(--color-gold-deep);">Note: {{ note }}</div>
+          {% endfor %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

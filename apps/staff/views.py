@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -18,6 +19,7 @@ from apps.events.models import EventDay
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter, SoHoMember
 from apps.members.newsletter import send_newsletter
+from apps.menu import importers as menu_importers
 from apps.menu.models import Menu
 
 from .forms import ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
@@ -609,6 +611,115 @@ class PopupDeleteView(StaffRequiredMixin, View):
         popup = get_object_or_404(SitePopup, pk=pk)
         popup.delete()
         return redirect('staff:popups')
+
+
+# ── Menu CSV import / export (superuser only) ─────────────────────────────────
+
+MENU_IMPORT_SESSION_KEY = 'menu_import'
+MENU_IMPORT_MAX_BYTES = 2 * 1024 * 1024
+
+
+def _menu_kind_or_404(kind):
+    if kind not in menu_importers.KINDS:
+        raise Http404
+    return kind
+
+
+def _csv_download(text, filename):
+    response = HttpResponse(text, content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+class MenuImportView(StaffRequiredMixin, View):
+    """Choose a kind and upload a CSV; it waits in the session for the preview."""
+    staff_access = SUPERUSER
+
+    def _render(self, request, error=None, selected=''):
+        kinds = [
+            {'name': k, 'step': n, 'description': menu_importers.KIND_DESCRIPTIONS[k]}
+            for n, k in enumerate(menu_importers.KIND_ORDER, start=1)
+        ]
+        return render(request, 'staff/menu_import/upload.html', {
+            'kinds': kinds,
+            'error': error,
+            'selected': selected,
+            'pending': request.session.get(MENU_IMPORT_SESSION_KEY),
+        })
+
+    def get(self, request):
+        return self._render(request)
+
+    def post(self, request):
+        kind = request.POST.get('kind', '')
+        upload = request.FILES.get('file')
+        if kind not in menu_importers.KINDS:
+            return self._render(request, 'Choose what the file contains.', kind)
+        if not upload:
+            return self._render(request, 'Choose a CSV file to upload.', kind)
+        if upload.size > MENU_IMPORT_MAX_BYTES:
+            return self._render(request, 'That file is larger than 2 MB — is it really a menu CSV?', kind)
+        text = menu_importers.read_csv_bytes(upload.read())
+        request.session[MENU_IMPORT_SESSION_KEY] = {'kind': kind, 'text': text, 'filename': upload.name}
+        return redirect('staff:menu_import_preview')
+
+
+class MenuImportPreviewView(StaffRequiredMixin, View):
+    """Show what the upload would change; Confirm saves it all, or nothing."""
+    staff_access = SUPERUSER
+
+    def _render(self, request, pending, result):
+        rows = [r for r in result.rows if r.action != 'unchanged']
+        return render(request, 'staff/menu_import/preview.html', {
+            'pending': pending,
+            'result': result,
+            'rows': rows,
+            'counts': {a: result.count(a) for a in ('new', 'update', 'unchanged', 'error')},
+        })
+
+    def get(self, request):
+        pending = request.session.get(MENU_IMPORT_SESSION_KEY)
+        if not pending:
+            messages.info(request, 'Upload a CSV file to preview it.')
+            return redirect('staff:menu_import')
+        return self._render(request, pending, menu_importers.parse(pending['kind'], pending['text']))
+
+    def post(self, request):
+        pending = request.session.get(MENU_IMPORT_SESSION_KEY)
+        if request.POST.get('action') == 'cancel' or not pending:
+            request.session.pop(MENU_IMPORT_SESSION_KEY, None)
+            messages.info(request, 'Import cancelled — nothing was saved.')
+            return redirect('staff:menu_import')
+        try:
+            result = menu_importers.apply(pending['kind'], pending['text'])
+        except menu_importers.ImportRefused as exc:
+            # The data changed since the preview (or the file was always bad): show why.
+            messages.error(request, 'Nothing was saved — the file has errors.')
+            return self._render(request, pending, exc.result)
+        request.session.pop(MENU_IMPORT_SESSION_KEY, None)
+        messages.success(
+            request,
+            f"Imported {pending['filename']}: {result.count('new')} added, "
+            f"{result.count('update')} updated, {result.count('unchanged')} unchanged.",
+        )
+        return redirect('staff:menu_import')
+
+
+class MenuImportTemplateView(StaffRequiredMixin, View):
+    staff_access = SUPERUSER
+
+    def get(self, request, kind):
+        kind = _menu_kind_or_404(kind)
+        return _csv_download(menu_importers.template_csv(kind), f'{kind}-template.csv')
+
+
+class MenuExportView(StaffRequiredMixin, View):
+    staff_access = SUPERUSER
+
+    def get(self, request, kind):
+        kind = _menu_kind_or_404(kind)
+        return _csv_download(menu_importers.export_csv(kind),
+                             f'{kind}-{timezone.localdate().isoformat()}.csv')
 
 
 # ── Help ──────────────────────────────────────────────────────────────────────
