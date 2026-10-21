@@ -20,6 +20,7 @@ from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter, SoHoMember
 from apps.members.newsletter import send_newsletter
 from apps.menu import importers as menu_importers
+from apps.menu import whole_menu
 from apps.menu.models import Menu
 
 from .forms import ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
@@ -620,7 +621,7 @@ MENU_IMPORT_MAX_BYTES = 2 * 1024 * 1024
 
 
 def _menu_kind_or_404(kind):
-    if kind not in menu_importers.KINDS:
+    if kind != whole_menu.KIND and kind not in menu_importers.KINDS:
         raise Http404
     return kind
 
@@ -636,7 +637,7 @@ class MenuImportView(StaffRequiredMixin, View):
     staff_access = MANAGER
 
     def _render(self, request, error=None, selected=''):
-        kinds = [
+        kinds = [{'name': whole_menu.KIND, 'step': 0, 'description': whole_menu.DESCRIPTION}] + [
             {'name': k, 'step': n, 'description': menu_importers.KIND_DESCRIPTIONS[k]}
             for n, k in enumerate(menu_importers.KIND_ORDER, start=1)
         ]
@@ -653,7 +654,7 @@ class MenuImportView(StaffRequiredMixin, View):
     def post(self, request):
         kind = request.POST.get('kind', '')
         upload = request.FILES.get('file')
-        if kind not in menu_importers.KINDS:
+        if kind != whole_menu.KIND and kind not in menu_importers.KINDS:
             return self._render(request, 'Choose what the file contains.', kind)
         if not upload:
             return self._render(request, 'Choose a CSV file to upload.', kind)
@@ -669,6 +670,17 @@ class MenuImportPreviewView(StaffRequiredMixin, View):
     staff_access = MANAGER
 
     def _render(self, request, pending, result):
+        if pending['kind'] == whole_menu.KIND:
+            return render(request, 'staff/menu_import/preview_sheet.html', {
+                'pending': pending,
+                'result': result,
+                'stages': [{'kind': s.kind, 'result': s.result,
+                            'rows': [r for r in s.result.rows if r.action != 'unchanged'],
+                            'counts': {a: s.result.count(a) for a in ('new', 'update', 'unchanged', 'error')}}
+                           for s in result.stages],
+                'row_errors': sorted(result.row_errors.items()),
+                'counts': {a: result.count(a) for a in ('new', 'update', 'unchanged', 'error')},
+            })
         rows = [r for r in result.rows if r.action != 'unchanged']
         return render(request, 'staff/menu_import/preview.html', {
             'pending': pending,
@@ -682,6 +694,8 @@ class MenuImportPreviewView(StaffRequiredMixin, View):
         if not pending:
             messages.info(request, 'Upload a CSV file to preview it.')
             return redirect('staff:menu_import')
+        if pending['kind'] == whole_menu.KIND:
+            return self._render(request, pending, whole_menu.parse_sheet(pending['text']))
         return self._render(request, pending, menu_importers.parse(pending['kind'], pending['text']))
 
     def post(self, request):
@@ -691,8 +705,11 @@ class MenuImportPreviewView(StaffRequiredMixin, View):
             messages.info(request, 'Import cancelled — nothing was saved.')
             return redirect('staff:menu_import')
         try:
-            result = menu_importers.apply(pending['kind'], pending['text'])
-        except menu_importers.ImportRefused as exc:
+            if pending['kind'] == whole_menu.KIND:
+                result = whole_menu.apply_sheet(pending['text'])
+            else:
+                result = menu_importers.apply(pending['kind'], pending['text'])
+        except (menu_importers.ImportRefused, whole_menu.SheetRefused) as exc:
             # The data changed since the preview (or the file was always bad): show why.
             messages.error(request, 'Nothing was saved — the file has errors.')
             return self._render(request, pending, exc.result)
@@ -710,7 +727,8 @@ class MenuImportTemplateView(StaffRequiredMixin, View):
 
     def get(self, request, kind):
         kind = _menu_kind_or_404(kind)
-        return _csv_download(menu_importers.template_csv(kind), f'{kind}-template.csv')
+        text = whole_menu.template_csv() if kind == whole_menu.KIND else menu_importers.template_csv(kind)
+        return _csv_download(text, f'{kind}-template.csv')
 
 
 class MenuExportView(StaffRequiredMixin, View):
@@ -718,8 +736,8 @@ class MenuExportView(StaffRequiredMixin, View):
 
     def get(self, request, kind):
         kind = _menu_kind_or_404(kind)
-        return _csv_download(menu_importers.export_csv(kind),
-                             f'{kind}-{timezone.localdate().isoformat()}.csv')
+        text = whole_menu.export_csv() if kind == whole_menu.KIND else menu_importers.export_csv(kind)
+        return _csv_download(text, f'{kind}-{timezone.localdate().isoformat()}.csv')
 
 
 # ── Help ──────────────────────────────────────────────────────────────────────

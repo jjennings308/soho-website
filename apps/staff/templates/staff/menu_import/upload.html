@@ -29,7 +29,7 @@
         <select class="sp-select" id="kind" name="kind" required>
           <option value="">Choose…</option>
           {% for kind in kinds %}
-            <option value="{{ kind.name }}" {% if kind.name == selected %}selected{% endif %}>{{ kind.step }}. {{ kind.name }}</option>
+            <option value="{{ kind.name }}" {% if kind.name == selected %}selected{% endif %}>{% if kind.step %}{{ kind.step }}. {{ kind.name }}{% else %}Whole menu (one sheet){% endif %}</option>
           {% endfor %}
         </select>
       </div>
@@ -48,14 +48,15 @@
   <div class="sp-card">
     <h2 style="font-size:0.95rem;font-weight:600;margin-bottom:0.4rem;">Files, in import order</h2>
     <p style="font-size:0.8rem;color:var(--color-mid-gray);margin-bottom:1rem;line-height:1.5;">
-      Each file refers to the ones above it, so import new categories before the items placed in them.
+      <strong>Whole menu</strong> covers menus, categories, items and placements on one sheet. The numbered files
+      cover one thing each; each refers to the ones above it, so import new categories before the items placed in them.
       <strong>Export</strong> downloads the current data to edit; <strong>Template</strong> is a blank sheet with one example row.
     </p>
     <table class="sp-table">
       <tbody>
         {% for kind in kinds %}
         <tr>
-          <td style="white-space:nowrap;vertical-align:top;"><strong>{{ kind.step }}. {{ kind.name }}</strong></td>
+          <td style="white-space:nowrap;vertical-align:top;"><strong>{% if kind.step %}{{ kind.step }}. {{ kind.name }}{% else %}Whole menu{% endif %}</strong></td>
           <td style="font-size:0.8rem;color:var(--color-mid-gray);">{{ kind.description }}</td>
           <td style="white-space:nowrap;text-align:right;vertical-align:top;">
             <a href="{% url 'staff:menu_export' kind.name %}" class="sp-btn sp-btn--outline sp-btn--sm">Export</a>

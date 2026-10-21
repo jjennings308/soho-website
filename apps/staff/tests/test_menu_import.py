@@ -164,3 +164,45 @@ class MenuImportHelpTests(TestCase):
     def test_read_only_staff_do_not_see_help_topic(self):
         self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
         self.assertNotContains(self.client.get(reverse('staff:help')), 'id="menu-import"')
+
+
+class WholeMenuPortalTests(TestCase):
+    def setUp(self):
+        manager = User.objects.create_user('mgr', password='x', is_staff=True)
+        manager.groups.add(Group.objects.get(name=MANAGER_GROUP))
+        self.client.force_login(manager)
+        self.url = reverse('staff:menu_import')
+        self.preview = reverse('staff:menu_import_preview')
+
+    def sheet(self, text):
+        return self.client.post(self.url, {'kind': 'whole_menu', 'file': upload(text, 'menu.csv')}, follow=True)
+
+    def test_upload_page_offers_whole_menu_first(self):
+        response = self.client.get(self.url)
+        content = response.content.decode()
+        self.assertLess(content.index('Whole menu (one sheet)'), content.index('1. categories'))
+        self.assertContains(response, reverse('staff:menu_export', args=['whole_menu']))
+
+    def test_preview_shows_stages_and_saves_nothing_then_confirm_saves(self):
+        response = self.sheet('menu,menu_type,category,item,price\nBrunch,food,Eggs,Shakshuka,13\n')
+        self.assertTemplateUsed(response, 'staff/menu_import/preview_sheet.html')
+        self.assertEqual(response.context['counts']['new'], 5)
+        self.assertContains(response, 'Shakshuka')
+        self.assertFalse(MenuItem.objects.filter(slug='shakshuka').exists())
+
+        response = self.client.post(self.preview, {'action': 'confirm'}, follow=True)
+        self.assertContains(response, 'Imported menu.csv: 5 added')
+        self.assertTrue(MenuItem.objects.filter(slug='shakshuka').exists())
+        self.assertNotIn(MENU_IMPORT_SESSION_KEY, self.client.session)
+
+    def test_sheet_errors_show_line_numbers_and_disable_confirm(self):
+        response = self.sheet('menu,category,item\nBrunch,Eggs,Toast\n')
+        self.assertContains(response, 'Line 2 — menu_type: required')
+        self.assertContains(response, 'disabled')
+
+    def test_whole_menu_downloads(self):
+        MenuCategory.objects.create(name='Burgers', slug='burgers')
+        for name in ('staff:menu_export', 'staff:menu_import_template'):
+            response = self.client.get(reverse(name, args=['whole_menu']))
+            header = next(csv.reader(io.StringIO(response.content.decode('utf-8-sig'))))
+            self.assertEqual(header[:3], ['menu', 'menu_type', 'category'])

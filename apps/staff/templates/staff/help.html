@@ -258,6 +258,16 @@
     <li>Upload it, choosing the same file type. The preview lists every change as old &rarr; new.</li>
     <li><strong>Confirm import</strong> to save, or Cancel.</li>
   </ol>
+  <h3>The whole menu on one sheet</h3>
+  <p>The <strong>Whole menu</strong> file has one row per item on a menu: menu, category, item, price and the usual flags. It's the easiest way to set up a new menu or make a seasonal change.</p>
+  <ul>
+    <li>A menu, category or item name that doesn't exist yet is <strong>created</strong>. New menus need a <code>menu_type</code> (food, drinks, promo or weekly_specials).</li>
+    <li><code>price</code> is the item's own price everywhere it appears. For a different price in one category only, use <code>special_price</code>.</li>
+    <li>An item can appear on several rows (in several categories or menus) — its price and flags must match on every row, or the import stops and shows both line numbers.</li>
+    <li><code>category_order</code> and <code>item_order</code> set the display order; leave them blank to keep the current order (new entries go to the end).</li>
+    <li><code>shown</code> = <code>no</code> hides an item in that category without removing it.</li>
+    <li>Subcategories must already exist — create them with the <em>subcategories</em> file first.</li>
+  </ul>
   <h3>Add new things</h3>
   <p>Download the <strong>Template</strong> (a header row plus one example row), fill in a row per new record and upload it. Files depend on the ones above them in the list — import new categories before the items placed in them, and items before placements.</p>
   <h3>Rules for cells</h3>

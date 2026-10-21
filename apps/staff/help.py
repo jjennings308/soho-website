@@ -49,6 +49,6 @@ PAGE_TIPS = {
     'settings': ('settings', 'Changes here affect the whole site immediately.'),
     'color_scheme_add': ('settings', 'Color schemes style promo menus and popups. Only one can be the default.'),
     'color_scheme_edit': ('settings', 'Changing a scheme restyles every promo menu and popup that uses it.'),
-    'menu_import': ('menu-import', 'Export a file, edit it in Excel or Google Sheets, save as CSV and upload it here. Nothing is saved until you confirm the preview.'),
+    'menu_import': ('menu-import', 'Export a file (Whole menu covers everything on one sheet), edit it in Excel or Google Sheets, save as CSV and upload it here. Nothing is saved until you confirm the preview.'),
     'menu_import_preview': ('menu-import', 'Check every highlighted change. Confirm saves the whole file at once; any error means nothing is saved.'),
 }

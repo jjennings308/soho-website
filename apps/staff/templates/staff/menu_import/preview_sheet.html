@@ -1,0 +1,59 @@
+{% extends "staff/base.html" %}
+{% block title %}Import Preview{% endblock %}
+{% block page_title %}Import Preview — whole menu{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{% url 'staff:menu_import' %}" class="sp-btn sp-btn--outline">← Import / Export</a>
+{% endblock %}
+
+{% block content %}
+<div class="sp-card" style="margin-bottom:1.25rem;">
+  <p style="font-size:0.875rem;margin-bottom:0.75rem;"><strong>{{ pending.filename }}</strong></p>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+    <span class="sp-pill sp-pill--green">{{ counts.new }} new</span>
+    <span class="sp-pill sp-pill--gold">{{ counts.update }} to update</span>
+    <span class="sp-pill sp-pill--gray">{{ counts.unchanged }} unchanged</span>
+    {% if counts.error or row_errors %}<span class="sp-pill sp-pill--red">errors</span>{% endif %}
+  </div>
+
+  {% for err in result.errors %}
+    <div class="sp-field-error" style="margin-bottom:0.5rem;">{{ err }}</div>
+  {% endfor %}
+  {% for line, errs in row_errors %}
+    {% for err in errs %}<div class="sp-field-error" style="margin-bottom:0.35rem;">Line {{ line }} — {{ err }}</div>{% endfor %}
+  {% endfor %}
+  {% if result.stopped_at %}
+    <p style="font-size:0.8rem;color:var(--color-accent-red-deep);margin-bottom:0.75rem;">
+      Stopped at <strong>{{ result.stopped_at }}</strong> — the rest of the sheet wasn't checked yet.
+    </p>
+  {% endif %}
+
+  <form method="post" style="display:flex;gap:0.5rem;flex-wrap:wrap;align-items:center;">
+    {% csrf_token %}
+    {% if result.ok %}
+      {% if counts.new or counts.update %}
+        <button type="submit" name="action" value="confirm" class="sp-btn sp-btn--primary">Confirm import</button>
+      {% else %}
+        <span style="font-size:0.85rem;color:var(--color-mid-gray);">Nothing to change — every row matches what's saved.</span>
+      {% endif %}
+    {% else %}
+      <button type="submit" class="sp-btn sp-btn--primary" disabled title="Fix the errors and upload again">Confirm import</button>
+      <span style="font-size:0.8rem;color:var(--color-accent-red-deep);">Fix the errors in the file and upload it again. Nothing has been saved.</span>
+    {% endif %}
+    <button type="submit" name="action" value="cancel" class="sp-btn sp-btn--outline" formnovalidate>Cancel</button>
+  </form>
+  <p style="font-size:0.78rem;color:var(--color-mid-gray);margin-top:0.75rem;">Line numbers refer to your sheet. A record used on several lines is listed once.</p>
+</div>
+
+{% for stage in stages %}
+  {% if stage.rows %}
+  <div class="sp-card" style="overflow-x:auto;margin-bottom:1.25rem;">
+    <h2 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;">
+      {{ stage.kind|capfirst }}
+      <span style="font-weight:400;color:var(--color-mid-gray);font-size:0.8rem;">— {{ stage.counts.new }} new, {{ stage.counts.update }} to update{% if stage.counts.error %}, {{ stage.counts.error }} with errors{% endif %}</span>
+    </h2>
+    {% include "staff/menu_import/_rows.html" with rows=stage.rows %}
+  </div>
+  {% endif %}
+{% endfor %}
+{% endblock %}

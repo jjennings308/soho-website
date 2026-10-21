@@ -38,42 +38,7 @@
 
 {% if rows %}
 <div class="sp-card" style="overflow-x:auto;">
-  <table class="sp-table">
-    <thead>
-      <tr><th>Line</th><th>Result</th><th>Record</th><th>Changes</th></tr>
-    </thead>
-    <tbody>
-      {% for row in rows %}
-      <tr>
-        <td style="color:var(--color-mid-gray);vertical-align:top;">{{ row.line }}</td>
-        <td style="vertical-align:top;">
-          {% if row.action == 'new' %}<span class="sp-pill sp-pill--green">New</span>
-          {% elif row.action == 'update' %}<span class="sp-pill sp-pill--gold">Update</span>
-          {% else %}<span class="sp-pill sp-pill--red">Error</span>{% endif %}
-        </td>
-        <td style="vertical-align:top;font-weight:500;">{{ row.label }}</td>
-        <td style="font-size:0.8rem;line-height:1.6;">
-          {% for err in row.errors %}
-            <div style="color:var(--color-accent-red-deep);">{{ err }}</div>
-          {% endfor %}
-          {% if row.action == 'update' %}
-            {% for col, change in row.changes.items %}
-              <div><strong>{{ col }}</strong>:
-                <span style="color:var(--color-mid-gray);text-decoration:line-through;">{{ change.0|default:"(empty)"|truncatechars:80 }}</span>
-                &rarr; <span style="background:var(--color-gold-light);padding:0 0.2rem;border-radius:2px;">{{ change.1|default:"(empty)"|truncatechars:80 }}</span>
-              </div>
-            {% endfor %}
-          {% elif row.action == 'new' %}
-            {% for col, change in row.changes.items %}{% if change.1 %}<span style="margin-right:0.6rem;"><strong>{{ col }}</strong>: {{ change.1|truncatechars:40 }}</span>{% endif %}{% endfor %}
-          {% endif %}
-          {% for note in row.notes %}
-            <div style="color:var(--color-gold-deep);">Note: {{ note }}</div>
-          {% endfor %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% include "staff/menu_import/_rows.html" with rows=rows %}
 </div>
 {% endif %}
 {% endblock %}
