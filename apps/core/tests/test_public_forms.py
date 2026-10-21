@@ -1,9 +1,14 @@
+import time
+
 from django.core import mail
 from django.test import TestCase
 from django.urls import reverse
 
 from apps.core.models import EventInquiry, SiteSettings
+from apps.core.spam import form_started_token
 
+# A form "loaded" a minute ago, so the minimum-fill-time spam check passes.
+FORM_LOADED = form_started_token(time.time() - 60)
 
 VALID_INQUIRY = {
     'name': 'Pat Doe',
@@ -15,6 +20,7 @@ VALID_INQUIRY = {
     'preferred_date': '2026-12-05',
     'menu_preference': 'full',
     'message': 'Back room if possible.',
+    'ft': FORM_LOADED,
 }
 
 VALID_CONTACT = {
@@ -22,6 +28,7 @@ VALID_CONTACT = {
     'email': 'pat@example.com',
     'phone': '',
     'message': 'Do you have gluten-free options?',
+    'ft': FORM_LOADED,
 }
 
 

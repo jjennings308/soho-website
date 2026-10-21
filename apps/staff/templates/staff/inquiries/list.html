@@ -8,6 +8,7 @@
   <a href="?status=new" class="sp-btn {% if status_filter == 'new' %}sp-btn--primary{% else %}sp-btn--outline{% endif %}">New ({{ counts.new }})</a>
   <a href="?status=contacted" class="sp-btn {% if status_filter == 'contacted' %}sp-btn--primary{% else %}sp-btn--outline{% endif %}">Contacted ({{ counts.contacted }})</a>
   <a href="?status=closed" class="sp-btn {% if status_filter == 'closed' %}sp-btn--primary{% else %}sp-btn--outline{% endif %}">Closed ({{ counts.closed }})</a>
+  <a href="?status=spam" class="sp-btn {% if status_filter == 'spam' %}sp-btn--primary{% else %}sp-btn--outline{% endif %}" style="margin-left:auto;">Spam ({{ counts.spam }})</a>
 </div>
 
 <div class="sp-card">
@@ -31,6 +32,9 @@
         <tr>
           <td>
             <div style="font-weight:500;">{{ inq.name }}</div>
+            {% if inq.status == 'spam' and inq.spam_reason %}
+              <div style="font-size:0.72rem;color:var(--color-accent-red-deep);margin-top:0.2rem;">Flagged: {{ inq.spam_reason }}</div>
+            {% endif %}
             {% if inq.message %}
               <div style="font-size:0.75rem;color:var(--color-mid-gray);margin-top:0.2rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ inq.message }}">
                 {{ inq.message }}
@@ -58,6 +62,7 @@
                 <option value="new" {% if inq.status == 'new' %}selected{% endif %}>New</option>
                 <option value="contacted" {% if inq.status == 'contacted' %}selected{% endif %}>Contacted</option>
                 <option value="closed" {% if inq.status == 'closed' %}selected{% endif %}>Closed</option>
+                <option value="spam" {% if inq.status == 'spam' %}selected{% endif %}>Spam</option>
               </select>
             </form>
           </td>

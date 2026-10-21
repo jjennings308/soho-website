@@ -459,14 +459,15 @@ class NewsletterDeleteView(StaffRequiredMixin, View):
 class InquiryListView(StaffRequiredMixin, View):
     def get(self, request):
         status_filter = request.GET.get('status', '')
+        # Spam is kept for review but left out of "All" so it doesn't bury real inquiries.
         qs = EventInquiry.objects.all()
-        if status_filter:
-            qs = qs.filter(status=status_filter)
+        qs = qs.filter(status=status_filter) if status_filter else qs.exclude(status='spam')
         counts = {
-            'total': EventInquiry.objects.count(),
+            'total': EventInquiry.objects.exclude(status='spam').count(),
             'new': EventInquiry.objects.filter(status='new').count(),
             'contacted': EventInquiry.objects.filter(status='contacted').count(),
             'closed': EventInquiry.objects.filter(status='closed').count(),
+            'spam': EventInquiry.objects.filter(status='spam').count(),
         }
         return render(request, 'staff/inquiries/list.html', {
             'inquiries': qs,
@@ -479,7 +480,7 @@ class InquiryStatusView(StaffRequiredMixin, View):
     def post(self, request, pk):
         inquiry = get_object_or_404(EventInquiry, pk=pk)
         status = request.POST.get('status')
-        if status in ('new', 'contacted', 'closed'):
+        if status in dict(EventInquiry.STATUS_CHOICES):
             inquiry.status = status
             inquiry.save(update_fields=['status'])
         return redirect(_safe_next(request, request.META.get('HTTP_REFERER'), default=reverse('staff:inquiries')))

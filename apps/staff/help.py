@@ -32,7 +32,7 @@ PAGE_TIPS = {
     'event_edit': ('events', 'Untick “Limited menu” for events that keep full service; untick “Active” to hide an event without deleting it.'),
     'menu_item_list': ('menu-items', 'Find an item by name or filter, then use Images to choose which photos it shows.'),
     'menu_item_images': ('menu-items', 'Pick photos from the media library and mark one as the item’s main (primary) photo.'),
-    'inquiries': ('inquiries', 'New private-event requests arrive here and by email. Mark them Contacted once you have reached out, Closed when done.'),
+    'inquiries': ('inquiries', 'New private-event requests arrive here and by email. Mark them Contacted once you have reached out, Closed when done. Likely spam is filed under Spam.'),
     'media_library': ('media', 'New photos start hidden. Click Show on a photo to publish it to the public gallery.'),
     'media_upload': ('media', 'Give each photo a clear name and a short description (alt text) for visitors using screen readers.'),
     'media_edit': ('media', 'Name and category are for finding photos; the caption is what visitors see in the gallery.'),

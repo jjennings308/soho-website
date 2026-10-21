@@ -1,4 +1,5 @@
 # core/views.py
+from django.core.cache import cache
 from django.core.mail import send_mail, EmailMessage
 from django.shortcuts import render
 from django.template.loader import render_to_string
@@ -7,6 +8,7 @@ from django.views.generic import TemplateView
 from django.db.models import Prefetch
 from .forms import ContactForm, EventInquiryForm
 from .models import Review, SitePopup, SiteSettings
+from .spam import spam_reasons
 from .utils import client_ip, get_banner, get_panel_side, honeypot_tripped, is_throttled
 from apps.content.models import ContentGroup
 from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
@@ -188,8 +190,15 @@ def accessibility(request):
 
 # Valid submissions allowed per visitor IP per hour on each public form.
 FORM_SUBMISSIONS_PER_HOUR = 5
+# Sitewide caps per hour, for floods spread across many IPs.
+SITEWIDE_INQUIRY_EMAILS_PER_HOUR = 30
+SITEWIDE_CONTACT_EMAILS_PER_HOUR = 30
 THROTTLED_MESSAGE = (
     "We've received several messages from you recently. "
+    "Please try again later, or give us a call."
+)
+BUSY_MESSAGE = (
+    "We're receiving an unusual number of messages right now. "
     "Please try again later, or give us a call."
 )
 
@@ -213,16 +222,25 @@ class ContactFormView(View):
             return render(request, 'core/partials/contact_form.html', {
                 'errors': {'form': THROTTLED_MESSAGE}, 'data': request.POST,
             })
+        # Contact messages aren't stored, so over the cap tell the visitor
+        # rather than silently dropping their message.
+        if is_throttled('contact:sitewide', SITEWIDE_CONTACT_EMAILS_PER_HOUR, 3600):
+            return render(request, 'core/partials/contact_form.html', {
+                'errors': {'form': BUSY_MESSAGE}, 'data': request.POST,
+            })
         data = form.cleaned_data
+        reasons = spam_reasons(request, data['name'], data['message'])
 
         site = SiteSettings.load()
         recipient = site.notification_email or site.email
 
         if recipient:
+            # Flagged messages still arrive, tagged, so nothing real is lost.
             send_mail(
-                subject=f'Website Contact — {data["name"]}',
+                subject=f'{"[Possible spam] " if reasons else ""}Website Contact — {data["name"]}',
                 message=(
-                    f'Name: {data["name"]}\n'
+                    (f'Flagged as possible spam: {"; ".join(reasons)}\n\n' if reasons else '')
+                    + f'Name: {data["name"]}\n'
                     f'Email: {data["email"]}\n'
                     f'Phone: {data["phone"] or "—"}\n\n'
                     f'{data["message"]}'
@@ -251,7 +269,24 @@ class EventInquiryView(View):
                 'errors': {'form': THROTTLED_MESSAGE}, 'data': request.POST,
             })
 
-        inquiry = form.save()
+        inquiry = form.save(commit=False)
+        reasons = spam_reasons(request, inquiry.name, inquiry.message)
+        if reasons:
+            # Kept for staff to review under the Spam filter; no emails sent.
+            inquiry.status = 'spam'
+            inquiry.spam_reason = '; '.join(reasons)[:200]
+            inquiry.save()
+            return render(request, 'core/partials/event_inquiry_form.html', {
+                'success': True, 'inquiry': inquiry, 'confirmation_sent': False,
+            })
+        inquiry.save()
+
+        if is_throttled('inquiry:sitewide', SITEWIDE_INQUIRY_EMAILS_PER_HOUR, 3600):
+            # Flood: the inquiry is saved, but pause emails until the hour resets.
+            _alert_inquiry_emails_paused()
+            return render(request, 'core/partials/event_inquiry_form.html', {
+                'success': True, 'inquiry': inquiry, 'confirmation_sent': False,
+            })
 
         site = SiteSettings.load()
         restaurant_email = site.notification_email or site.email
@@ -281,4 +316,27 @@ class EventInquiryView(View):
             fail_silently=True,
         )
 
-        return render(request, 'core/partials/event_inquiry_form.html', {'success': True, 'inquiry': inquiry})
+        return render(request, 'core/partials/event_inquiry_form.html', {
+            'success': True, 'inquiry': inquiry, 'confirmation_sent': True,
+        })
+
+
+def _alert_inquiry_emails_paused():
+    """Email staff once per hour when the sitewide inquiry cap is hit."""
+    if not cache.add('inquiry:sitewide-alerted', True, 3600):
+        return
+    site = SiteSettings.load()
+    recipient = site.notification_email or site.email
+    if recipient:
+        send_mail(
+            subject='Event inquiry emails paused — unusual volume',
+            message=(
+                f'More than {SITEWIDE_INQUIRY_EMAILS_PER_HOUR} event inquiries arrived in the last hour, '
+                'which usually means a spam attack. New inquiries are still being saved, but '
+                'notification and confirmation emails are paused until the hour resets.\n\n'
+                'Review them in the staff portal under Inquiries.'
+            ),
+            from_email=None,
+            recipient_list=[recipient],
+            fail_silently=True,
+        )

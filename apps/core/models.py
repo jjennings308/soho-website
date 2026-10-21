@@ -543,6 +543,7 @@ class EventInquiry(TimeStampedModel):
         ('new', 'New'),
         ('contacted', 'Contacted'),
         ('closed', 'Closed'),
+        ('spam', 'Spam'),
     ]
 
     name = models.CharField(max_length=200)
@@ -555,6 +556,10 @@ class EventInquiry(TimeStampedModel):
     menu_preference = models.CharField(max_length=10, choices=MENU_CHOICES, default='not_sure')
     message = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
+    spam_reason = models.CharField(
+        max_length=200, blank=True,
+        help_text="Why the spam checks flagged this inquiry (see apps/core/spam.py).",
+    )
 
     class Meta:
         verbose_name = 'Event Inquiry'

@@ -1,4 +1,8 @@
-{# Spam trap — hidden from people and screen readers; see core.utils.honeypot_tripped #}
-<div class="hidden" aria-hidden="true">
+{% load spam_guard %}
+{# Spam guards for public forms — see apps/core/spam.py and core.utils.honeypot_tripped. #}
+{# Trap field: moved off-screen rather than display:none, which smarter bots skip. #}
+<div aria-hidden="true" style="position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden;">
   <label>Leave this field empty <input type="text" name="hp_check" value="" tabindex="-1" autocomplete="off"></label>
 </div>
+{# Signed page-load time: submissions within a few seconds are flagged as spam. #}
+<input type="hidden" name="ft" value="{% form_started_input_value %}">
