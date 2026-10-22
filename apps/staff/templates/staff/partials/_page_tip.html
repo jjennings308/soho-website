@@ -1,11 +1,29 @@
 {% load staff_help %}
+{% comment %}
+  "How this page works" — a ? button in the page banner that opens a short tip.
+  Included twice in staff/base.html: variant="desktop" next to the page title,
+  variant="mobile" in the phone top bar (the desktop banner is hidden on phones).
+  Renders nothing on pages without a tip (see apps/staff/help.py PAGE_TIPS).
+{% endcomment %}
 {% staff_page_tip as tip %}
 {% if tip %}
-<details class="sp-tip" style="margin-bottom:1.25rem;border:1px solid var(--color-gold-light);border-left:3px solid var(--color-gold-primary);border-radius:4px;background:var(--color-white);font-size:0.85rem;">
-  <summary style="cursor:pointer;padding:0.55rem 0.9rem;color:var(--color-gold-deep);font-weight:600;list-style-position:inside;">How this page works</summary>
-  <div style="padding:0 0.9rem 0.75rem;color:var(--color-text-tertiary);line-height:1.55;">
+<div class="sp-tip" x-data="{ tipOpen: false }"
+     @click.outside="tipOpen = false" @keydown.escape.window="tipOpen = false"
+     style="position:relative;display:inline-flex;">
+  <button type="button" @click="tipOpen = !tipOpen"
+          :aria-expanded="tipOpen.toString()" aria-expanded="false" aria-controls="page-tip-{{ variant }}"
+          aria-label="How this page works" title="How this page works"
+          style="width:1.6rem;height:1.6rem;border-radius:50%;background:transparent;cursor:pointer;font-weight:700;font-size:0.85rem;line-height:1;padding:0;
+                 {% if variant == 'mobile' %}border:1.5px solid var(--color-white);color:var(--color-white);{% else %}border:1.5px solid var(--color-gold-primary);color:var(--color-gold-deep);{% endif %}">?</button>
+  <div id="page-tip-{{ variant }}" x-show="tipOpen" x-transition
+       style="display:none;position:absolute;top:calc(100% + 0.5rem);{% if variant == 'mobile' %}right:0;{% else %}left:0;{% endif %}
+              width:min(20rem, calc(100vw - 2rem));z-index:60;text-align:left;
+              background:var(--color-white);border:1px solid var(--color-gold-light);border-left:3px solid var(--color-gold-primary);
+              border-radius:4px;box-shadow:var(--shadow-md);padding:0.75rem 0.9rem;
+              font-size:0.85rem;font-weight:400;line-height:1.55;color:var(--color-text-tertiary);">
+    <div style="font-weight:600;color:var(--color-gold-deep);margin-bottom:0.3rem;">How this page works</div>
     {{ tip.text }}
     <a href="{{ tip.url }}" style="color:var(--color-gold-deep);white-space:nowrap;">More in Help &rarr;</a>
   </div>
-</details>
+</div>
 {% endif %}

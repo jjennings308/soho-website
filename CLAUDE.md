@@ -441,7 +441,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
 | `/staff/popups/` | List, add, edit, delete site popups |
 | `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
-| `/staff/help/` | Task-based help for every tier (topics filtered by tier). Each portal page shows a collapsible "How this page works" tip linking to its topic. Content: `apps/staff/help.py` (topics + per-page tips) and `staff/help.html` — tests fail if a portal page has no tip or the two drift apart |
+| `/staff/help/` | Task-based help for every tier (topics filtered by tier). Each portal page has a "?" icon in its banner (desktop title bar and phone top bar) that opens a short "How this page works" tip linking to its topic (`staff/partials/_page_tip.html`). Content: `apps/staff/help.py` (topics + per-page tips) and `staff/help.html` — tests fail if a portal page has no tip or the two drift apart |
 | `/staff/import/` | **Staff Manager tier and above.** Menu CSV import (upload → preview → confirm) and per-kind CSV export/templates — see *Menu CSV import / export* |
 | `/staff/settings/` | Edit `SiteSettings` (notification email, phone, reservations URL, etc.); manage color schemes (add/edit/delete) |
 

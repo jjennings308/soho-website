@@ -86,6 +86,16 @@ class PageTipTests(TestCase):
         self.assertContains(response, PAGE_TIPS['events'][1])
         self.assertContains(response, f'{reverse("staff:help")}#events')
 
+    def test_tip_is_a_banner_icon_on_desktop_and_mobile_not_a_box_in_the_page(self):
+        html = self.client.get(reverse('staff:events')).content.decode()
+        self.assertIn('aria-controls="page-tip-desktop"', html)
+        self.assertIn('aria-controls="page-tip-mobile"', html)
+        self.assertIn('aria-label="How this page works"', html)
+        content_starts = html.index('class="sp-content"')
+        self.assertLess(html.index('page-tip-desktop'), content_starts)
+        self.assertLess(html.index('page-tip-mobile'), content_starts)
+        self.assertNotIn('class="sp-tip"', html[content_starts:])
+
     def test_help_page_has_no_tip(self):
         self.assertNotContains(self.client.get(reverse('staff:help')), 'class="sp-tip"')
 

@@ -29,7 +29,10 @@
   <!-- Mobile top bar -->
   <div class="sp-mobile-topbar">
     <span>SoHo Staff</span>
-    <button class="sp-hamburger" @click="sidebarOpen = !sidebarOpen">&#9776;</button>
+    <div style="display:flex;align-items:center;gap:0.9rem;">
+      {% include "staff/partials/_page_tip.html" with variant="mobile" %}
+      <button class="sp-hamburger" @click="sidebarOpen = !sidebarOpen">&#9776;</button>
+    </div>
   </div>
 
   <div class="sp-overlay" :class="{ open: sidebarOpen }" @click="sidebarOpen = false"></div>
@@ -141,7 +144,10 @@
     <!-- Main content -->
     <div class="sp-main">
       <div class="sp-topbar">
-        <h1>{% block page_title %}{% endblock %}</h1>
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <h1>{% block page_title %}{% endblock %}</h1>
+          {% include "staff/partials/_page_tip.html" with variant="desktop" %}
+        </div>
         <div style="display:flex;gap:0.75rem;align-items:center;">
           {% block topbar_actions %}{% endblock %}
         </div>
@@ -155,7 +161,6 @@
             </div>
           {% endfor %}
         {% endif %}
-        {% block page_tip %}{% include "staff/partials/_page_tip.html" %}{% endblock %}
         {% block content %}{% endblock %}
       </div>
     </div>
