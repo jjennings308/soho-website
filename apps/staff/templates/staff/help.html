@@ -101,6 +101,22 @@
 <section id="menu-items" class="sp-card help-topic">
   <h2>Menu items and photos</h2>
   <p>Every dish and drink on any menu. Search by name, or filter by availability and flags (featured, new, chef's special, seasonal).</p>
+  <h3>How the menu fits together</h3>
+  <p>Items aren't put on a menu directly — they go into <strong>categories</strong>, and menus show categories:</p>
+  <p style="margin-left:1rem;"><strong>Menu</strong> &rarr; shows <strong>categories</strong> (Burgers, Beer…) &rarr; each category holds <strong>items</strong>.</p>
+  <ul>
+    <li><strong>Shared categories:</strong> a category can be on more than one menu. Every item in it then appears on all of those menus — you can't show an item in "Burgers" on one menu but not another. (Use a separate category for that, e.g. "Promo Burgers".)</li>
+    <li><strong>One item, several categories:</strong> the same dish can sit in more than one category, each with its own position.</li>
+    <li><strong>Prices:</strong> an item has one normal price. A category can give it a <em>special price</em> — that price shows wherever that category appears, on every menu that uses it.</li>
+    <li><strong>Hiding something:</strong>
+      <ul>
+        <li>Item marked <em>not available</em> &rarr; hidden everywhere.</li>
+        <li>Item hidden in one category &rarr; gone from that category only.</li>
+        <li>Category taken off a menu &rarr; that whole section disappears from that menu.</li>
+      </ul>
+    </li>
+    <li><strong>Which menu customers see</strong> is set separately: normally the default food and drinks menus, and the event menus during limited-menu times (see <a href="#menu-mode" class="help-back">Menu mode</a>).</li>
+  </ul>
   {% if staff_is_manager %}
   <h3>Choose an item's photos</h3>
   <ol>
@@ -111,7 +127,11 @@
     <li>Save.</li>
   </ol>
   {% endif %}
-  <p class="help-note">Menu names, prices and descriptions are changed by a site administrator.</p>
+  {% if staff_is_manager %}
+  <p class="help-note">To change names, prices, descriptions or which items are in which categories, use <a href="#menu-import" class="help-back">Menu import / export</a>. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
+  {% else %}
+  <p class="help-note">Menu names, prices and descriptions are changed by a manager.</p>
+  {% endif %}
   <a class="help-back" href="#">&uarr; Back to top</a>
 </section>
 

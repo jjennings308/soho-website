@@ -88,3 +88,20 @@ class PageTipTests(TestCase):
 
     def test_help_page_has_no_tip(self):
         self.assertNotContains(self.client.get(reverse('staff:help')), 'class="sp-tip"')
+
+
+class MenuStructureHelpTests(TestCase):
+    def test_every_tier_sees_how_the_menu_fits_together(self):
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
+        response = self.client.get(reverse('staff:help'))
+        self.assertContains(response, 'How the menu fits together')
+        self.assertContains(response, 'changed by a manager')
+        self.assertNotContains(response, 'href="#menu-import"')  # viewers can't open that topic
+
+    def test_managers_are_pointed_at_the_import(self):
+        user = User.objects.create_user('mgr', password='x', is_staff=True)
+        user.groups.add(Group.objects.get(name=MANAGER_GROUP))
+        self.client.force_login(user)
+        response = self.client.get(reverse('staff:help'))
+        self.assertContains(response, 'href="#menu-import"')
+        self.assertNotContains(response, 'changed by a site administrator.</p>')
