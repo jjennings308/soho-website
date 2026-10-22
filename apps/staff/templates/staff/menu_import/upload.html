@@ -1,6 +1,23 @@
 {% extends "staff/base.html" %}
+{# staff/menu_import/upload.html — menu CSV import, step 1: pick a kind (radio), upload; plus that kind's template/export downloads and columns #}
 {% block title %}Menu Import / Export{% endblock %}
 {% block page_title %}Menu Import / Export{% endblock %}
+
+{% block extra_head %}
+<style>
+  [x-cloak] { display: none !important; }
+  .mi-kinds { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+  .mi-kind { display: flex; align-items: center; gap: 0.45rem; font-size: 0.875rem; cursor: pointer; }
+  .mi-kind input { accent-color: var(--color-gold-primary, #c9b07a); width: 1rem; height: 1rem; }
+  .mi-help { font-size: 0.78rem; color: var(--color-mid-gray); margin-top: 0.4rem; line-height: 1.5; }
+  .mi-link { color: var(--color-gold-deep); text-decoration: underline; }
+  .mi-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem;
+               border-top: 1px solid var(--color-bg-tertiary); padding-top: 1rem; }
+  .mi-list { list-style: disc; padding-left: 1.25rem; font-size: 0.85rem; color: var(--color-text-tertiary); line-height: 1.55; }
+  .mi-cols td { padding: 0.4rem 0.75rem; }
+  .mi-list li + li { margin-top: 0.3rem; }
+</style>
+{% endblock %}
 
 {% block content %}
 {% if pending %}
@@ -18,55 +35,81 @@
 </div>
 {% endif %}
 
-<div class="sp-grid-2" style="align-items:start;">
+<div x-data="{ kind: '{{ selected|escapejs }}' }" style="max-width:56rem;">
 
-  <div class="sp-card">
-    <h2 style="font-size:0.95rem;font-weight:600;margin-bottom:1rem;">Upload a CSV</h2>
-    <form method="post" enctype="multipart/form-data">
-      {% csrf_token %}
-      <div class="sp-field">
-        <label class="sp-label" for="kind">The file contains</label>
-        <select class="sp-select" id="kind" name="kind" required>
-          <option value="">Choose…</option>
-          {% for kind in kinds %}
-            <option value="{{ kind.name }}" {% if kind.name == selected %}selected{% endif %}>{% if kind.step %}{{ kind.step }}. {{ kind.name }}{% else %}Whole menu (one sheet){% endif %}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="sp-field">
-        <label class="sp-label" for="file">CSV file</label>
-        <input class="sp-input" type="file" id="file" name="file" accept=".csv,text/csv" required>
-      </div>
-      {% if error %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ error }}</div>{% endif %}
-      <button type="submit" class="sp-btn sp-btn--primary">Upload and preview</button>
-      <p style="font-size:0.78rem;color:var(--color-mid-gray);margin-top:0.75rem;line-height:1.5;">
-        Nothing is saved until you confirm the preview. Imports add and update — they never delete.
-      </p>
-    </form>
-  </div>
-
-  <div class="sp-card">
-    <h2 style="font-size:0.95rem;font-weight:600;margin-bottom:0.4rem;">Files, in import order</h2>
-    <p style="font-size:0.8rem;color:var(--color-mid-gray);margin-bottom:1rem;line-height:1.5;">
-      <strong>Whole menu</strong> covers menus, categories, items and placements on one sheet. The numbered files
-      cover one thing each; each refers to the ones above it, so import new categories before the items placed in them.
-      <strong>Export</strong> downloads the current data to edit; <strong>Template</strong> is a blank sheet with one example row.
-    </p>
-    <table class="sp-table">
-      <tbody>
+  <form method="post" enctype="multipart/form-data" class="sp-card" style="margin-bottom:1.25rem;">
+    {% csrf_token %}
+    <fieldset class="sp-field" style="border:0;padding:0;margin-left:0;margin-right:0;">
+      <legend class="sp-label">What are you importing?</legend>
+      <div class="mi-kinds">
         {% for kind in kinds %}
-        <tr>
-          <td style="white-space:nowrap;vertical-align:top;"><strong>{% if kind.step %}{{ kind.step }}. {{ kind.name }}{% else %}Whole menu{% endif %}</strong></td>
-          <td style="font-size:0.8rem;color:var(--color-mid-gray);">{{ kind.description }}</td>
-          <td style="white-space:nowrap;text-align:right;vertical-align:top;">
-            <a href="{% url 'staff:menu_export' kind.name %}" class="sp-btn sp-btn--outline sp-btn--sm">Export</a>
-            <a href="{% url 'staff:menu_import_template' kind.name %}" class="sp-btn sp-btn--outline sp-btn--sm">Template</a>
-          </td>
-        </tr>
+          <label class="mi-kind">
+            <input type="radio" name="kind" value="{{ kind.name }}" x-model="kind" {% if kind.name == selected %}checked{% endif %}>
+            {% if kind.step %}{{ kind.label }}{% else %}<strong>{{ kind.label }}</strong>{% endif %}
+          </label>
         {% endfor %}
-      </tbody>
-    </table>
-  </div>
+      </div>
+      <p class="mi-help">
+        <strong>Whole menu</strong> covers menus, categories, items and placements on one sheet. The numbered files cover one
+        thing each; each looks up the ones above it, so import new categories before the items placed in them.
+      </p>
+    </fieldset>
+
+    <div class="sp-field">
+      <label class="sp-label" for="file">CSV file</label>
+      <input class="sp-input" type="file" id="file" name="file" accept=".csv,text/csv" required>
+      <p class="mi-help">Save from Excel or Google Sheets as “CSV”. Up to 2 MB.</p>
+    </div>
+    {% if error %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ error }}</div>{% endif %}
+
+    <div class="mi-footer">
+      <span style="font-size:0.85rem;">
+        {% for kind in kinds %}
+          <span x-show="kind === '{{ kind.name }}'" {% if kind.name != selected %}x-cloak{% endif %}>
+            <strong>{{ kind.label }}:</strong>
+            <a class="mi-link" href="{% url 'staff:menu_import_template' kind.name %}">blank template</a> ·
+            <a class="mi-link" href="{% url 'staff:menu_export' kind.name %}">export what's loaded now</a>
+          </span>
+        {% endfor %}
+      </span>
+      <button type="submit" class="sp-btn sp-btn--primary">Upload and preview</button>
+    </div>
+  </form>
+
+  <section class="sp-card">
+    <h2 style="font-size:0.95rem;font-weight:600;margin-bottom:0.6rem;">How it works</h2>
+    <ul class="mi-list">
+      <li>Nothing is saved until you confirm the preview. Any error in the file means nothing is saved.</li>
+      <li>Imports add and update — they never delete. To hide something, set its active / available column to <em>no</em>.</li>
+      <li>A row that matches an existing record (by slug, or by name) <strong>updates</strong> it. Blank cells keep the existing value; to clear a cell, enter a single <code>-</code>.</li>
+      <li>Yes/no columns take yes, no, true, false, 1 or 0. Prices are plain numbers (12.50, no $). Dates: 2026-10-21. Times: 20:00.</li>
+      <li>Choice columns take the code or the label (<code>default_food</code> or “Default Food Menu”). Unknown columns are an error, to catch typos.</li>
+      <li>Images aren't in the CSV — set them on each item's Images page.</li>
+      <li>“Export what's loaded now” downloads the current data in these same columns, ready to edit and import again.</li>
+    </ul>
+
+    {% for kind in kinds %}
+      <div x-show="kind === '{{ kind.name }}'" {% if kind.name != selected %}x-cloak{% endif %} style="margin-top:1.25rem;">
+        <h3 style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-mid-gray);margin-bottom:0.3rem;">
+          Columns for {{ kind.label }}
+        </h3>
+        <p class="mi-help" style="margin:0 0 0.6rem;">{{ kind.description }}</p>
+        <div style="overflow-x:auto;">
+          <table class="sp-table mi-cols">
+            <thead><tr><th>Column</th><th>Example</th></tr></thead>
+            <tbody>
+              {% for name, example in kind.columns %}
+              <tr>
+                <td style="font-family:monospace;white-space:nowrap;">{{ name }}</td>
+                <td style="font-size:0.8rem;color:var(--color-mid-gray);">{{ example }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    {% endfor %}
+  </section>
 
 </div>
 {% endblock %}

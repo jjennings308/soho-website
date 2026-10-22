@@ -111,6 +111,7 @@ class MenuImportFlowTests(TestCase):
         self.assertContains(response, 'Choose what the file contains')
         response = self.client.post(self.url, {'kind': 'items'})
         self.assertContains(response, 'Choose a CSV file')
+        self.assertContains(response, 'value="items" x-model="kind" checked')  # choice kept
 
     def test_excel_windows_encoding_upload(self):
         data = 'slug,short_description\nlager,Crisp café lager\n'.encode('cp1252')
@@ -180,7 +181,8 @@ class WholeMenuPortalTests(TestCase):
     def test_upload_page_offers_whole_menu_first(self):
         response = self.client.get(self.url)
         content = response.content.decode()
-        self.assertLess(content.index('Whole menu (one sheet)'), content.index('1. categories'))
+        self.assertLess(content.index('value="whole_menu"'), content.index('value="categories"'))
+        self.assertRegex(content, r'value="whole_menu" x-model="kind" checked')  # default choice
         self.assertContains(response, reverse('staff:menu_export', args=['whole_menu']))
 
     def test_preview_shows_stages_and_saves_nothing_then_confirm_saves(self):

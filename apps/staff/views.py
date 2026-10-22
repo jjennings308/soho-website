@@ -637,10 +637,18 @@ class MenuImportView(StaffRequiredMixin, View):
     staff_access = MANAGER
 
     def _render(self, request, error=None, selected=''):
-        kinds = [{'name': whole_menu.KIND, 'step': 0, 'description': whole_menu.DESCRIPTION}] + [
-            {'name': k, 'step': n, 'description': menu_importers.KIND_DESCRIPTIONS[k]}
-            for n, k in enumerate(menu_importers.KIND_ORDER, start=1)
-        ]
+        kinds = [{
+            'name': whole_menu.KIND, 'step': 0, 'label': 'Whole menu',
+            'description': whole_menu.DESCRIPTION,
+            'columns': [(c, whole_menu.EXAMPLE.get(c, '')) for c in whole_menu.COLUMNS],
+        }] + [{
+            'name': k, 'step': n, 'label': f'{n}. {k}',
+            'description': menu_importers.KIND_DESCRIPTIONS[k],
+            'columns': [(c.name, menu_importers.KIND_EXAMPLES[k].get(c.name, ''))
+                        for c in menu_importers.KINDS[k].columns],
+        } for n, k in enumerate(menu_importers.KIND_ORDER, start=1)]
+        if selected not in {k['name'] for k in kinds}:
+            selected = whole_menu.KIND
         return render(request, 'staff/menu_import/upload.html', {
             'kinds': kinds,
             'error': error,
