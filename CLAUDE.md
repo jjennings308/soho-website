@@ -2069,7 +2069,18 @@ promo menu, a whole seasonal change. Export the current menu, edit it in Excel/S
   re-validates and saves all rows or none.
 - **Choice columns accept the code or the label** (`default_food` or `Default Food Menu`);
   booleans accept `yes/no`, `true/false`, `1/0`, `y/n` (blank = keep). Prices are plain numbers
-  (`12.50`, no currency sign). Dates `YYYY-MM-DD`, times `HH:MM` (24 h).
+  (`12.50`, no currency sign). Times `HH:MM` (24 h).
+- **Dates in these CSVs are `m/d/yyyy`** (rule added 2026-10-23, same as ShareBucketList: `9/18/2027`,
+  no leading zeros — what Excel shows and opens as a date in a US locale). Export and the template
+  example rows write dates that way and date-times as `m/d/yyyy HH:MM` (Eastern); errors say "use
+  M/D/YYYY" / "use M/D/YYYY HH:MM". Import accepts `m/d/yyyy` (with or without leading zeros) and still
+  accepts `yyyy-mm-dd` (and `yyyy-mm-dd HH:MM`), so older exports re-import. **Never accept
+  `d/m/yyyy`.** Export folder names (`menu-export-YYYY-MM-DD/`) stay ISO so they sort.
+  *Not yet converted when the rule was written:* `apps/menu/importers.py` exports with `isoformat()` /
+  `'%Y-%m-%d %H:%M'`, parses dates only with `date.fromisoformat` and date-times only in ISO formats,
+  and its docstring and error messages say YYYY-MM-DD; also update `apps/menu/tests/test_importers.py`
+  (add m/d/yyyy parse, ISO still accepted, d/m refused — `13/9/2027` is an error), the upload page
+  (`staff/menu_import/upload.html`) and the staff help (`staff/help.html`) wherever they show a date.
 - **Images are not in the CSV.** They stay in the media library and the existing
   `/staff/menu/items/<pk>/images/` page.
 - **`MenuItem.description` (CKEditor) is imported as plain text** wrapped in `<p>` per paragraph;
@@ -2137,8 +2148,8 @@ Match key = how a row finds an existing record (match → update, no match → c
 - **Menu roles**: the same non-`none` role on two rows of one file is an error; taking a role from a
   menu not in the file is allowed and shown as a note (`Menu.save()` then demotes the old holder).
 - **New subcategory slugs** default to `<category-slug>-<name>` (existing convention, e.g. `wine-red`).
-- **Menu `active_from` / `active_until`** are date-times: `YYYY-MM-DD HH:MM` Eastern; a bare date
-  means midnight.
+- **Menu `active_from` / `active_until`** are date-times: `m/d/yyyy HH:MM` Eastern (ISO
+  `YYYY-MM-DD HH:MM` still accepted; see the date rule above); a bare date means midnight.
 - **Description**: if the imported plain text equals the stored HTML with tags stripped, the HTML is
   kept, so a round trip never loses formatting.
 - `export_menu` writes `1-categories.csv` … `8-placements.csv` (default folder
