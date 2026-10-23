@@ -2076,11 +2076,9 @@ promo menu, a whole seasonal change. Export the current menu, edit it in Excel/S
   M/D/YYYY" / "use M/D/YYYY HH:MM". Import accepts `m/d/yyyy` (with or without leading zeros) and still
   accepts `yyyy-mm-dd` (and `yyyy-mm-dd HH:MM`), so older exports re-import. **Never accept
   `d/m/yyyy`.** Export folder names (`menu-export-YYYY-MM-DD/`) stay ISO so they sort.
-  *Not yet converted when the rule was written:* `apps/menu/importers.py` exports with `isoformat()` /
-  `'%Y-%m-%d %H:%M'`, parses dates only with `date.fromisoformat` and date-times only in ISO formats,
-  and its docstring and error messages say YYYY-MM-DD; also update `apps/menu/tests/test_importers.py`
-  (add m/d/yyyy parse, ISO still accepted, d/m refused — `13/9/2027` is an error), the upload page
-  (`staff/menu_import/upload.html`) and the staff help (`staff/help.html`) wherever they show a date.
+  Implemented 2026-10-23 in `apps/menu/importers.py` (`format_date` / `format_datetime` /
+  `parse_date` / `parse_datetime`; forms still receive ISO internally), with tests in
+  `DateFormatTests`; the upload page and staff help show `9/18/2027`.
 - **Images are not in the CSV.** They stay in the media library and the existing
   `/staff/menu/items/<pk>/images/` page.
 - **`MenuItem.description` (CKEditor) is imported as plain text** wrapped in `<p>` per paragraph;

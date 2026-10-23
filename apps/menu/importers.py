@@ -12,8 +12,11 @@ Cell rules:
   - blank  → keep the existing value (on create: the model default)
   - '-'    → clear the field
   - choices accept the code or the label; booleans yes/no, true/false, 1/0, y/n
-  - numbers plain (12.50), dates YYYY-MM-DD, times HH:MM, date-times
-    'YYYY-MM-DD HH:MM' in local (Eastern) time
+  - numbers plain (12.50), times HH:MM (24 h)
+  - dates m/d/yyyy (9/18/2027 — what Excel shows in a US locale); date-times
+    'm/d/yyyy HH:MM' in local (Eastern) time. Export writes these; import also
+    accepts yyyy-mm-dd (and 'yyyy-mm-dd HH:MM') so older exports re-import.
+    Day-first dates (13/9/2027) are never accepted.
 Rows are validated by ModelForms built from exactly the fields a row sets, so
 imports obey the same field and unique rules as manual edits. Imports never
 delete; any row error refuses the whole file.
@@ -70,6 +73,47 @@ def text_to_html(text):
     """Imported plain text → one <p> per paragraph, line breaks kept."""
     paragraphs = normalize_text(text).split('\n\n') if text else []
     return ''.join(f'<p>{"<br>".join(escape(line) for line in p.split(chr(10)))}</p>' for p in paragraphs if p)
+
+
+# ── Dates (m/d/yyyy; ISO also read) ───────────────────────────────────────────
+
+_US_DATE_RE = re.compile(r'^(\d{1,2})/(\d{1,2})/(\d{4})$')
+_ISO_DATE_RE = re.compile(r'^(\d{4})-(\d{2})-(\d{2})$')
+_DATETIME_RE = re.compile(r'^(\S+)(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$')
+
+
+def format_date(value):
+    """9/18/2027 — month/day/year, no leading zeros."""
+    return f'{value.month}/{value.day}/{value.year}'
+
+
+def format_datetime(value):
+    """9/18/2027 17:30, in local (Eastern) time."""
+    value = timezone.localtime(value)
+    return f'{format_date(value)} {value:%H:%M}'
+
+
+def parse_date(text):
+    """m/d/yyyy (leading zeros optional) or yyyy-mm-dd; raises ValueError otherwise."""
+    m = _US_DATE_RE.match(text)
+    if m:
+        month, day, year = map(int, m.groups())
+        return date(year, month, day)
+    m = _ISO_DATE_RE.match(text)
+    if m:
+        year, month, day = map(int, m.groups())
+        return date(year, month, day)
+    raise ValueError(text)
+
+
+def parse_datetime(text):
+    """A parse_date() date, optionally followed by HH:MM[:SS]; a bare date is midnight."""
+    m = _DATETIME_RE.match(text)
+    if not m:
+        raise ValueError(text)
+    day = parse_date(m.group(1))
+    hour, minute, second = (int(g) if g else 0 for g in m.groups()[1:])
+    return datetime(day.year, day.month, day.day, hour, minute, second)
 
 
 # ── Columns ───────────────────────────────────────────────────────────────────
@@ -129,11 +173,11 @@ class Column:
         if self.type == 'html':
             return html_to_text(value)
         if self.type == 'date':
-            return value.isoformat()
+            return format_date(value)
         if self.type == 'time':
             return value.strftime('%H:%M')
         if self.type == 'datetime':
-            return timezone.localtime(value).strftime('%Y-%m-%d %H:%M')
+            return format_datetime(value)
         if self.type == 'decimal':
             return str(value.quantize(Decimal(1).scaleb(-self.model_field.decimal_places)))
         return str(value)
@@ -173,9 +217,9 @@ class Column:
                 raise CellError(f'"{cell}" is not a whole number')
         if t == 'date':
             try:
-                return date.fromisoformat(cell).isoformat()
+                return format_date(parse_date(cell))
             except ValueError:
-                raise CellError(f'"{cell}" is not a date (use YYYY-MM-DD)')
+                raise CellError(f'"{cell}" is not a date (use M/D/YYYY)')
         if t == 'time':
             for fmt in ('%H:%M', '%H:%M:%S'):
                 try:
@@ -184,12 +228,11 @@ class Column:
                     pass
             raise CellError(f'"{cell}" is not a time (use HH:MM, 24-hour)')
         if t == 'datetime':
-            for fmt in ('%Y-%m-%d %H:%M', '%Y-%m-%d %H:%M:%S', '%Y-%m-%d'):
-                try:
-                    return datetime.strptime(cell, fmt).strftime('%Y-%m-%d %H:%M')
-                except ValueError:
-                    pass
-            raise CellError(f'"{cell}" is not a date and time (use YYYY-MM-DD HH:MM)')
+            try:
+                value = parse_datetime(cell)
+            except ValueError:
+                raise CellError(f'"{cell}" is not a date and time (use M/D/YYYY HH:MM)')
+            return f'{format_date(value)} {value:%H:%M}'
         if t == 'html':
             return normalize_text(cell)
         return cell
@@ -200,6 +243,11 @@ class Column:
             return canonical == 'yes'
         if self.type == 'html':
             return text_to_html(canonical)
+        # The form gets ISO, so its parsing doesn't depend on locale settings.
+        if self.type == 'date' and canonical:
+            return parse_date(canonical).isoformat()
+        if self.type == 'datetime' and canonical:
+            return parse_datetime(canonical).strftime('%Y-%m-%d %H:%M')
         return canonical
 
 

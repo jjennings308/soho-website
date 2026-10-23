@@ -1,5 +1,6 @@
 import csv
 import io
+from datetime import date, datetime
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
@@ -199,6 +200,55 @@ class CellFormatTests(MenuFixture):
                 decoded = im.read_csv_bytes(data)
                 row = im.parse('items', decoded).rows[0]
                 self.assertEqual(row.changes['short_description'][1], 'Crisp — brewed in Pittsburgh, café style')
+
+
+class DateFormatTests(MenuFixture):
+    """CSV dates are m/d/yyyy (CLAUDE.md, 2026-10-23); ISO still read; day-first never."""
+
+    def menu_row(self, **cells):
+        return im.parse('menus', make_csv({'slug': 'food-menu', **cells})).rows[0]
+
+    def test_export_writes_m_d_yyyy_without_leading_zeros(self):
+        Menu.objects.filter(pk=self.food.pk).update(
+            valid_from=date(2027, 9, 8),
+            active_from=datetime(2027, 9, 8, 17, 30, tzinfo=ZoneInfo('America/New_York')),
+        )
+        row = dict(zip([c.name for c in im.KINDS['menus'].columns],
+                       next(r for r in im.export_rows('menus') if 'food-menu' in r)))
+        self.assertEqual(row['valid_from'], '9/8/2027')
+        self.assertEqual(row['active_from'], '9/8/2027 17:30')
+
+    def test_m_d_yyyy_import_with_or_without_leading_zeros(self):
+        for cell in ('9/18/2027', '09/18/2027'):
+            with self.subTest(cell=cell):
+                self.assertEqual(self.menu_row(valid_from=cell).changes['valid_from'], ('', '9/18/2027'))
+        im.apply('menus', make_csv({'slug': 'food-menu', 'valid_from': '9/18/2027', 'active_from': '9/18/2027 17:30'}))
+        self.food.refresh_from_db()
+        self.assertEqual(self.food.valid_from, date(2027, 9, 18))
+        local = self.food.active_from.astimezone(ZoneInfo('America/New_York'))
+        self.assertEqual((local.month, local.day, local.hour, local.minute), (9, 18, 17, 30))
+
+    def test_iso_still_accepted_and_older_exports_reimport_unchanged(self):
+        im.apply('menus', make_csv({'slug': 'food-menu', 'valid_from': '9/18/2027', 'active_from': '9/18/2027 17:30'}))
+        row = self.menu_row(valid_from='2027-09-18', active_from='2027-09-18 17:30')
+        self.assertEqual(row.action, 'unchanged')
+
+    def test_day_first_dates_are_refused(self):
+        row = self.menu_row(valid_from='13/9/2027')
+        self.assertEqual(row.errors, ['valid_from: "13/9/2027" is not a date (use M/D/YYYY)'])
+        row = self.menu_row(active_from='13/9/2027 17:30')
+        self.assertEqual(row.errors, ['active_from: "13/9/2027 17:30" is not a date and time (use M/D/YYYY HH:MM)'])
+
+    def test_other_formats_refused(self):
+        for cell in ('2/30/2027', '9/18/27', '20270918', 'Sept 18 2027'):
+            with self.subTest(cell=cell):
+                self.assertIn('use M/D/YYYY', self.menu_row(valid_from=cell).errors[0])
+
+    def test_bare_date_in_a_datetime_column_means_midnight(self):
+        im.apply('menus', make_csv({'slug': 'food-menu', 'active_until': '11/30/2026'}))
+        self.food.refresh_from_db()
+        local = self.food.active_until.astimezone(ZoneInfo('America/New_York'))
+        self.assertEqual((local.month, local.day, local.hour), (11, 30, 0))
 
 
 class FileErrorTests(MenuFixture):
