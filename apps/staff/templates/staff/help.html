@@ -136,13 +136,35 @@
     <li><strong>Name</strong>, a <strong>short description</strong> (shown in menu listings) and a longer <strong>description</strong> (shown when a customer taps the item).</li>
     <li><strong>Price</strong> and how it's shown: <em>Show price</em>, <em>Market price</em> (shows "MP") or <em>Hide price</em> (shows nothing — handy for drinks).</li>
     <li><strong>Sale price</strong> — when set and lower than the price, customers see the old price crossed out next to the sale price.</li>
-    <li><strong>Sizes</strong> (e.g. Pint / Pitcher, each with its own price — the listing then shows a price range) and <strong>add-ons</strong> (e.g. Add bacon +$2), shown when the item is tapped.</li>
+    <li><strong>Sizes</strong> (e.g. Pint / Pitcher) and <strong>add-ons</strong> (e.g. Add bacon +$2) — see <a href="#sizes-addons" class="help-back">Sizes and add-ons</a> below.</li>
     <li><strong>Badges</strong>: Featured, Chef's special, New and Seasonal.</li>
+    <li><strong>Dietary</strong> — the dietary type (Vegetarian, Vegan, Gluten free, Dairy free) plus the Gluten-free, Dairy-free and Nut-free ticks, shown as labels when the item is tapped.</li>
     <li><strong>Allergen info</strong> — extra warnings shown when the item is tapped.</li>
     <li><strong>Available</strong> — the master switch. Turning it off hides the item everywhere, on every menu.</li>
     <li><strong>Photos</strong> — chosen from the media library (Menu Items &rarr; Images).</li>
   </ul>
-  <p class="help-note">Some item settings are stored but not shown on the website yet: the dietary type and vegan / gluten-free / dairy-free / nut-free / shellfish flags, spice level, calories, preparation time, and the time-of-day or day-of-week limits. Changing them has no effect on what customers see for now.</p>
+  <p class="help-note">Some item settings are stored but not shown on the website yet: the separate Vegan tick (use the <em>Vegan</em> dietary type instead), Contains shellfish, spice level, calories, preparation time, and the time-of-day or day-of-week limits. Changing them has no effect on what customers see for now.</p>
+
+  <h3 id="sizes-addons" style="scroll-margin-top:1rem;">Sizes and add-ons</h3>
+  <p>Both belong to the item, so they're the same everywhere the item appears. They're for information only — customers see them when they tap the item; nothing is ordered online.</p>
+  <p><strong>Sizes</strong> (called <em>variations</em> in the spreadsheets) — for one item that comes in versions with different prices: Pint / Pitcher, Glass / Bottle, 6 / 12 wings.</p>
+  <ul>
+    <li>Each size has a <strong>name</strong> (Pint), an optional <strong>size note</strong> shown in brackets (16 oz), a <strong>price</strong>, a <strong>position</strong> and an <strong>available</strong> switch.</li>
+    <li>When the item is tapped, an <strong>Options</strong> list shows every available size with its price, in position order. The item's own price isn't shown there.</li>
+    <li>In the menu listing, the item shows the <strong>range</strong> of its available size prices (e.g. $6.00 – $18.00), or a single price if they're all the same — <em>but only if the item's <strong>Has variations</strong> box (<code>has_variations</code>) is ticked</em>. If it isn't, the listing shows the item's normal price even though the sizes still appear when tapped.</li>
+    <li>A category's <strong>special price</strong>, or a <em>Market</em> / <em>Hide</em> price setting, replaces the range in the listing. The sizes keep their own prices when tapped.</li>
+    <li>Switching a size off hides it from the Options list and from the range.</li>
+  </ul>
+  <p><strong>Add-ons</strong> — optional extras: Add bacon, Extra cheese, Make it a double.</p>
+  <ul>
+    <li>Each add-on has a <strong>name</strong>, a <strong>price</strong> (shown as "+$2.00"), a <strong>position</strong> and an <strong>available</strong> switch.</li>
+    <li>When the item is tapped, an <strong>Add-ons</strong> list shows every available add-on. They don't change the price shown in the listing.</li>
+    <li>They appear whenever the item has an available add-on — the item's <em>Has addons</em> box doesn't change anything on the website.</li>
+  </ul>
+  <p class="help-note">A size's description, quantity and "default" setting, and an add-on's description and "default" setting, are stored but not shown on the website yet.</p>
+  {% if staff_is_manager %}
+  <p>To add or change them, use the <em>variations</em> (sizes) and <em>addons</em> files in <a href="#menu-import" class="help-back">Menu import / export</a> — one row per size or add-on, naming the item by its slug. Remember to set <code>has_variations</code> to <code>yes</code> in the <em>items</em> file so the listing shows the price range. The Whole menu sheet doesn't include sizes or add-ons.</p>
+  {% endif %}
 
   <h3>2. Categories — the sections of a menu</h3>
   <ul>
@@ -369,6 +391,7 @@
   </ul>
   <h3>Add new things</h3>
   <p>Download the <strong>Template</strong> (a header row plus one example row), fill in a row per new record and upload it. Files depend on the ones above them in the list — import new categories before the items placed in them, and items before placements.</p>
+  <p>Sizes and add-ons have their own files, <em>variations</em> and <em>addons</em>: one row per size or add-on, with the item's slug in the <code>item</code> column. A row with the same item and name as an existing one updates it. See <a href="#sizes-addons" class="help-back">Sizes and add-ons</a> for how they show on the website.</p>
   <h3>Rules for cells</h3>
   <ul>
     <li><strong>Blank</strong> keeps what's there now. Type <strong>-</strong> (a dash) to empty a field.</li>

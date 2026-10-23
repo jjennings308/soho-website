@@ -127,3 +127,18 @@ class HowMenusWorkHelpTests(TestCase):
         response = self.client.get(reverse('staff:help'))
         self.assertContains(response, 'Setting up a new menu')
         self.assertContains(response, 'href="#menus-explained"')  # linked from Menu items
+
+
+class SizesAndAddonsHelpTests(TestCase):
+    def test_everyone_sees_how_sizes_and_addons_show(self):
+        self.client.force_login(User.objects.create_user('viewer2', password='x', is_staff=True))
+        response = self.client.get(reverse('staff:help'))
+        self.assertContains(response, 'id="sizes-addons"')
+        self.assertContains(response, 'Has variations')
+        self.assertNotContains(response, 'set <code>has_variations</code> to <code>yes</code>')  # manager-only
+
+    def test_managers_get_the_spreadsheet_instructions(self):
+        user = User.objects.create_user('mgr3', password='x', is_staff=True)
+        user.groups.add(Group.objects.get(name=MANAGER_GROUP))
+        self.client.force_login(user)
+        self.assertContains(self.client.get(reverse('staff:help')), 'set <code>has_variations</code> to <code>yes</code>')
