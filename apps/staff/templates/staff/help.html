@@ -100,22 +100,7 @@
 <section id="menu-items" class="sp-card help-topic">
   <h2>Menu items and photos</h2>
   <p>Every dish and drink on any menu. Search by name, or filter by availability and flags (featured, new, chef's special, seasonal).</p>
-  <h3>How the menu fits together</h3>
-  <p>Items aren't put on a menu directly — they go into <strong>categories</strong>, and menus show categories:</p>
-  <p style="margin-left:1rem;"><strong>Menu</strong> &rarr; shows <strong>categories</strong> (Burgers, Beer…) &rarr; each category holds <strong>items</strong>.</p>
-  <ul>
-    <li><strong>Shared categories:</strong> a category can be on more than one menu. Every item in it then appears on all of those menus — you can't show an item in "Burgers" on one menu but not another. (Use a separate category for that, e.g. "Promo Burgers".)</li>
-    <li><strong>One item, several categories:</strong> the same dish can sit in more than one category, each with its own position.</li>
-    <li><strong>Prices:</strong> an item has one normal price. A category can give it a <em>special price</em> — that price shows wherever that category appears, on every menu that uses it.</li>
-    <li><strong>Hiding something:</strong>
-      <ul>
-        <li>Item marked <em>not available</em> &rarr; hidden everywhere.</li>
-        <li>Item hidden in one category &rarr; gone from that category only.</li>
-        <li>Category taken off a menu &rarr; that whole section disappears from that menu.</li>
-      </ul>
-    </li>
-    <li><strong>Which menu customers see</strong> is set separately: normally the default food and drinks menus, and the event menus during limited-menu times (see <a href="#menu-mode" class="help-back">Menu mode</a>).</li>
-  </ul>
+  <p>Items reach a menu through categories — see <a href="#menus-explained" class="help-back">How menus work</a> for the whole picture and what every setting does.</p>
   {% if staff_is_manager %}
   <h3>Choose an item's photos</h3>
   <ol>
@@ -130,6 +115,101 @@
   <p class="help-note">To change names, prices, descriptions or which items are in which categories, use <a href="#menu-import" class="help-back">Menu import / export</a>. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
   {% else %}
   <p class="help-note">Menu names, prices and descriptions are changed by a manager.</p>
+  {% endif %}
+  <a class="help-back" href="#">&uarr; Back to top</a>
+</section>
+
+{# ── How menus work ─────────────────────────────────────────────────────── #}
+<section id="menus-explained" class="sp-card help-topic">
+  <h2>How menus work</h2>
+  <p>A dish never goes straight onto a menu. It travels through four layers:</p>
+  <p style="margin-left:1rem;">
+    <strong>Menu item</strong> &rarr; placed in a <strong>category</strong> (optionally under a <strong>subcategory</strong>)
+    &rarr; categories are shown on a <strong>menu</strong> &rarr; the site picks <strong>which menu</strong> customers see.
+  </p>
+  <p>For example: <em>Classic Burger</em> is placed in <em>Burgers</em>; <em>Burgers</em> is on the <em>Food Menu</em>;
+    the Food Menu is the default food menu, so it's what customers see on the Food page.</p>
+
+  <h3>1. Menu items — the dish or drink itself</h3>
+  <p>An item is written once and can appear in as many places as you like. What it holds:</p>
+  <ul>
+    <li><strong>Name</strong>, a <strong>short description</strong> (shown in menu listings) and a longer <strong>description</strong> (shown when a customer taps the item).</li>
+    <li><strong>Price</strong> and how it's shown: <em>Show price</em>, <em>Market price</em> (shows "MP") or <em>Hide price</em> (shows nothing — handy for drinks).</li>
+    <li><strong>Sale price</strong> — when set and lower than the price, customers see the old price crossed out next to the sale price.</li>
+    <li><strong>Sizes</strong> (e.g. Pint / Pitcher, each with its own price — the listing then shows a price range) and <strong>add-ons</strong> (e.g. Add bacon +$2), shown when the item is tapped.</li>
+    <li><strong>Badges</strong>: Featured, Chef's special, New and Seasonal.</li>
+    <li><strong>Allergen info</strong> — extra warnings shown when the item is tapped.</li>
+    <li><strong>Available</strong> — the master switch. Turning it off hides the item everywhere, on every menu.</li>
+    <li><strong>Photos</strong> — chosen from the media library (Menu Items &rarr; Images).</li>
+  </ul>
+  <p class="help-note">Some item settings are stored but not shown on the website yet: the dietary type and vegan / gluten-free / dairy-free / nut-free / shellfish flags, spice level, calories, preparation time, and the time-of-day or day-of-week limits. Changing them has no effect on what customers see for now.</p>
+
+  <h3>2. Categories — the sections of a menu</h3>
+  <ul>
+    <li>A category is a section such as <em>Burgers</em>, <em>Beer</em> or <em>Happy Hour Drinks</em>, marked as food or drinks.</li>
+    <li><strong>Name</strong> is for staff. <strong>Display name</strong> is the heading customers see — leave it blank and the section has <em>no heading</em> at all.</li>
+    <li>Optional <strong>description</strong>, <strong>background image</strong> (with a dark overlay so text stays readable) and a <strong>disclaimer</strong> line at the bottom of the section.</li>
+    <li><strong>Active</strong> off hides the category everywhere, whichever menus it's on.</li>
+  </ul>
+
+  <h3>3. Subcategories — optional groups inside a category</h3>
+  <ul>
+    <li>Used to split a long category, e.g. <em>Beer</em> &rarr; <em>On Tap</em> / <em>Bottles &amp; Cans</em>, or <em>Wine</em> &rarr; <em>Red</em> / <em>White</em>.</li>
+    <li>Each belongs to one category and has its own position within it.</li>
+    <li>As with categories, the <strong>display name</strong> is the sub-heading; blank means no sub-heading.</li>
+  </ul>
+
+  <h3>4. Placing an item in a category</h3>
+  <p>Putting an item into a category (a <em>placement</em>) has a few settings of its own — they apply to that category only:</p>
+  <ul>
+    <li><strong>Subcategory</strong> — which group it sits under (optional).</li>
+    <li><strong>Position</strong> — where it appears in the category.</li>
+    <li><strong>Special price</strong> — a different price in this category only (e.g. half price in <em>Happy Hour Drinks</em>). The item's normal price is untouched everywhere else.</li>
+    <li><strong>Note</strong> — a short call-out shown on the item here, e.g. "Limited time!".</li>
+    <li><strong>Shown</strong> — turn off to hide the item from this category without removing it.</li>
+  </ul>
+  <p><strong>Which price customers see:</strong> a special price wins; otherwise "MP" or nothing if the item is set to Market / Hide price; otherwise the size range; otherwise the sale price; otherwise the normal price.</p>
+
+  <h3>5. Menus — collections of categories</h3>
+  <ul>
+    <li>A menu lists the categories it shows and in what <strong>order</strong>. Every item in those categories comes along with them.</li>
+    <li><strong>Title</strong> is for staff; <strong>display name</strong> is what customers see (blank = use the title).</li>
+    <li><strong>Type</strong>: <em>Food</em>, <em>Drinks</em>, <em>Promotion</em> or <em>Weekly specials</em>.</li>
+    <li><strong>Active</strong> switch, plus optional <strong>active from / until</strong> date-times to schedule it.</li>
+    <li><strong>Role</strong> — marks the menu as the <em>default food</em>, <em>default drinks</em>, <em>event food</em> or <em>event drinks</em> menu. Only one menu can hold each role; giving a role to a new menu takes it away from the old one.</li>
+    <li><strong>Promotions</strong> can have a <strong>color scheme</strong> and a <strong>homepage slot</strong> (left or right of the main banner). Food, drinks and specials menus always use the site's normal colors.</li>
+    <li><strong>Weekly specials</strong> have <strong>valid from / until</strong> dates and appear only between them — the "This week's specials" link shows up by itself and disappears when the dates pass.</li>
+  </ul>
+
+  <h3>6. Which menu customers see</h3>
+  <ul>
+    <li>The website's <strong>Menu &rarr; Food</strong> and <strong>Menu &rarr; Drinks</strong> pages show the menus with the <em>default food</em> and <em>default drinks</em> roles.</li>
+    <li>During limited-menu times (see <a href="#menu-mode" class="help-back">Menu mode</a>) they switch to the <em>event food</em> and <em>event drinks</em> menus instead.</li>
+    <li><strong>Menu &rarr; Event Day (Limited)</strong> always shows the event menus, so customers can see them ahead of a game.</li>
+    <li><strong>Promotions</strong> appear on the Promotions page (<code>/menu/promotions/</code>) while active and within their dates.</li>
+    <li><strong>Homepage slots</strong> show a promotion whenever it's switched on — they don't follow its dates, so switch it off or clear its slot when the promotion ends.</li>
+  </ul>
+
+  <h3>Good to know</h3>
+  <ul>
+    <li><strong>Shared categories:</strong> a category on two menus shows the same items on both. To show an item on one menu only, give that menu its own category (e.g. "Promo Burgers").</li>
+    <li><strong>One item, many places:</strong> the same dish can sit in several categories, each with its own position, special price and note.</li>
+    <li><strong>Three ways to hide something:</strong> item <em>not available</em> (gone everywhere) · placement <em>not shown</em> (gone from that category) · category taken off a menu (that whole section gone from that menu).</li>
+  </ul>
+
+  {% if staff_is_manager %}
+  <h3>Setting up a new menu</h3>
+  <p>Work from the bottom up, because each layer refers to the one before it:</p>
+  <ol>
+    <li>Create any new <strong>categories</strong> (and <strong>subcategories</strong>).</li>
+    <li>Create any new <strong>items</strong>.</li>
+    <li>Create the <strong>menu</strong> and choose its type (and role, color scheme or dates as needed).</li>
+    <li>Add the categories to the menu, in order.</li>
+    <li>Place the items in their categories.</li>
+  </ol>
+  <p>The quickest way is the <strong>Whole menu</strong> sheet in <a href="#menu-import" class="help-back">Menu import / export</a>: one row per item on the menu creates the menu, categories, items and placements together (subcategories must exist first). Deleting items and changing which days a promotion runs are done by a site administrator.</p>
+  {% else %}
+  <p class="help-note">Menus are set up and changed by a manager.</p>
   {% endif %}
   <a class="help-back" href="#">&uarr; Back to top</a>
 </section>

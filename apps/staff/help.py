@@ -14,6 +14,7 @@ TOPICS = [
     ('menu-mode', 'Menu mode (full vs. limited menu)', STAFF),
     ('events', 'Events calendar', STAFF),
     ('menu-items', 'Menu items and photos', STAFF),
+    ('menus-explained', 'How menus work', STAFF),
     ('inquiries', 'Event inquiries', MANAGER),
     ('media', 'Media library (photos)', MANAGER),
     ('newsletter', 'Newsletter', MANAGER),
