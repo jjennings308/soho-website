@@ -14,20 +14,28 @@
 {% include "core/components/hero_with_promos.html" %}
 
 {# ══════════════════════════════════════════════════════════════════════════ #}
-{# RESERVATIONS BAR                                                          #}
+{# RESERVATIONS BAR — reserve, order online, view menu                        #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
-{% if site_settings.reservations_url %}
 {# intentional — fixed UI element, not content-driven #}
-<div class="w-full py-3 flex items-center justify-center
+<div class="w-full py-3 px-4 flex flex-wrap items-center justify-center gap-3
             bg-[var(--color-bg-secondary)]">
+  {% if site_settings.reservations_url %}
   <a href="{{ site_settings.reservations_url }}"
     target="_blank"
     rel="noopener noreferrer"
     class="btn btn-primary">
     Reserve a Table
   </a>
+  {% endif %}
+  <a href="{% url 'menu:full' %}" class="btn btn-primary">
+    View Menu
+  </a>
+  {% if site_settings.doordash_url or site_settings.grubhub_url or site_settings.ubereats_url %}
+  <a href="{% url 'core:online_delivery' %}" class="btn btn-primary">
+    Online Delivery
+  </a>
+  {% endif %}
 </div>
-{% endif %}
 
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {# CATERING & EVENTS — 50/50                                                 #}
