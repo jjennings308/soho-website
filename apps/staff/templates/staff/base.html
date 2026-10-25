@@ -168,18 +168,26 @@
   </div>
 
   <script>
+  // Collapsible nav sections. Collapsed state lasts for this visit only
+  // (sessionStorage), so a section collapsed once can't stay hidden on a
+  // device for good. On phones the menu is a slide-out, so every section
+  // always starts open there and matches the desktop.
+  const navIsPhone = window.matchMedia('(max-width: 768px)').matches;
+  try { ['ops', 'content', 'tools'].forEach(k => localStorage.removeItem('nav_' + k)); } catch (e) {}
+
   function navSection(key, defaultOpen) {
     return {
       open: true,
       init() {
-        const stored = localStorage.getItem('nav_' + key);
+        let stored = null;
+        try { stored = sessionStorage.getItem('nav_' + key); } catch (e) {}
         const hasActive = this.$el.querySelector('a.active') !== null;
         // Always open the section containing the current page; otherwise use stored or default.
-        this.open = hasActive ? true : (stored !== null ? stored === '1' : defaultOpen);
+        this.open = (navIsPhone || hasActive) ? true : (stored !== null ? stored === '1' : defaultOpen);
       },
       toggle() {
         this.open = !this.open;
-        localStorage.setItem('nav_' + key, this.open ? '1' : '0');
+        try { sessionStorage.setItem('nav_' + key, this.open ? '1' : '0'); } catch (e) {}
       },
     };
   }

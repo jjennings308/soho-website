@@ -142,3 +142,15 @@ class SizesAndAddonsHelpTests(TestCase):
         user.groups.add(Group.objects.get(name=MANAGER_GROUP))
         self.client.force_login(user)
         self.assertContains(self.client.get(reverse('staff:help')), 'set <code>has_variations</code> to <code>yes</code>')
+
+
+class NavSectionStateTests(TestCase):
+    """Collapsed nav sections must not stay hidden on a device for good (phone menu bug)."""
+
+    def test_collapse_state_is_per_visit_and_phones_start_open(self):
+        self.client.force_login(User.objects.create_user('nav', password='x', is_staff=True))
+        html = self.client.get(reverse('staff:dashboard')).content.decode()
+        self.assertIn("sessionStorage.getItem('nav_' + key)", html)
+        self.assertNotIn("localStorage.getItem('nav_'", html)
+        self.assertNotIn("localStorage.setItem('nav_'", html)
+        self.assertIn("matchMedia('(max-width: 768px)')", html)
