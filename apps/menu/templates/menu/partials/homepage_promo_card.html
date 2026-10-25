@@ -12,7 +12,7 @@
 
 {% with colors=menu.resolve_colors %}
 <div
-  class="flex flex-col items-center gap-3 w-full rounded-lg p-4"
+  class="flex flex-col items-center gap-3 w-full rounded-lg p-3"
   style="
     --color-promo-primary: {{ colors.primary }};
     --color-promo-accent:  {{ colors.accent }};
@@ -60,7 +60,7 @@
 
       {# ── Short description ── #}
       {% if item.short_description %}
-        <p class="text-sm opacity-80 leading-snug max-w-[180px]">
+        <p class="text-sm opacity-80 leading-snug text-center">
           {{ item.short_description|truncatechars:100 }}
         </p>
       {% endif %}

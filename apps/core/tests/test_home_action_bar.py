@@ -32,3 +32,24 @@ class HomeActionBarTests(TestCase):
         self.assertNotIn('Reserve a Table', bar)
         self.assertNotIn('Online Delivery', bar)
         self.assertIn('View Menu', bar)  # the bar always shows the menu button
+
+
+class HeroLayoutTests(TestCase):
+    def test_hero_uses_equal_thirds(self):
+        html = self.client.get(reverse('core:home')).content.decode()
+        self.assertIn('grid grid-cols-1 md:grid-cols-3', html)
+        self.assertNotIn('md:grid-cols-[1fr_3fr_1fr]', html)
+
+
+class HeroSideBoxTests(TestCase):
+    def test_side_boxes_use_less_padding_and_full_width_text(self):
+        from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemCategoryAssignment
+        menu = Menu.objects.create(title='Happy Hour', slug='happy-hour', menu_type='promo', homepage_slot='slot_1')
+        cat = MenuCategory.objects.create(name='Drafts', slug='drafts')
+        MenuCategoryAssignment.objects.create(menu=menu, category=cat)
+        item = MenuItem.objects.create(name='Lager', slug='lager', short_description='Crisp and cold')
+        MenuItemCategoryAssignment.objects.create(menu_item=item, category=cat)
+        html = self.client.get(reverse('core:home')).content.decode()
+        self.assertIn('Crisp and cold', html)
+        self.assertNotIn('max-w-[180px]', html)
+        self.assertEqual(html.count('md:min-h-[400px] p-2 md:p-3'), 2)  # both side boxes
