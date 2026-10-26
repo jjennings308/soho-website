@@ -3,6 +3,7 @@
 {% block page_title %}Events{% endblock %}
 {% block topbar_actions %}
   {% if staff_is_manager %}
+  <a href="{% url 'staff:menu_import' %}?kind=events" class="sp-btn sp-btn--outline">Import / Export CSV</a>
   <a href="{% url 'staff:event_add' %}" class="sp-btn sp-btn--primary">+ Add Event</a>
   {% endif %}
 {% endblock %}

@@ -12,7 +12,7 @@ Cell rules:
   - blank  → keep the existing value (on create: the model default)
   - '-'    → clear the field
   - choices accept the code or the label; booleans yes/no, true/false, 1/0, y/n
-  - numbers plain (12.50), times HH:MM (24 h)
+  - numbers plain (12.50), times HH:MM (24 h; 7:05 PM is also accepted)
   - dates m/d/yyyy (9/18/2027 — what Excel shows in a US locale); date-times
     'm/d/yyyy HH:MM' in local (Eastern) time. Export writes these; import also
     accepts yyyy-mm-dd (and 'yyyy-mm-dd HH:MM') so older exports re-import.
@@ -121,7 +121,9 @@ def parse_datetime(text):
 class Column:
     """
     One CSV column. `type` is inferred from the model field unless given:
-    text, bool, choice, decimal, int, date, time, datetime, html, ref.
+    text, bool, choice, decimal, int, date, time, datetime, html, ref, key.
+    A 'key' column (the record id) only finds an existing record: it is
+    exported but never saved or shown as a change.
     For type 'ref', `ref` names a resolver in RESOLVERS and `ref_field` the
     attribute used when exporting the related object (slug or name).
     """
@@ -168,6 +170,8 @@ class Column:
             return ''
         if self.type == 'ref':
             return getattr(value, self.ref_field)
+        if self.type == 'key':
+            return str(value)
         if self.type == 'bool':
             return 'yes' if value else 'no'
         if self.type == 'html':
@@ -210,7 +214,7 @@ class Column:
             except InvalidOperation:
                 raise CellError(f'"{cell}" is not a number (use e.g. 12.50, no currency sign)')
             return str(value.quantize(Decimal(1).scaleb(-self.model_field.decimal_places)))
-        if t == 'int':
+        if t in ('int', 'key'):
             try:
                 return str(int(cell))
             except ValueError:
@@ -221,12 +225,13 @@ class Column:
             except ValueError:
                 raise CellError(f'"{cell}" is not a date (use M/D/YYYY)')
         if t == 'time':
-            for fmt in ('%H:%M', '%H:%M:%S'):
+            # 12-hour times too: Excel saves a time cell as it displays it (7:05 PM).
+            for fmt in ('%H:%M', '%H:%M:%S', '%I:%M %p', '%I:%M:%S %p', '%I:%M%p', '%I %p', '%I%p'):
                 try:
-                    return datetime.strptime(cell, fmt).strftime('%H:%M')
+                    return datetime.strptime(cell.upper(), fmt).strftime('%H:%M')
                 except ValueError:
                     pass
-            raise CellError(f'"{cell}" is not a time (use HH:MM, 24-hour)')
+            raise CellError(f'"{cell}" is not a time (use HH:MM, e.g. 19:05, or 7:05 PM)')
         if t == 'datetime':
             try:
                 value = parse_datetime(cell)
@@ -305,6 +310,14 @@ class Kind:
     find: object = None
     # (row) → slug for a new record whose slug cell is blank, or None.
     default_slug: object = None
+    # (row) → label shown in the preview; default: _label().
+    label: object = None
+    # (result) → None; extra file-wide checks, adding row errors / notes.
+    check: object = None
+    # (row) → None; runs after a new/changed row is saved.
+    after_save: object = None
+    # Example row for the downloadable template; default: KIND_EXAMPLES[name].
+    example: dict = None
 
     def __post_init__(self):
         for col in self.columns:
@@ -478,9 +491,15 @@ def read_csv_bytes(data):
         return data.decode('cp1252')
 
 
+def get_kind(kind):
+    """A Kind, given one or the name of a menu kind."""
+    return KINDS[kind] if isinstance(kind, str) else kind
+
+
 def parse(kind_name, csv_text):
-    """Validate a CSV for one kind. Saves nothing."""
-    kind = KINDS[kind_name]
+    """Validate a CSV for one kind (a name in KINDS, or a Kind). Saves nothing."""
+    kind = get_kind(kind_name)
+    kind_name = kind.name
     result = Result(kind=kind_name)
     reader = csv.DictReader(io.StringIO(csv_text.lstrip('﻿')))
     headers = [(h or '').strip().lower() for h in (reader.fieldnames or [])]
@@ -504,7 +523,9 @@ def parse(kind_name, csv_text):
         _parse_row(kind, row)
         row.label = row.label or _label(kind, row)
         if not row.errors:
-            key = tuple(_key_part(kind, row, c) for c in kind.key)
+            # Two rows for one existing record clash however they found it.
+            key = (('pk', row.instance.pk) if row.instance
+                   else tuple(_key_part(kind, row, c) for c in kind.key))
             if key in seen_keys:
                 row.errors.append(f'same record as line {seen_keys[key]} ({", ".join(kind.key)})')
             else:
@@ -512,6 +533,8 @@ def parse(kind_name, csv_text):
 
     if kind_name == 'menus':
         _check_menu_roles(result)
+    if kind.check:
+        kind.check(result)
     for row in result.rows:
         if row.errors:
             row.action = 'error'
@@ -540,10 +563,12 @@ def _parse_row(kind, row):
             elif col.type == 'ref':
                 row.refs[name] = RESOLVERS[col.ref](cell, row)
                 row.values[name] = cell
+            elif col.type == 'key':
+                row.values[name] = col.canonical(cell)
             else:
                 row.values[name] = col.canonical(cell)
         except CellError as exc:
-            if col.type == 'ref':
+            if col.type in ('ref', 'key'):
                 row.errors.append(f'{name}: {exc}')
             else:
                 unreadable.append((col, cell, exc))
@@ -551,7 +576,11 @@ def _parse_row(kind, row):
         return
 
     # 2. Find the existing record; build the before/after picture.
-    row.instance = kind.find(kind, row)
+    try:
+        row.instance = kind.find(kind, row)
+    except CellError as exc:
+        row.errors.append(str(exc))
+        return
     for col, cell, exc in unreadable:
         # A value that is no longer valid but is exactly what's stored (e.g. a
         # legacy choice, re-imported from an export) is simply unchanged.
@@ -562,7 +591,7 @@ def _parse_row(kind, row):
     base = row.instance or kind.model()
     data, fields = {}, []
     for col in kind.columns:
-        if col.name not in row.values:
+        if col.name not in row.values or col.type == 'key':
             continue
         old = col.export(base)
         value = row.values[col.name]
@@ -590,7 +619,7 @@ def _parse_row(kind, row):
                 data['slug'] = slug
                 fields.append('slug')
         for col in kind.columns:
-            if col.field not in fields:
+            if col.field not in fields and col.type != 'key':
                 fields.append(col.field)
                 # Blank lookups go in empty so the form reports required ones.
                 data[col.field] = '' if col.type == 'ref' else col.form_value(col.export(base))
@@ -613,6 +642,8 @@ def _parse_row(kind, row):
 
 
 def _label(kind, row):
+    if kind.label:
+        return kind.label(row)
     v, refs, inst = row.values, row.refs, row.instance
     def ref(name):
         obj = refs.get(name) or (kind.by_name[name]._related(inst) if inst else None)
@@ -653,20 +684,23 @@ def _check_menu_roles(result):
 
 def apply(kind_name, csv_text):
     """Re-validate and save every new/changed row in one transaction, or raise ImportRefused."""
+    kind = get_kind(kind_name)
     with transaction.atomic():
-        result = parse(kind_name, csv_text)
+        result = parse(kind, csv_text)
         if not result.ok:
             raise ImportRefused(result)
         for row in result.rows:
             if row.action in ('new', 'update'):
                 row.instance = row.form.save()
+                if kind.after_save:
+                    kind.after_save(row)
     return result
 
 
 # ── Export ────────────────────────────────────────────────────────────────────
 
 def export_rows(kind_name):
-    kind = KINDS[kind_name]
+    kind = get_kind(kind_name)
     related = [c.field for c in kind.columns if c.type == 'ref']
     qs = kind.model.objects.select_related(*related).order_by(*kind.export_order)
     for obj in qs:
@@ -675,8 +709,9 @@ def export_rows(kind_name):
 
 def template_csv(kind_name):
     """Header row plus one example row, for staff to fill in."""
-    columns = [c.name for c in KINDS[kind_name].columns]
-    example = KIND_EXAMPLES[kind_name]
+    kind = get_kind(kind_name)
+    columns = [c.name for c in kind.columns]
+    example = kind.example or KIND_EXAMPLES[kind.name]
     out = io.StringIO()
     out.write('\ufeff')
     writer = csv.writer(out)
@@ -690,6 +725,6 @@ def export_csv(kind_name):
     out = io.StringIO()
     out.write('﻿')
     writer = csv.writer(out)
-    writer.writerow([c.name for c in KINDS[kind_name].columns])
+    writer.writerow([c.name for c in get_kind(kind_name).columns])
     writer.writerows(export_rows(kind_name))
     return out.getvalue()

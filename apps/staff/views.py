@@ -19,6 +19,7 @@ from apps.events.models import EventDay
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter, SoHoMember
 from apps.members.newsletter import send_newsletter
+from apps.events import importers as event_importers
 from apps.menu import importers as menu_importers
 from apps.menu import whole_menu
 from apps.menu.models import Menu
@@ -614,14 +615,23 @@ class PopupDeleteView(StaffRequiredMixin, View):
         return redirect('staff:popups')
 
 
-# ── Menu CSV import / export (Staff Manager tier) ─────────────────────────────────
+# ── Menu and events CSV import / export (Staff Manager tier) ──────────────────────
 
 MENU_IMPORT_SESSION_KEY = 'menu_import'
 MENU_IMPORT_MAX_BYTES = 2 * 1024 * 1024
 
 
+def _is_import_kind(kind):
+    return kind in (whole_menu.KIND, event_importers.NAME) or kind in menu_importers.KINDS
+
+
+def _engine_kind(kind):
+    """What menu_importers.parse/apply/export take for a kind name (not whole_menu)."""
+    return event_importers.KIND if kind == event_importers.NAME else kind
+
+
 def _menu_kind_or_404(kind):
-    if kind != whole_menu.KIND and kind not in menu_importers.KINDS:
+    if not _is_import_kind(kind):
         raise Http404
     return kind
 
@@ -646,7 +656,12 @@ class MenuImportView(StaffRequiredMixin, View):
             'description': menu_importers.KIND_DESCRIPTIONS[k],
             'columns': [(c.name, menu_importers.KIND_EXAMPLES[k].get(c.name, ''))
                         for c in menu_importers.KINDS[k].columns],
-        } for n, k in enumerate(menu_importers.KIND_ORDER, start=1)]
+        } for n, k in enumerate(menu_importers.KIND_ORDER, start=1)] + [{
+            'name': event_importers.NAME, 'step': 0, 'label': event_importers.LABEL,
+            'description': event_importers.DESCRIPTION,
+            'columns': [(c.name, event_importers.KIND.example.get(c.name, ''))
+                        for c in event_importers.KIND.columns],
+        }]
         if selected not in {k['name'] for k in kinds}:
             selected = whole_menu.KIND
         return render(request, 'staff/menu_import/upload.html', {
@@ -657,17 +672,17 @@ class MenuImportView(StaffRequiredMixin, View):
         })
 
     def get(self, request):
-        return self._render(request)
+        return self._render(request, selected=request.GET.get('kind', ''))
 
     def post(self, request):
         kind = request.POST.get('kind', '')
         upload = request.FILES.get('file')
-        if kind != whole_menu.KIND and kind not in menu_importers.KINDS:
+        if not _is_import_kind(kind):
             return self._render(request, 'Choose what the file contains.', kind)
         if not upload:
             return self._render(request, 'Choose a CSV file to upload.', kind)
         if upload.size > MENU_IMPORT_MAX_BYTES:
-            return self._render(request, 'That file is larger than 2 MB — is it really a menu CSV?', kind)
+            return self._render(request, 'That file is larger than 2 MB — is it really a CSV export?', kind)
         text = menu_importers.read_csv_bytes(upload.read())
         request.session[MENU_IMPORT_SESSION_KEY] = {'kind': kind, 'text': text, 'filename': upload.name}
         return redirect('staff:menu_import_preview')
@@ -704,7 +719,7 @@ class MenuImportPreviewView(StaffRequiredMixin, View):
             return redirect('staff:menu_import')
         if pending['kind'] == whole_menu.KIND:
             return self._render(request, pending, whole_menu.parse_sheet(pending['text']))
-        return self._render(request, pending, menu_importers.parse(pending['kind'], pending['text']))
+        return self._render(request, pending, menu_importers.parse(_engine_kind(pending['kind']), pending['text']))
 
     def post(self, request):
         pending = request.session.get(MENU_IMPORT_SESSION_KEY)
@@ -716,7 +731,7 @@ class MenuImportPreviewView(StaffRequiredMixin, View):
             if pending['kind'] == whole_menu.KIND:
                 result = whole_menu.apply_sheet(pending['text'])
             else:
-                result = menu_importers.apply(pending['kind'], pending['text'])
+                result = menu_importers.apply(_engine_kind(pending['kind']), pending['text'])
         except (menu_importers.ImportRefused, whole_menu.SheetRefused) as exc:
             # The data changed since the preview (or the file was always bad): show why.
             messages.error(request, 'Nothing was saved — the file has errors.')
@@ -727,6 +742,8 @@ class MenuImportPreviewView(StaffRequiredMixin, View):
             f"Imported {pending['filename']}: {result.count('new')} added, "
             f"{result.count('update')} updated, {result.count('unchanged')} unchanged.",
         )
+        if pending['kind'] == event_importers.NAME:
+            return redirect('staff:events')
         return redirect('staff:menu_import')
 
 
@@ -735,7 +752,7 @@ class MenuImportTemplateView(StaffRequiredMixin, View):
 
     def get(self, request, kind):
         kind = _menu_kind_or_404(kind)
-        text = whole_menu.template_csv() if kind == whole_menu.KIND else menu_importers.template_csv(kind)
+        text = whole_menu.template_csv() if kind == whole_menu.KIND else menu_importers.template_csv(_engine_kind(kind))
         return _csv_download(text, f'{kind}-template.csv')
 
 
@@ -744,7 +761,7 @@ class MenuExportView(StaffRequiredMixin, View):
 
     def get(self, request, kind):
         kind = _menu_kind_or_404(kind)
-        text = whole_menu.export_csv() if kind == whole_menu.KIND else menu_importers.export_csv(kind)
+        text = whole_menu.export_csv() if kind == whole_menu.KIND else menu_importers.export_csv(_engine_kind(kind))
         return _csv_download(text, f'{kind}-{timezone.localdate().isoformat()}.csv')
 
 

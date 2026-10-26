@@ -442,7 +442,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/popups/` | List, add, edit, delete site popups |
 | `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
 | `/staff/help/` | Task-based help for every tier (topics filtered by tier). Each portal page has a "?" icon in its banner (desktop title bar and phone top bar) that opens a short "How this page works" tip linking to its topic (`staff/partials/_page_tip.html`). Content: `apps/staff/help.py` (topics + per-page tips) and `staff/help.html` — tests fail if a portal page has no tip or the two drift apart |
-| `/staff/import/` | **Staff Manager tier and above.** Menu CSV import (upload → preview → confirm) and per-kind CSV export/templates — see *Menu CSV import / export* |
+| `/staff/import/` | **Staff Manager tier and above.** Menu and events CSV import (upload → preview → confirm) and per-kind CSV export/templates — see *Menu CSV import / export* and *Events CSV import* |
 | `/staff/settings/` | Edit `SiteSettings` (notification email, phone, reservations URL, etc.); manage color schemes (add/edit/delete) |
 
 **Media library page retention:** Edit/cancel/delete on the media edit page all return to the URL that launched the edit. The list page passes `?next={{ request.get_full_path|urlencode }}` on edit links; the edit view threads it through a hidden `<input name="next">` field so POST redirects land back on the same filtered/paginated page. `safe='/'` on the `urlencode` filter keeps path slashes readable.
@@ -2163,7 +2163,7 @@ Match key = how a row finds an existing record (match → update, no match → c
   (unchanged rows are counted). Confirm runs `apply()`, so it re-validates; on refusal the session is
   kept and the errors shown.
 - `KIND_DESCRIPTIONS` and `KIND_EXAMPLES` in `importers.py` feed the upload page and the templates.
-- Tools nav link "Menu Import / Export" shows for managers and superusers (above the superuser-only
+- Tools nav link "Import / Export" (was "Menu Import / Export" until events were added) shows for managers and superusers (above the superuser-only
   Settings and Django Admin links).
 
 ### M3 implementation notes — "whole menu" sheet (2026-10-21, James approved)
@@ -2198,6 +2198,24 @@ Match key = how a row finds an existing record (match → update, no match → c
   topic and tips. Tests: non-superuser staff get 403 and see no Tools link; preview saves nothing;
   confirm saves; session cleared after confirm; CSV templates download with the right headers.
 - **M3 — "Whole menu" sheet.** Built — see M3 implementation notes.
+
+### Events CSV import (2026-10-25)
+
+- `apps/events/importers.py` defines one more `Kind` (`events`, `EventDay`) run by the same engine
+  (`importers.parse/apply/export_csv/template_csv` accept a `Kind` as well as a menu kind name), so
+  all cell rules above apply. Columns: `id`, date, event_type, label, team, home_away, game_time,
+  limited_menu, limited_menu_lead_hours, is_active.
+- Match: `id` (a `key` column — exported, used only to find the record, never saved) if given, else
+  the same date + event_type + team + label (case-insensitive). An unknown id is an error; two existing
+  events matching the natural key ask for the id. Changing an event's date needs its id.
+- New games: `EventDay.save()`'s home/away `limited_menu` default applies when the cell is blank (shown
+  as a preview note); an explicit `limited_menu` wins (re-set after save via the kind's `after_save`).
+- Portal: kind `events` on `/staff/import/` (open preselected with `?kind=events`; Events page has an
+  "Import / Export CSV" button for managers). Confirm redirects to the Events page. Same `MANAGER`
+  access as adding/editing events. No management command.
+- Time cells accept 12-hour times too (`6:40 PM`, `4pm`) — Excel saves time cells as displayed. This
+  applies to every kind.
+- Tests: `apps/events/tests/test_importers.py`.
 
 ### What Claude Code must not do here
 

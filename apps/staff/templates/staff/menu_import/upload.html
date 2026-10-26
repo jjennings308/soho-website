@@ -1,7 +1,7 @@
 {% extends "staff/base.html" %}
-{# staff/menu_import/upload.html — menu CSV import, step 1: pick a kind (radio), upload; plus that kind's template/export downloads and columns #}
-{% block title %}Menu Import / Export{% endblock %}
-{% block page_title %}Menu Import / Export{% endblock %}
+{# staff/menu_import/upload.html — menu and events CSV import, step 1: pick a kind (radio), upload; plus that kind's template/export downloads and columns #}
+{% block title %}Import / Export{% endblock %}
+{% block page_title %}Import / Export{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -52,6 +52,7 @@
       <p class="mi-help">
         <strong>Whole menu</strong> covers menus, categories, items and placements on one sheet. The numbered files cover one
         thing each; each looks up the ones above it, so import new categories before the items placed in them.
+        <strong>Events</strong> is the events calendar.
       </p>
     </fieldset>
 
@@ -81,8 +82,8 @@
     <ul class="mi-list">
       <li>Nothing is saved until you confirm the preview. Any error in the file means nothing is saved.</li>
       <li>Imports add and update — they never delete. To hide something, set its active / available column to <em>no</em>.</li>
-      <li>A row that matches an existing record (by slug, or by name) <strong>updates</strong> it. Blank cells keep the existing value; to clear a cell, enter a single <code>-</code>.</li>
-      <li>Yes/no columns take yes, no, true, false, 1 or 0. Prices are plain numbers (12.50, no $). Dates are month/day/year: 9/18/2027 (with a time: 9/18/2027 20:00). Times: 20:00.</li>
+      <li>A row that matches an existing record (by slug, or by name; events by id, or by the same date, type, team and label) <strong>updates</strong> it. Blank cells keep the existing value; to clear a cell, enter a single <code>-</code>.</li>
+      <li>Yes/no columns take yes, no, true, false, 1 or 0. Prices are plain numbers (12.50, no $). Dates are month/day/year: 9/18/2027 (with a time: 9/18/2027 20:00). Times: 20:00 or 8:00 PM.</li>
       <li>Choice columns take the code or the label (<code>default_food</code> or “Default Food Menu”). Unknown columns are an error, to catch typos.</li>
       <li>Images aren't in the CSV — set them on each item's Images page.</li>
       <li>“Export what's loaded now” downloads the current data in these same columns, ready to edit and import again.</li>

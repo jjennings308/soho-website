@@ -84,6 +84,7 @@
     <li>Save.</li>
   </ol>
   <p><strong>Home games</strong> get the limited menu automatically; <strong>away games</strong> don't. To use the limited menu for an away game (say, a watch party), edit the event after saving and tick <strong>Limited menu</strong>. Untick it for events that keep full service, such as most live music.</p>
+  <p>To load a whole schedule at once, or change many events, use <strong>Import / Export CSV</strong> on the Events page — see <a href="#events-import" class="help-back">Events spreadsheets</a>.</p>
   <h3>Change or remove an event</h3>
   <ul>
     <li><strong>Edit</strong> — change any detail.</li>
@@ -369,11 +370,11 @@
 {% if 'menu-import' in visible %}
 {# ── Menu import / export ───────────────────────────────────────────────── #}
 <section id="menu-import" class="sp-card help-topic">
-  <h2>Menu import / export (spreadsheets)</h2>
-  <p>Managers and administrators. Change many menu items at once — prices, descriptions, a new promo menu, a seasonal change — by editing a spreadsheet instead of clicking through the admin.</p>
+  <h2>Import / export (menu and events spreadsheets)</h2>
+  <p>Managers and administrators. Change many menu items at once — prices, descriptions, a new promo menu, a seasonal change — or load a season of events, by editing a spreadsheet instead of clicking through the admin.</p>
   <h3>Change existing items</h3>
   <ol>
-    <li>Tools &rarr; <strong>Menu Import / Export</strong>. Click <strong>Export</strong> next to the file you need (e.g. <em>items</em>).</li>
+    <li>Tools &rarr; <strong>Import / Export</strong>. Click <strong>Export</strong> next to the file you need (e.g. <em>items</em>).</li>
     <li>Open it in Excel or Google Sheets and edit. Leave the <strong>slug</strong> column alone — it's how each row finds its record.</li>
     <li>Save as <strong>CSV</strong> (in Excel: <em>CSV UTF-8</em>).</li>
     <li>Upload it, choosing the same file type. The preview lists every change as old &rarr; new.</li>
@@ -392,11 +393,20 @@
   <h3>Add new things</h3>
   <p>Download the <strong>Template</strong> (a header row plus one example row), fill in a row per new record and upload it. Files depend on the ones above them in the list — import new categories before the items placed in them, and items before placements.</p>
   <p>Sizes and add-ons have their own files, <em>variations</em> and <em>addons</em>: one row per size or add-on, with the item's slug in the <code>item</code> column. A row with the same item and name as an existing one updates it. See <a href="#sizes-addons" class="help-back">Sizes and add-ons</a> for how they show on the website.</p>
+  <h3 id="events-import" style="scroll-margin-top:1rem;">Events</h3>
+  <p>The <strong>Events</strong> file has one row per calendar event: <code>date</code>, <code>event_type</code> (game, private_party, live_music, holiday, other), <code>label</code>, <code>team</code>, <code>home_away</code>, <code>game_time</code>, <code>limited_menu</code>, <code>limited_menu_lead_hours</code> and <code>is_active</code>. Events &rarr; <strong>Import / Export CSV</strong> opens it directly.</p>
+  <ul>
+    <li><strong>New events:</strong> leave <code>id</code> blank. Only <code>date</code> is required; the type defaults to a game.</li>
+    <li><strong>Changing events:</strong> export first and keep the <code>id</code> column — that's how a row finds its event, even if you change its date. Without an id, a row updates the event with the same date, type, team and label, so uploading the same schedule twice doesn't make duplicates.</li>
+    <li>For new games, leave <code>limited_menu</code> blank to get the usual default (on for home games, off for away). Fill it in to override, e.g. <code>yes</code> for an away-game watch party.</li>
+    <li>Times can be <code>18:40</code> or <code>6:40 PM</code>; blank means all day.</li>
+    <li>To cancel an event, set <code>is_active</code> to <code>no</code>. Delete events on the Events page.</li>
+  </ul>
   <h3>Rules for cells</h3>
   <ul>
     <li><strong>Blank</strong> keeps what's there now. Type <strong>-</strong> (a dash) to empty a field.</li>
     <li>Yes/no columns accept yes/no, y/n, true/false or 1/0.</li>
-    <li>Prices are plain numbers: <code>12.50</code>, no $ sign. Dates are month/day/year: <code>9/18/2027</code> — never day first. Date and time: <code>9/18/2027 17:30</code>; times alone <code>17:30</code> (24-hour).</li>
+    <li>Prices are plain numbers: <code>12.50</code>, no $ sign. Dates are month/day/year: <code>9/18/2027</code> — never day first. Date and time: <code>9/18/2027 17:30</code>; times alone <code>17:30</code> (or <code>5:30 PM</code>).</li>
     <li>Choices accept the code or the label shown in the admin (<code>default_food</code> or <code>Default Food Menu</code>).</li>
     <li>Refer to other records by slug; names work if only one record has that name.</li>
   </ul>

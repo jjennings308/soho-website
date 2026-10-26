@@ -169,8 +169,11 @@ class CellFormatTests(MenuFixture):
         self.lager.refresh_from_db()
         self.assertEqual((self.lager.price, self.lager.calories), (Decimal('6.50'), 180))
         self.assertEqual(self.lager.available_from.strftime('%H:%M'), '16:00')
-        bad = im.parse('items', make_csv({'slug': 'lager', 'price': '$6', 'available_from': '4pm', 'calories': '1.5'}))
+        bad = im.parse('items', make_csv({'slug': 'lager', 'price': '$6', 'available_from': '25:00', 'calories': '1.5'}))
         self.assertEqual(len(bad.rows[0].errors), 3)
+        # 12-hour times, as Excel saves a time cell
+        for cell in ('4pm', '4:00 PM', '4:00PM'):
+            self.assertEqual(im.KINDS['items'].by_name['available_from'].canonical(cell), '16:00', cell)
 
     def test_menu_datetimes_are_eastern(self):
         im.apply('menus', make_csv({'slug': 'food-menu', 'active_from': '2026-11-01 17:00', 'valid_from': '2026-11-01'}))

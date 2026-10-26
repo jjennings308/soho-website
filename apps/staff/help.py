@@ -22,7 +22,7 @@ TOPICS = [
     ('reviews', 'Reviews', MANAGER),
     ('colors', 'Color reference', STAFF),
     ('settings', 'Site settings and color schemes', SUPERUSER),
-    ('menu-import', 'Menu import / export (spreadsheets)', MANAGER),
+    ('menu-import', 'Import / export (menu and events spreadsheets)', MANAGER),
 ]
 
 # url_name → (topic id, one-line tip). Every portal page should have an entry.
@@ -50,6 +50,6 @@ PAGE_TIPS = {
     'settings': ('settings', 'Changes here affect the whole site immediately.'),
     'color_scheme_add': ('settings', 'Color schemes style promo menus and popups. Only one can be the default.'),
     'color_scheme_edit': ('settings', 'Changing a scheme restyles every promo menu and popup that uses it.'),
-    'menu_import': ('menu-import', 'Export a file (Whole menu covers everything on one sheet), edit it in Excel or Google Sheets, save as CSV and upload it here. Nothing is saved until you confirm the preview.'),
+    'menu_import': ('menu-import', 'Export a file (Whole menu covers the menu on one sheet; Events is the calendar), edit it in Excel or Google Sheets, save as CSV and upload it here. Nothing is saved until you confirm the preview.'),
     'menu_import_preview': ('menu-import', 'Check every highlighted change. Confirm saves the whole file at once; any error means nothing is saved.'),
 }

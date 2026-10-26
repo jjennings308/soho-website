@@ -115,7 +115,7 @@
             </a>
             {% if staff_is_manager %}
             <a href="{% url 'staff:menu_import' %}" class="{% if 'menu_import' in request.resolver_match.url_name %}active{% endif %}">
-              &#9670; Menu Import / Export
+              &#9670; Import / Export
             </a>
             {% endif %}
             {% if request.user.is_superuser %}
