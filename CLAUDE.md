@@ -436,8 +436,8 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/menu-mode/` | Toggle menu mode: Automatic / Force Full / Force Game Day. POSTs to `SiteSettings` |
 | `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
 | `/staff/media/` | Media library — thumbnail grid; publish/hide toggle; upload; import from disk; edit (name, category, alt text); page-retention via `?next=` |
-| `/staff/menu/items/` | Menu item list with filters (name, availability, flags); Images button per row |
-| `/staff/menu/items/<pk>/images/` | Formset to assign, order, and set primary image for a menu item |
+| `/staff/menu/items/` | Menu item list with filters (name, availability, flags); Images button per row (**planned:** Edit/View per row — see *Menu item editing in the staff portal*) |
+| `/staff/menu/items/<pk>/images/` | Formset to assign, order, and set primary image for a menu item (**planned:** replaced by the Pictures section of the item page) |
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
 | `/staff/popups/` | List, add, edit, delete site popups |
 | `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
@@ -1980,6 +1980,7 @@ The staff portal dashboard is built and functional. Do not add features beyond w
 - Full portal access
 - Can change menu mode, manage events, upload media, send newsletters, manage inquiries
 - Can import/export the menu as CSV (`/staff/import/`) — James, 2026-10-21
+- Can edit menu items (details, sizes, add-ons, pictures) in the portal — James, 2026-11-01 (planned; see *Menu item editing in the staff portal*)
 - Cannot access SiteSettings, user management, or anything on the superuser-only list
 
 **Tier 2 — General Staff**
@@ -2024,7 +2025,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 
 **Candidate features for Phase 3 (not yet specced — do not build):**
 - Weekly specials editor (side-by-side item library + current specials)
-- Full menu management in portal
+- Full menu management in portal (item editing is now specced separately — see *Menu item editing in the staff portal*; adding items, placements and menus remain unspecced)
 - ContentBlock / page content editor
 - Member photo moderation queue
 - Booking/event inquiry management (links to `apps.bookings`)
@@ -2035,10 +2036,182 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Remove the superuser-only Django admin link from the Tools section
 - Add Django admin links for non-superusers
 - Build Phase 3 features not yet specced
-- Grant menu editing access to the staff portal before Phase 3 is planned (the CSV import for
-  Tier 1 is the one approved exception)
+- Grant menu editing access to the staff portal before Phase 3 is planned (the CSV import and the
+  item editing spec'd in *Menu item editing in the staff portal* are the approved exceptions)
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
+
+## Menu item editing in the staff portal — PLANNED (spec 2026-11-01)
+
+Managers edit menu items — details, sizes, add-ons and pictures — from the portal, without Django
+admin. Build in the phases at the end, one branch each. This is an approved exception to *Staff
+portal phasing* ("no menu editing in the portal before Phase 3"), decided by James 2026-11-01.
+
+### Why
+
+- Item edits (a price, a description, sold out) currently need Django admin, which managers don't use.
+- Pictures are painful: `/staff/menu/items/<pk>/images/` is a formset with **one** blank row
+  (`extra=1`), a plain dropdown of media names (no thumbnails), and Save returns to the item list —
+  so each extra picture means going back into the item.
+
+### Decision log (James, 2026-11-01)
+
+- **Scope now:** edit existing items' details + sizes (variations) + add-ons + pictures.
+- **Not now, keep the design open for later:** adding new items, editing menu placements
+  (which menus/categories, order, special price), deleting items. Build the page so these can be
+  added as more sections later (see *Future*). Until then: new items and placements come from the
+  CSV import or Django admin.
+- **One item page with sections:** Details · Sizes & add-ons · Pictures. Tabs on desktop, stacked on
+  phone. Details and Sizes & add-ons share one **Save**. Pictures save on their own (no full-page
+  submit), so adding photos never loses unsaved typing in the details form.
+- **Picture picker: thumbnail grid, multi-select.** Searchable grid of the media library; tick
+  several, "Add N pictures"; set main picture, reorder and remove on the same page; stay on the page.
+  **Item page only** — no "assign to item" action on the media library page.
+- **Long description: rich text** (CKEditor 5, same as Django admin) so formatting is kept.
+- **Read-only (Tier 2) staff** get the same item page with no edit controls — useful for answering
+  guest questions (allergens, sizes).
+- **`has_variations` / `has_addons` are set automatically**: true when the item has at least one
+  size / add-on, false when none. The checkboxes are not shown in the portal.
+- **Slug never changes on rename.** Shown read-only on the page (it's the ID CSV files use).
+
+### Access
+
+| | Tier 2 (staff) | Tier 1 (manager) / superuser |
+|---|---|---|
+| Item list, item page (GET) | View | View + edit controls |
+| Save details / sizes / add-ons | 403 | Yes |
+| Picture add / remove / reorder / main | 403 | Yes |
+
+Item page view: `staff_access = STAFF` (GET open to Tier 2, POST needs manager — the existing rule in
+`permissions.has_access`). Picture endpoints and the picker: `staff_access = MANAGER`. Templates hide
+edit controls with `staff_is_manager`.
+
+### URLs and views (`apps/staff/`)
+
+| URL | Name | View | Notes |
+|-----|------|------|-------|
+| `/staff/menu/items/<pk>/` | `staff:menu_item` | `MenuItemDetailView` | GET: page (read-only for Tier 2). POST: save Details + Sizes & add-ons |
+| `/staff/menu/items/<pk>/pictures/` | `staff:menu_item_pictures` | `MenuItemPicturesView` | GET: the Pictures partial. POST `action=add|remove|primary|up|down` → returns the re-rendered partial |
+| `/staff/menu/items/<pk>/pictures/picker/` | `staff:menu_item_picker` | `MenuItemPickerView` | GET `?q=&category=&page=` → grid fragment for the picker |
+| `/staff/menu/items/<pk>/images/` | `staff:menu_item_images` | — | Kept as a **redirect** to `staff:menu_item` + `#pictures` so old links/bookmarks work. Remove the old formset view and `item_images.html` |
+
+Item list (`/staff/menu/items/`): each row links to the item page (name is the link). The "Images"
+button becomes **Edit** for managers / **View** for Tier 2. Keep the image-count column. After a save,
+"Back to items" returns to the list **with the same filters** — thread `?next=` exactly like the media
+library edit page (see *Media library page retention*).
+
+### Details section
+
+A `MenuItemForm(ModelForm)` in `apps/staff/forms.py`, grouped on the page:
+
+- **Basics:** name, short_description, description (CKEditor5Widget, `config_name='default'`).
+  Slug shown as read-only text.
+- **Price:** price_display, price, sale_price.
+- **Dietary & allergens:** dietary_type, is_gluten_free, is_vegan, is_dairy_free, is_nut_free,
+  contains_shellfish, allergen_info, spice_level, calories.
+- **Labels:** is_featured, is_chef_special, is_new, is_seasonal.
+- **Availability:** is_available, available_from, available_until (time inputs).
+- **Not in the form:** slug, has_variations, has_addons (automatic), preparation_time (unused on the
+  site — confirm before adding), recurrence fields from `RecurrenceMixin` (`days_of_week` etc. — same
+  decision as the CSVs), `available_game_day` (deprecated).
+- Validation is the model/ModelForm's — do not re-implement rules in the view.
+- Below the form, a **read-only "Appears on"** list from `MenuItemCategoryAssignment`: menu › category
+  (› subcategory), with the special price if set, e.g. *Food Menu › Burgers — $14.50*. This is where
+  placement editing will go later.
+
+### Sizes & add-ons section
+
+- Two inline formsets on the same form/Save: `MenuItemVariation` (name, size, quantity, price,
+  description, order, is_default, is_available) and `MenuItemAddon` (name, price, description, order,
+  is_default, is_available). `can_delete=True`, `extra=0`.
+- **"Add a size" / "Add an add-on" buttons** add a blank row client-side from the formset's
+  `empty_form` and bump `TOTAL_FORMS` (Alpine, plain global function per *Alpine.js* rule — no
+  `alpine:init` listener). No page reload, no fixed number of blank rows.
+- Details + both formsets validate together; save all in one `transaction.atomic()` only if all are
+  valid; otherwise re-render with errors in place.
+- After saving, set `has_variations` / `has_addons` from whether rows exist — put this in one model
+  method, `MenuItem.sync_option_flags()`, and call it from here. Also call it after the CSV
+  `variations` / `addons` imports so the two paths agree (and the CSV `has_variations` / `has_addons`
+  columns then only matter for items with no rows — note this in the CSV section when built).
+- On success: message "Saved", stay on the item page (redirect to it — POST/redirect/GET).
+- **Unsaved-changes guard:** warn on leaving the page (`beforeunload`) when the details/sizes form
+  has been changed and not saved.
+
+### Pictures section
+
+Rendered from a partial, `staff/menu/_item_pictures.html`, used both in the page and as the response
+of every picture action. Actions use `fetch()` POST (CSRF token from the cookie/meta) and swap the
+returned HTML into the section — the rest of the page is untouched. Without JS the section still
+shows the current pictures.
+
+- **Current pictures:** a row/grid of thumbnails in display order. Each shows the media name, a
+  **Main** badge on the primary, and buttons: **Make main**, **↑ / ↓** (move; buttons, not drag —
+  works on phones), **Remove**. Remove deletes the `MenuItemImage` link only, never the `MediaItem`
+  or file; it asks to confirm with an inline "Remove? Yes / No", not a browser `confirm()` dialog.
+- **Main picture rules:** `MenuItemImage.save()` already demotes the old primary — don't re-implement.
+  The first picture added to an item with none becomes primary. Removing the primary makes the
+  next picture (by order) primary. (Public templates already fall back to the first by order —
+  `get_primary_media` — but storing it keeps the portal honest.)
+- **Order:** new pictures go after the existing ones. ↑/↓ swap `display_order` with the neighbour;
+  renumber 1..n on every change so there are no gaps or ties.
+- **"Add pictures" opens the picker** (an Alpine modal, full-screen on phones):
+  - Grid of `MediaItem.objects.filter(owner_type='staff', media_type='image')` — images only (videos
+    can't be an item's picture), any `is_published` state, `select_related('category')`.
+  - Search by name, filter by media category (default: the category whose name matches the item's
+    first placement's category, if any — otherwise All). 48 per page with **Load more** (fetches the
+    next page from `staff:menu_item_picker`).
+  - Thumbnails use `loading="lazy"` (there are no generated thumbnails — full files are shown small).
+  - Tap to select (tick overlay); pictures already on the item show **Added** and can't be selected.
+    Footer: "N selected — **Add pictures**". One POST adds them all (`action=add`, `media_ids=…`),
+    ignoring ids already attached (`unique_together` on menu_item + media_item) and rejecting
+    non-staff / non-image ids.
+  - After adding, the modal closes and the section shows the new pictures with a message
+    "Added N pictures".
+- Uploading new photos from the item page is **out of scope** (upload in the media library first).
+
+### Help
+
+`apps/staff/help.py`: add a page tip for `menu_item` (and update `menu_item_list`'s — "Images" is
+now "Edit"); rewrite the menu-items help topic for the new page (find an item → edit details → sizes
+and add-ons → pictures). Remove the `menu_item_images` tip with the old view. The existing tests
+fail if a portal page has no tip.
+
+### Tests (`apps/staff/tests/`)
+
+- Tier 2: list and item page 200 with no edit controls; every POST (save, each picture action,
+  picker) 403.
+- Manager: save details; validation error re-renders with the typed values; add/edit/delete a size
+  and an add-on in one save; `has_variations` / `has_addons` follow the rows; slug unchanged after
+  rename; nothing saved when any part is invalid.
+- Pictures: add several at once; duplicates ignored; video / member-owned ids rejected; first added
+  becomes primary; make main; ↑/↓ renumbers; remove keeps the `MediaItem`; removing the primary
+  promotes the next.
+- Picker: search, category filter, paging; attached pictures marked Added.
+- Old `/images/` URL redirects to the item page.
+- `?next=` round trip returns to the filtered list.
+
+### Phases
+
+- **E1 — Item page + Details.** `MenuItemDetailView`, `MenuItemForm`, read-only Tier 2 view, "Appears
+  on" list, list-page links + `?next=`, unsaved-changes guard, help. Old images page untouched.
+- **E2 — Sizes & add-ons.** Inline formsets with add-row buttons; `MenuItem.sync_option_flags()`
+  called from the portal and the CSV variations/addons imports.
+- **E3 — Pictures.** Partial + actions + picker; redirect the old `/images/` URL and delete the old
+  formset view/template; update help.
+
+### Future (not specced — do not build without a spec update)
+
+- Add a new item from the portal (same page, empty).
+- Placements section: add/remove the item from menus/categories, order, special price, note.
+- Delete / archive an item.
+- Upload photos from the item page.
+
+### What Claude Code must not do here
+
+- Delete `MediaItem` records or files from the item page.
+- Show edit controls or accept edit POSTs from Tier 2 staff.
+- Touch `available_game_day`, recurrence fields, or the menu-mode logic.
+- Add inline colour styles beyond the portal's existing brand-variable pattern.
 
 ## Menu CSV import / export (`apps/menu/importers.py`) — M1–M3 BUILT
 
