@@ -57,6 +57,7 @@ urlpatterns = [
 
     # Menu Items
     path('menu/items/', views.MenuItemListView.as_view(), name='menu_item_list'),
+    path('menu/items/<int:pk>/', views.MenuItemDetailView.as_view(), name='menu_item'),
     path('menu/items/<int:pk>/images/', views.MenuItemImagesView.as_view(), name='menu_item_images'),
 
     # Color reference

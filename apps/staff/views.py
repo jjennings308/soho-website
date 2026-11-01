@@ -11,7 +11,7 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
-from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.http import url_has_allowed_host_and_scheme, urlencode
 from django.views import View
 
 from apps.core.models import ColorScheme, EventInquiry, Review, SitePopup, SiteSettings
@@ -24,9 +24,12 @@ from apps.menu import importers as menu_importers
 from apps.menu import whole_menu
 from apps.menu.models import Menu
 
-from .forms import ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, NewsletterForm, PopupForm, SiteSettingsForm
+from .forms import (
+    ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuItemForm, NewsletterForm,
+    PopupForm, SiteSettingsForm,
+)
 from .help import TOPICS
-from .permissions import MANAGER, STAFF, SUPERUSER, has_access
+from .permissions import MANAGER, STAFF, SUPERUSER, has_access, is_manager
 
 
 def _safe_next(request, *candidates, default):
@@ -945,6 +948,70 @@ class MenuItemListView(StaffRequiredMixin, View):
             'avail_filter': avail_filter,
             'flag_filter': flag_filter,
         })
+
+
+def _appears_on(item):
+    """
+    Read-only "Appears on" lines for the item page: one per menu showing each of
+    the item's placements, e.g. Food Menu › Burgers — $14.50.
+    """
+    from apps.menu.models import MenuItemCategoryAssignment
+
+    placements = (
+        MenuItemCategoryAssignment.objects
+        .filter(menu_item=item)
+        .select_related('category', 'subcategory')
+        .prefetch_related('category__menu_assignments__menu')
+        .order_by('category__name')
+    )
+    lines = []
+    for placement in placements:
+        menus = [a.menu for a in placement.category.menu_assignments.all()]
+        for menu in sorted(menus, key=lambda m: m.title.lower()) or [None]:
+            lines.append({'menu': menu, 'placement': placement})
+    lines.sort(key=lambda l: (l['menu'] is None, l['menu'].title.lower() if l['menu'] else ''))
+    return lines
+
+
+class MenuItemDetailView(StaffRequiredMixin, View):
+    """
+    The item page. GET is open to every staff tier (read-only for Tier 2);
+    POST saves the Details section and needs a manager (StaffRequiredMixin).
+    """
+    staff_access = STAFF
+
+    def _render(self, request, item, form, back_url):
+        return render(request, 'staff/menu/item.html', {
+            'item': item,
+            'form': form,
+            'back_url': back_url,
+            'can_edit': is_manager(request.user),
+            'appears_on': _appears_on(item),
+            'pictures': item.images.select_related('media_item').order_by('display_order', 'pk'),
+        })
+
+    def _back_url(self, request, data):
+        return _safe_next(request, data.get('next'), default=reverse('staff:menu_item_list'))
+
+    def get(self, request, pk):
+        from apps.menu.models import MenuItem
+        item = get_object_or_404(MenuItem, pk=pk)
+        form = MenuItemForm(instance=item, read_only=not is_manager(request.user))
+        return self._render(request, item, form, self._back_url(request, request.GET))
+
+    def post(self, request, pk):
+        from apps.menu.models import MenuItem
+        item = get_object_or_404(MenuItem, pk=pk)
+        back_url = self._back_url(request, request.POST)
+        form = MenuItemForm(request.POST, instance=item)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Saved.')
+            url = reverse('staff:menu_item', args=[item.pk])
+            if back_url != reverse('staff:menu_item_list'):
+                url += '?' + urlencode({'next': back_url})
+            return redirect(url)
+        return self._render(request, item, form, back_url)
 
 
 class MenuItemImagesView(StaffRequiredMixin, View):

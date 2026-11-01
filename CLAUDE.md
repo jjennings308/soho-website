@@ -436,7 +436,8 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/menu-mode/` | Toggle menu mode: Automatic / Force Full / Force Game Day. POSTs to `SiteSettings` |
 | `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
 | `/staff/media/` | Media library — thumbnail grid; publish/hide toggle; upload; import from disk; edit (name, category, alt text); page-retention via `?next=` |
-| `/staff/menu/items/` | Menu item list with filters (name, availability, flags); Images button per row (**planned:** Edit/View per row — see *Menu item editing in the staff portal*) |
+| `/staff/menu/items/` | Menu item list with filters (name, availability, flags); name + Edit (managers) / View (Tier 2) per row open the item page, with `?next=` back to the filtered list |
+| `/staff/menu/items/<pk>/` | Item page — Details tab (edit for managers, read-only for Tier 2), "Appears on" list, Pictures tab (view; "Change pictures" → the images page until E3). See *Menu item editing in the staff portal* |
 | `/staff/menu/items/<pk>/images/` | Formset to assign, order, and set primary image for a menu item (**planned:** replaced by the Pictures section of the item page) |
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
 | `/staff/popups/` | List, add, edit, delete site popups |
@@ -1980,7 +1981,7 @@ The staff portal dashboard is built and functional. Do not add features beyond w
 - Full portal access
 - Can change menu mode, manage events, upload media, send newsletters, manage inquiries
 - Can import/export the menu as CSV (`/staff/import/`) — James, 2026-10-21
-- Can edit menu items (details, sizes, add-ons, pictures) in the portal — James, 2026-11-01 (planned; see *Menu item editing in the staff portal*)
+- Can edit menu items (details, sizes, add-ons, pictures) in the portal — James, 2026-11-01 (E1 details built; sizes/add-ons and pictures planned — see *Menu item editing in the staff portal*)
 - Cannot access SiteSettings, user management, or anything on the superuser-only list
 
 **Tier 2 — General Staff**
@@ -2041,7 +2042,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
 
-## Menu item editing in the staff portal — PLANNED (spec 2026-11-01)
+## Menu item editing in the staff portal — E1 BUILT, E2–E3 PLANNED (spec 2026-11-01)
 
 Managers edit menu items — details, sizes, add-ons and pictures — from the portal, without Django
 admin. Build in the phases at the end, one branch each. This is an approved exception to *Staff
@@ -2198,6 +2199,22 @@ fail if a portal page has no tip.
   called from the portal and the CSV variations/addons imports.
 - **E3 — Pictures.** Partial + actions + picker; redirect the old `/images/` URL and delete the old
   formset view/template; update help.
+
+### E1 implementation notes (2026-11-01)
+
+- `MenuItemDetailView` (`staff_access = STAFF`) + `MenuItemForm` (`apps/staff/forms.py`; field groups in
+  `MENU_ITEM_GROUPS`, `read_only=True` disables every field for Tier 2). Template `staff/menu/item.html`.
+- Tabs: `itemPage()` Alpine function; `#details` / `#pictures` hashes select the tab (E3's `/images/`
+  redirect to `#pictures` lands on it). Below 769px the tabs are hidden and sections stack.
+- Tier 2 sees the long description as rendered HTML (no CKEditor); CKEditor assets load only for managers.
+- Unsaved-changes guard compares a `FormData` snapshot taken on load (CKEditor writes its textarea only
+  on a real edit); after a failed save it always warns.
+- "Appears on": `_appears_on(item)` in `apps/staff/views.py` — one line per menu showing each placement's
+  category, "Not on any menu" when the category is on none; "Hidden here" when the placement is inactive.
+- Pictures tab in E1 is view-only plus a "Change pictures" link to the old images page (managers).
+- After save: redirect to the item page, carrying `?next=` only when it isn't the plain list URL.
+- Tests: `apps/staff/tests/test_menu_item_edit.py`; `menu_item` added to Tier-2-readable pages in
+  `test_permissions.py`.
 
 ### Future (not specced — do not build without a spec update)
 

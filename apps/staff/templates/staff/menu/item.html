@@ -1,0 +1,189 @@
+{% extends "staff/base.html" %}
+{# staff/menu/item.html — one menu item: Details (+ "Appears on") and Pictures. Read-only unless can_edit. #}
+{% block title %}{{ item.name }}{% endblock %}
+{% block page_title %}{{ item.name }}{% endblock %}
+
+{% block extra_head %}
+{% if can_edit %}{{ form.media }}{% endif %}
+<style>
+  .ip-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--color-bg-tertiary); margin-bottom: 1.25rem; }
+  .ip-tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 0.55rem 0.9rem;
+            font-size: 0.875rem; cursor: pointer; color: var(--color-mid-gray); margin-bottom: -1px; }
+  .ip-tab[aria-selected="true"] { border-bottom-color: var(--color-gold-primary); color: var(--color-text-primary); font-weight: 600; }
+  .ip-section { scroll-margin-top: 1rem; }
+  .ip-section + .ip-section { margin-top: 1.5rem; }
+  .ip-section-title { display: none; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
+  /* Tabs on desktop; every section stacked on phones. */
+  @media (min-width: 769px) {
+    .ip-section.is-hidden { display: none; }
+    .ip-section + .ip-section { margin-top: 0; }
+  }
+  @media (max-width: 768px) {
+    .ip-tabs { display: none; }
+    .ip-section-title { display: block; }
+  }
+  .ip-group { margin-bottom: 1.5rem; }
+  .ip-group h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+                 color: var(--color-mid-gray); margin-bottom: 0.75rem; }
+  .ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0 1rem; }
+  .ip-grid .ip-wide { grid-column: 1 / -1; }
+  .ip-checks { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-bottom: 1.1rem; }
+  .ip-check { display: flex; align-items: center; gap: 0.45rem; font-size: 0.875rem; cursor: pointer; }
+  .ip-check input { accent-color: var(--color-gold-primary); width: 1rem; height: 1rem; }
+  .ip-help { font-size: 0.75rem; color: var(--color-mid-gray); margin-top: 0.25rem; line-height: 1.45; }
+  .ip-readonly-html { font-size: 0.875rem; line-height: 1.6; padding: 0.6rem 0.75rem; border: 1px solid var(--color-bg-tertiary);
+                      border-radius: 4px; background: var(--color-bg-secondary); }
+  .ip-meta { font-size: 0.8rem; color: var(--color-mid-gray); }
+  .ip-meta code { font-size: 0.8rem; }
+  .ip-appears li { font-size: 0.875rem; padding: 0.4rem 0; border-bottom: 1px solid var(--color-bg-tertiary); }
+  .ip-appears li:last-child { border-bottom: 0; }
+  .ip-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.75rem; }
+  .ip-pic img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; display: block; }
+  .ip-pic span { display: block; font-size: 0.75rem; margin-top: 0.3rem; color: var(--color-text-tertiary); }
+  .ip-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+  @media (max-width: 768px) {
+    .ip-actions { position: sticky; bottom: 0; background: var(--color-bg-primary); padding: 0.75rem 0;
+                  border-top: 1px solid var(--color-bg-tertiary); }
+  }
+</style>
+{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ back_url }}" class="sp-btn sp-btn--outline">&larr; Back to items</a>
+{% endblock %}
+
+{% block content %}
+<div x-data="itemPage()" style="max-width:56rem;">
+
+  <p class="ip-meta" style="margin-bottom:1rem;">
+    Spreadsheet ID (slug): <code>{{ item.slug }}</code> — stays the same if you rename the item.
+    {% if not can_edit %}<br>You can view this item; a manager can change it.{% endif %}
+  </p>
+
+  <div class="ip-tabs" role="tablist">
+    <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'details').toString()" @click="show('details')">Details</button>
+    <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'pictures').toString()" @click="show('pictures')">Pictures ({{ pictures|length }})</button>
+  </div>
+
+  {# ── Details ─────────────────────────────────────────────────────────── #}
+  <section id="details" class="ip-section" :class="{ 'is-hidden': tab !== 'details' }">
+    <h2 class="ip-section-title">Details</h2>
+    <form method="post" class="sp-card" id="item-form" {% if can_edit %}@submit="saving = true"{% endif %}>
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ back_url }}">
+      {% for err in form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ err }}</div>{% endfor %}
+
+      {% for title, fields in form.groups %}
+      <div class="ip-group">
+        <h3>{{ title }}</h3>
+        <div class="ip-checks">
+          {% for field in fields %}{% if field.widget_type == 'checkbox' %}
+            <label class="ip-check">{{ field }} {{ field.label }}</label>
+          {% endif %}{% endfor %}
+        </div>
+        <div class="ip-grid">
+          {% for field in fields %}{% if field.widget_type != 'checkbox' %}
+            <div class="sp-field{% if field.widget_type == 'textarea' or field.widget_type == 'ckeditor5' or field.name == 'name' or field.name == 'short_description' %} ip-wide{% endif %}">
+              <label class="sp-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% if field.name == 'description' and not can_edit %}
+                <div class="ip-readonly-html">{{ item.description|safe|default:"—" }}</div>
+              {% else %}
+                {{ field }}
+              {% endif %}
+              {% if field.help_text and can_edit %}<div class="ip-help">{{ field.help_text }}</div>{% endif %}
+              {% for err in field.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+            </div>
+          {% endif %}{% endfor %}
+        </div>
+        {% for field in fields %}{% if field.widget_type == 'checkbox' %}{% for err in field.errors %}
+          <div class="sp-field-error">{{ field.label }}: {{ err }}</div>
+        {% endfor %}{% endif %}{% endfor %}
+      </div>
+      {% endfor %}
+
+      {% if can_edit %}
+      <div class="ip-actions">
+        <button type="submit" class="sp-btn sp-btn--primary">Save</button>
+        <a href="{{ back_url }}" class="sp-btn sp-btn--outline">Back to items</a>
+      </div>
+      {% endif %}
+    </form>
+
+    <div class="sp-card" style="margin-top:1.25rem;">
+      <h3 style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-mid-gray);margin-bottom:0.5rem;">Appears on</h3>
+      {% if appears_on %}
+        <ul class="ip-appears">
+          {% for line in appears_on %}
+          <li>
+            {% if line.menu %}{{ line.menu.title }}{% else %}<em class="ip-meta">Not on any menu</em>{% endif %}
+            &rsaquo; {{ line.placement.category.name }}
+            {% if line.placement.subcategory %}&rsaquo; {{ line.placement.subcategory.name }}{% endif %}
+            {% if line.placement.override_price is not None %} — ${{ line.placement.override_price }}{% endif %}
+            {% if not line.placement.is_active %} <span class="sp-pill sp-pill--gray">Hidden here</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="ip-meta">This item isn't in any category yet, so customers don't see it.</p>
+      {% endif %}
+      <p class="ip-help" style="margin-top:0.6rem;">Where the item appears is changed with the menu spreadsheets (Tools &rarr; Import / Export).</p>
+    </div>
+  </section>
+
+  {# ── Pictures ────────────────────────────────────────────────────────── #}
+  <section id="pictures" class="ip-section" :class="{ 'is-hidden': tab !== 'pictures' }">
+    <h2 class="ip-section-title">Pictures</h2>
+    <div class="sp-card">
+      {% if pictures %}
+        <div class="ip-pics">
+          {% for pic in pictures %}
+          <div class="ip-pic">
+            {% if pic.media_item.file %}<img src="{{ pic.media_item.file.url }}" alt="{{ pic.media_item.alt_text|default:pic.media_item.name }}" loading="lazy">{% endif %}
+            <span>{% if pic.is_primary %}<strong>Main</strong> · {% endif %}{{ pic.media_item.name }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="ip-meta">No pictures yet.</p>
+      {% endif %}
+      {% if can_edit %}
+        <div class="ip-actions">
+          <a href="{% url 'staff:menu_item_images' item.pk %}" class="sp-btn sp-btn--outline">Change pictures</a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Tabs (desktop) + unsaved-changes warning for the Details form.
+  function itemPage() {
+    return {
+      tab: location.hash === '#pictures' ? 'pictures' : 'details',
+      saving: false,
+      show(name) {
+        this.tab = name;
+        history.replaceState(null, '', '#' + name);
+      },
+      init() {
+        {% if can_edit %}
+        const form = document.getElementById('item-form');
+        // CKEditor only writes to its textarea on a real edit, so a snapshot
+        // taken now matches the page until something is changed.
+        const snapshot = () => new URLSearchParams(new FormData(form)).toString();
+        const initial = snapshot();
+        const failedSave = {{ form.errors|yesno:'true,false' }};   // typed values not saved yet
+        window.addEventListener('beforeunload', (event) => {
+          if (!this.saving && (failedSave || snapshot() !== initial)) {
+            event.preventDefault();
+            event.returnValue = '';
+          }
+        });
+        {% endif %}
+      },
+    };
+  }
+</script>
+{% endblock %}

@@ -100,22 +100,29 @@
 {# ── Menu items ─────────────────────────────────────────────────────────── #}
 <section id="menu-items" class="sp-card help-topic">
   <h2>Menu items and photos</h2>
-  <p>Every dish and drink on any menu. Search by name, or filter by availability and flags (featured, new, chef's special, seasonal).</p>
+  <p>Every dish and drink on any menu. Search by name, or filter by availability and flags (featured, new, chef's special, seasonal). Tap an item's name to open its page: its details and allergens, its pictures, and an <strong>Appears on</strong> list of the menus and categories it's in.</p>
   <p>Items reach a menu through categories — see <a href="#menus-explained" class="help-back">How menus work</a> for the whole picture and what every setting does.</p>
   {% if staff_is_manager %}
+  <h3>Change an item</h3>
+  <ol>
+    <li>Menu Items &rarr; find the item &rarr; <strong>Edit</strong> (or tap its name).</li>
+    <li>Change what you need on the <strong>Details</strong> tab: name, descriptions, price, dietary and allergen info, labels, availability.</li>
+    <li><strong>Save</strong>. You stay on the item; <strong>Back to items</strong> returns to the list with your search and filters as they were.</li>
+  </ol>
+  <p>Untick <strong>Available</strong> to hide an item everywhere (e.g. sold out). The <em>spreadsheet ID</em> shown at the top never changes, even if you rename the item. If you try to leave with unsaved changes, the browser asks first.</p>
   <h3>Choose an item's photos</h3>
   <ol>
     <li>Make sure the photo is in the <a href="#media" class="help-back">media library</a> first.</li>
-    <li>Menu Items &rarr; find the item &rarr; <strong>Images</strong>.</li>
+    <li>Open the item &rarr; <strong>Pictures</strong> tab &rarr; <strong>Change pictures</strong>.</li>
     <li>In each row pick a photo and an order number. Select <strong>Primary</strong> for the item's main photo.</li>
     <li>To remove a photo from the item, tick <strong>Delete</strong> on its row. (The photo stays in the media library.)</li>
     <li>Save.</li>
   </ol>
   {% endif %}
   {% if staff_is_manager %}
-  <p class="help-note">To change names, prices, descriptions or which items are in which categories, use <a href="#menu-import" class="help-back">Menu import / export</a>. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
+  <p class="help-note">Sizes and add-ons, new items and which categories an item is in are changed with the spreadsheets in <a href="#menu-import" class="help-back">Import / export</a> for now. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
   {% else %}
-  <p class="help-note">Menu names, prices and descriptions are changed by a manager.</p>
+  <p class="help-note">You can open any item to answer a guest's question — allergens, dietary labels, prices. Items are changed by a manager.</p>
   {% endif %}
   <a class="help-back" href="#">&uarr; Back to top</a>
 </section>

@@ -7,7 +7,7 @@ from apps.staff import urls as staff_urls
 from apps.staff.permissions import MANAGER_GROUP
 
 # Pages a read-only (Tier 2) staff user may GET. Everything else is denied.
-TIER2_READABLE = {'dashboard', 'menu_mode', 'events', 'menu_item_list', 'colors', 'help'}
+TIER2_READABLE = {'dashboard', 'menu_mode', 'events', 'menu_item_list', 'menu_item', 'colors', 'help'}
 SUPERUSER_ONLY = {'settings', 'color_scheme_add', 'color_scheme_edit', 'color_scheme_delete'}
 PUBLIC = {'login', 'logout'}
 
@@ -16,9 +16,12 @@ def staff_url_names():
     return [p.name for p in staff_urls.urlpatterns if isinstance(p, URLPattern) and p.name not in PUBLIC]
 
 
+def url_for_route(name):
+    return str(next(p for p in staff_urls.urlpatterns if getattr(p, 'name', None) == name).pattern)
+
+
 def url_for(name):
-    pattern = next(p for p in staff_urls.urlpatterns if getattr(p, 'name', None) == name)
-    route = str(pattern.pattern)
+    route = url_for_route(name)
     kwargs = {'pk': 1} if '<int:pk>' in route else {'kind': 'items'} if '<slug:kind>' in route else {}
     return reverse(f'staff:{name}', kwargs=kwargs)
 
@@ -48,7 +51,8 @@ class EveryStaffUrlTests(TierTestCase):
             with self.subTest(name=name):
                 get_status = self.client.get(url_for(name)).status_code
                 if name in TIER2_READABLE:
-                    self.assertEqual(get_status, 200)
+                    # 404: allowed in, but pk=1 doesn't exist
+                    self.assertIn(get_status, (200, 404) if '<int:pk>' in url_for_route(name) else (200,))
                 else:
                     self.assertEqual(get_status, 403)
                 self.assertEqual(self.client.post(url_for(name)).status_code, 403)

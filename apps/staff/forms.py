@@ -6,6 +6,7 @@ from apps.core.models import ColorScheme
 from apps.events.models import EventDay
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter
+from apps.menu.models import MenuItem
 
 
 class EventForm(forms.ModelForm):
@@ -21,6 +22,70 @@ class EventForm(forms.ModelForm):
             'game_time': forms.TimeInput(attrs={'type': 'time', 'class': 'sp-input'}),
         }
 
+
+
+# (heading, fields) of the item page's Details section, in page order.
+MENU_ITEM_GROUPS = [
+    ('Basics', ['name', 'short_description', 'description']),
+    ('Price', ['price_display', 'price', 'sale_price']),
+    ('Dietary & allergens', ['dietary_type', 'is_gluten_free', 'is_vegan', 'is_dairy_free',
+                             'is_nut_free', 'contains_shellfish', 'allergen_info',
+                             'spice_level', 'calories']),
+    ('Labels', ['is_featured', 'is_chef_special', 'is_new', 'is_seasonal']),
+    ('Availability', ['is_available', 'available_from', 'available_until']),
+]
+
+
+class MenuItemForm(forms.ModelForm):
+    """Details section of the staff item page. Slug, has_variations / has_addons,
+    preparation_time and recurrence fields are deliberately left out."""
+
+    class Meta:
+        model = MenuItem
+        fields = [name for _, names in MENU_ITEM_GROUPS for name in names]
+        labels = {
+            'price_display': 'Show price as',
+            'sale_price': 'Sale price',
+            'dietary_type': 'Dietary type',
+            'is_gluten_free': 'Gluten free',
+            'is_vegan': 'Vegan',
+            'is_dairy_free': 'Dairy free',
+            'is_nut_free': 'Nut free',
+            'contains_shellfish': 'Contains shellfish',
+            'allergen_info': 'Allergen info',
+            'is_featured': 'Featured',
+            'is_chef_special': "Chef's special",
+            'is_new': 'New',
+            'is_seasonal': 'Seasonal',
+            'is_available': 'Available',
+            'available_from': 'Available from',
+            'available_until': 'Available until',
+        }
+        widgets = {
+            'description': CKEditor5Widget(config_name='default'),
+            'allergen_info': forms.Textarea(attrs={'rows': 2}),
+            'available_from': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+            'available_until': forms.TimeInput(attrs={'type': 'time'}, format='%H:%M'),
+        }
+
+    def __init__(self, *args, read_only=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            widget = field.widget
+            if isinstance(widget, forms.CheckboxInput) or name == 'description':
+                pass
+            elif isinstance(widget, forms.Select):
+                widget.attrs.setdefault('class', 'sp-select')
+            elif isinstance(widget, forms.Textarea):
+                widget.attrs.setdefault('class', 'sp-textarea')
+            else:
+                widget.attrs.setdefault('class', 'sp-input')
+            if read_only:
+                field.disabled = True
+
+    def groups(self):
+        """[(heading, [bound fields])] for the template."""
+        return [(title, [self[name] for name in names]) for title, names in MENU_ITEM_GROUPS]
 
 
 class NewsletterForm(forms.ModelForm):
