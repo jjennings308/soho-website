@@ -1,0 +1,42 @@
+{# Pictures section of the item page; also the response to every picture action (swapped in by itemPage()). #}
+<div id="pictures-body" data-count="{{ pictures|length }}">
+  {% if notice %}<p class="ip-notice">{{ notice }}</p>{% endif %}
+  {% if pictures %}
+    <div class="ip-pics">
+      {% for pic in pictures %}
+      <div class="ip-pic" x-data="{ confirming: false }">
+        <div class="ip-pic-frame">
+          {% if pic.media_item.file %}<img src="{{ pic.media_item.file.url }}" alt="{{ pic.media_item.alt_text|default:pic.media_item.name }}" loading="lazy">{% endif %}
+          {% if pic.is_primary %}<span class="ip-badge">Main</span>{% endif %}
+        </div>
+        <span>{{ pic.media_item.name }}</span>
+        {% if can_edit %}
+        <form method="post" action="{% url 'staff:menu_item_pictures' item.pk %}" class="ip-pic-actions">
+          {% csrf_token %}
+          <input type="hidden" name="picture" value="{{ pic.pk }}">
+          <div x-show="!confirming">
+            {% if not pic.is_primary %}<button type="submit" name="action" value="primary" class="ip-mini">Make main</button>{% endif %}
+            {% if not forloop.first %}<button type="submit" name="action" value="up" class="ip-mini" title="Move earlier" aria-label="Move earlier">&uarr;</button>{% endif %}
+            {% if not forloop.last %}<button type="submit" name="action" value="down" class="ip-mini" title="Move later" aria-label="Move later">&darr;</button>{% endif %}
+            <button type="button" class="ip-mini ip-mini--danger" @click="confirming = true">Remove</button>
+          </div>
+          <div x-show="confirming" x-cloak>
+            Remove?
+            <button type="submit" name="action" value="remove" class="ip-mini ip-mini--danger">Yes</button>
+            <button type="button" class="ip-mini" @click="confirming = false">No</button>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if can_edit %}<p class="ip-help" style="margin-top:0.75rem;">The main picture is the one shown on the menu. Remove only takes the picture off this item — it stays in the media library.</p>{% endif %}
+  {% else %}
+    <p class="ip-meta">No pictures yet.</p>
+  {% endif %}
+  {% if can_edit %}
+    <div class="ip-actions">
+      <button type="button" class="sp-btn sp-btn--primary" @click="openPicker()">+ Add pictures</button>
+    </div>
+  {% endif %}
+</div>

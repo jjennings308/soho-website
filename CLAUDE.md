@@ -437,8 +437,8 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
 | `/staff/media/` | Media library — thumbnail grid; publish/hide toggle; upload; import from disk; edit (name, category, alt text); page-retention via `?next=` |
 | `/staff/menu/items/` | Menu item list with filters (name, availability, flags); name + Edit (managers) / View (Tier 2) per row open the item page, with `?next=` back to the filtered list |
-| `/staff/menu/items/<pk>/` | Item page — Details and Sizes & add-ons tabs (edit for managers, read-only for Tier 2; one Save), "Appears on" list, Pictures tab (view; "Change pictures" → the images page until E3). See *Menu item editing in the staff portal* |
-| `/staff/menu/items/<pk>/images/` | Formset to assign, order, and set primary image for a menu item (**planned:** replaced by the Pictures section of the item page) |
+| `/staff/menu/items/<pk>/` | Item page — Details and Sizes & add-ons tabs (edit for managers, read-only for Tier 2; one Save), "Appears on" list, Pictures tab (add via thumbnail picker, make main, reorder, remove — saved immediately). See *Menu item editing in the staff portal* |
+| `/staff/menu/items/<pk>/images/` | Old images page — now a redirect to the item page's Pictures tab |
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
 | `/staff/popups/` | List, add, edit, delete site popups |
 | `/staff/inquiries/` | List event inquiries; filter by status; update status (new/contacted/closed); delete |
@@ -849,7 +849,7 @@ background_image = models.ForeignKey(
 
 **`Banner`** uses a `BannerImage` through model (not a direct FK) — supports a pool of images for random selection. See Page components section.
 
-**`MenuItem`** uses a `MenuItemImage` through model — supports multiple images per item with `is_primary`. Staff manages these via `/staff/menu/items/<pk>/images/`.
+**`MenuItem`** uses a `MenuItemImage` through model — supports multiple images per item with `is_primary`. Staff manages these on the item page's Pictures tab (`/staff/menu/items/<pk>/#pictures`).
 
 Remove the old `GalleryItem.menu_item` reverse FK entirely when `apps.gallery` is deleted.
 
@@ -949,7 +949,11 @@ POST-only view. Calls `call_command('import_media_files')`, captures stdout, sho
 
 Staff uses SFTP (WinSCP on Windows, Cyberduck on Mac, scp/sftp on Linux) to put files in `media/gallery/` or subdirectories on the server, then clicks "Import from Disk" in the portal. The import command scans and creates records.
 
-#### 4. Menu item image assignment (`/staff/menu/items/<pk>/images/`)
+#### 4. Menu item image assignment (`/staff/menu/items/<pk>/images/`) — SUPERSEDED
+
+> Replaced 2026-11-01 by the Pictures tab of the item page (see *Menu item editing in the staff portal*,
+> E3). The formset view and `item_images.html` are deleted; the URL redirects. Kept below for history.
+
 
 Menu item images are managed via a dedicated page per menu item — not an inline section on the main edit form. Staff navigates here from an "Images" button/link on the menu item list row.
 
@@ -1981,7 +1985,7 @@ The staff portal dashboard is built and functional. Do not add features beyond w
 - Full portal access
 - Can change menu mode, manage events, upload media, send newsletters, manage inquiries
 - Can import/export the menu as CSV (`/staff/import/`) — James, 2026-10-21
-- Can edit menu items (details, sizes, add-ons, pictures) in the portal — James, 2026-11-01 (details, sizes and add-ons built; pictures planned — see *Menu item editing in the staff portal*)
+- Can edit menu items (details, sizes, add-ons, pictures) in the portal — James, 2026-11-01 (built — see *Menu item editing in the staff portal*)
 - Cannot access SiteSettings, user management, or anything on the superuser-only list
 
 **Tier 2 — General Staff**
@@ -2042,7 +2046,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
 
-## Menu item editing in the staff portal — E1–E2 BUILT, E3 PLANNED (spec 2026-11-01)
+## Menu item editing in the staff portal — E1–E3 BUILT (spec 2026-11-01)
 
 Managers edit menu items — details, sizes, add-ons and pictures — from the portal, without Django
 admin. Build in the phases at the end, one branch each. This is an approved exception to *Staff
@@ -2231,6 +2235,23 @@ fail if a portal page has no tip.
 - The add/remove buttons are untested in a real browser here (headless Chromium lacks system libs on the
   dev machine); the server side is covered by `SizesAndAddonsTests`.
 
+### E3 implementation notes (2026-11-01)
+
+- `MenuItemPicturesView` and `MenuItemPickerView` (both `MANAGER`); partials `staff/menu/_item_pictures.html`
+  and `_picker_grid.html`. Picture actions are ordinary `<form method="post">`s: `itemPage().pictureAction`
+  sends them with `fetch()` (`X-Requested-With: fetch`) and swaps the returned partial into
+  `#pictures-wrap`; without that header the view redirects to `#pictures` with a flash message.
+- `_tidy_pictures(item)` renumbers `display_order` 1..n and makes the first picture main if none is;
+  it runs before and after every action. Removing the main picture promotes the one after it (or before,
+  if it was last). `MenuItemImage.save()` still does the demoting.
+- Add: ids are filtered to `owner_type='staff'`, `media_type='image'`, not already attached; kept in the
+  order picked. Picker: images with a file, ordered by name, 48 per page (`PICKER_PAGE_SIZE`); the grid
+  marks already-attached pictures `Added` (disabled). The default category (`picker_category`) is the
+  media category whose name matches the item's first placement's category.
+- Picture changes don't touch the Details form, so they never trip the unsaved-changes warning.
+- Like E2, the browser-side code (picker, swaps) hasn't been run in a real browser here; the views are
+  covered by `PicturesTests`.
+
 ### Future (not specced — do not build without a spec update)
 
 - Add a new item from the portal (same page, empty).
@@ -2285,7 +2306,7 @@ promo menu, a whole seasonal change. Export the current menu, edit it in Excel/S
   `parse_date` / `parse_datetime`; forms still receive ISO internally), with tests in
   `DateFormatTests`; the upload page and staff help show `9/18/2027`.
 - **Images are not in the CSV.** They stay in the media library and the existing
-  `/staff/menu/items/<pk>/images/` page.
+  item page's Pictures tab (`/staff/menu/items/<pk>/#pictures`).
 - **`MenuItem.description` (CKEditor) is imported as plain text** wrapped in `<p>` per paragraph;
   export writes it back as plain text (tags stripped). `short_description` is the main text column.
 - **Access: Staff Manager tier (Tier 1) and superusers** — decided by James 2026-10-21, an explicit

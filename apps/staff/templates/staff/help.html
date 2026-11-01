@@ -110,14 +110,16 @@
     <li><strong>Save</strong> — one Save covers both tabs; if anything has an error, nothing is saved and the page shows what to fix. You stay on the item; <strong>Back to items</strong> returns to the list with your search and filters as they were.</li>
   </ol>
   <p>Untick <strong>Available</strong> to hide an item everywhere (e.g. sold out). The <em>spreadsheet ID</em> shown at the top never changes, even if you rename the item. If you try to leave with unsaved changes, the browser asks first.</p>
-  <h3>Choose an item's photos</h3>
+  <h3>Choose an item's pictures</h3>
   <ol>
     <li>Make sure the photo is in the <a href="#media" class="help-back">media library</a> first.</li>
-    <li>Open the item &rarr; <strong>Pictures</strong> tab &rarr; <strong>Change pictures</strong>.</li>
-    <li>In each row pick a photo and an order number. Select <strong>Primary</strong> for the item's main photo.</li>
-    <li>To remove a photo from the item, tick <strong>Delete</strong> on its row. (The photo stays in the media library.)</li>
-    <li>Save.</li>
+    <li>Open the item &rarr; <strong>Pictures</strong> tab &rarr; <strong>+ Add pictures</strong>.</li>
+    <li>Search by name or pick a category, then tap every picture you want (a tick appears). Pictures already on the item say <em>Added</em>. <strong>Load more</strong> shows the next batch.</li>
+    <li>Press <strong>Add pictures</strong>. They go after the ones already there; the first picture an item gets becomes its <strong>Main</strong> picture — the one shown on the menu.</li>
+    <li>Use <strong>Make main</strong> to choose a different main picture, and the arrows to change the order.</li>
+    <li><strong>Remove</strong> asks you to confirm, then takes the picture off this item only — it stays in the media library. If you remove the main picture, the next one becomes main.</li>
   </ol>
+  <p>Picture changes are saved straight away — no need to press Save.</p>
   {% endif %}
   {% if staff_is_manager %}
   <p class="help-note">New items and which categories an item is in are changed with the spreadsheets in <a href="#menu-import" class="help-back">Import / export</a> for now. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
@@ -149,7 +151,7 @@
     <li><strong>Dietary</strong> — the dietary type (Vegetarian, Vegan, Gluten free, Dairy free) plus the Gluten-free, Dairy-free and Nut-free ticks, shown as labels when the item is tapped.</li>
     <li><strong>Allergen info</strong> — extra warnings shown when the item is tapped.</li>
     <li><strong>Available</strong> — the master switch. Turning it off hides the item everywhere, on every menu.</li>
-    <li><strong>Photos</strong> — chosen from the media library (Menu Items &rarr; Images).</li>
+    <li><strong>Photos</strong> — chosen from the media library on the item's <strong>Pictures</strong> tab.</li>
   </ul>
   <p class="help-note">Some item settings are stored but not shown on the website yet: the separate Vegan tick (use the <em>Vegan</em> dietary type instead), Contains shellfish, spice level, calories, preparation time, and the time-of-day or day-of-week limits. Changing them has no effect on what customers see for now.</p>
 
@@ -422,7 +424,7 @@
   <ul>
     <li>Imports <strong>never delete</strong>. To hide something, set <code>is_active</code> or <code>is_available</code> to <code>no</code>.</li>
     <li>If any row has an error, <strong>nothing</strong> from the file is saved — fix the file and upload again.</li>
-    <li>Photos aren't in the spreadsheets; manage them under Menu Items &rarr; Images.</li>
+    <li>Photos aren't in the spreadsheets; manage them on each item's Pictures tab (Menu Items &rarr; Edit).</li>
   </ul>
   <a class="help-back" href="#">&uarr; Back to top</a>
 </section>

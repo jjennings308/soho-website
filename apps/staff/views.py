@@ -887,32 +887,6 @@ class ReviewDeleteView(StaffRequiredMixin, View):
 
 # ── Menu Items ────────────────────────────────────────────────────────────────
 
-from django import forms as _dforms
-from django.forms import inlineformset_factory
-
-
-def _menu_item_image_formset():
-    from apps.menu.models import MenuItem, MenuItemImage
-    from apps.media.models import MediaItem
-
-    class MenuItemImageForm(_dforms.ModelForm):
-        media_item = _dforms.ModelChoiceField(
-            queryset=MediaItem.objects.filter(owner_type='staff').order_by('name'),
-            label='Image',
-        )
-
-        class Meta:
-            model = MenuItemImage
-            fields = ['media_item', 'display_order', 'is_primary']
-
-    return inlineformset_factory(
-        MenuItem, MenuItemImage,
-        form=MenuItemImageForm,
-        extra=1,
-        can_delete=True,
-    )
-
-
 class MenuItemListView(StaffRequiredMixin, View):
     staff_access = STAFF
 
@@ -999,7 +973,9 @@ class MenuItemDetailView(StaffRequiredMixin, View):
             'can_edit': can_edit,
             'initial_tab': 'sizes' if options_invalid else 'details',
             'appears_on': _appears_on(item),
-            'pictures': item.images.select_related('media_item').order_by('display_order', 'pk'),
+            'pictures': _item_pictures(item),
+            'picture_categories': MediaCategory.objects.all() if can_edit else [],
+            'picker_category': getattr(_picker_default_category(item), 'slug', '') if can_edit else '',
         })
 
     def _back_url(self, request, data):
@@ -1033,24 +1009,154 @@ class MenuItemDetailView(StaffRequiredMixin, View):
 
 
 class MenuItemImagesView(StaffRequiredMixin, View):
-    def _get_item(self, pk):
+    """Old images page: pictures now live on the item page."""
+
+    def get(self, request, pk):
+        return redirect(reverse('staff:menu_item', args=[pk]) + '#pictures')
+
+
+# ── Menu item pictures (item page, Pictures section) ─────────────────────────
+
+PICKER_PAGE_SIZE = 48
+
+
+def _item_pictures(item):
+    return list(item.images.select_related('media_item').order_by('display_order', 'pk'))
+
+
+def _tidy_pictures(item):
+    """Number the pictures 1..n in their current order and make sure one is main."""
+    pictures = _item_pictures(item)
+    for n, picture in enumerate(pictures, start=1):
+        if picture.display_order != n:
+            picture.display_order = n
+            picture.save(update_fields=['display_order', 'updated_at'])
+    if pictures and not any(p.is_primary for p in pictures):
+        pictures[0].is_primary = True
+        pictures[0].save()
+    return pictures
+
+
+def _picker_default_category(item):
+    """The media category named like the item's first placement's category, if any."""
+    placement = item.category_assignments.select_related('category').order_by('pk').first()
+    if not placement:
+        return None
+    return MediaCategory.objects.filter(name__iexact=placement.category.name).first()
+
+
+class MenuItemPicturesView(StaffRequiredMixin, View):
+    """
+    GET: the Pictures section partial. POST action=add|remove|primary|up|down
+    changes the item's pictures; a fetch() request gets the re-rendered partial
+    back, a plain form post is redirected to the item page.
+    Removing only unlinks the picture — the MediaItem and its file stay.
+    """
+    staff_access = MANAGER
+
+    def _item(self, pk):
         from apps.menu.models import MenuItem
         return get_object_or_404(MenuItem, pk=pk)
 
+    def _respond(self, request, item, notice=''):
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return render(request, 'staff/menu/_item_pictures.html', {
+                'item': item, 'pictures': _item_pictures(item), 'can_edit': True, 'notice': notice,
+            })
+        if notice:
+            messages.success(request, notice)
+        return redirect(reverse('staff:menu_item', args=[item.pk]) + '#pictures')
+
     def get(self, request, pk):
-        item = self._get_item(pk)
-        formset = _menu_item_image_formset()(instance=item)
-        return render(request, 'staff/menu/item_images.html', {
-            'item': item, 'formset': formset,
+        item = self._item(pk)
+        return render(request, 'staff/menu/_item_pictures.html', {
+            'item': item, 'pictures': _item_pictures(item), 'can_edit': True,
         })
 
     def post(self, request, pk):
-        item = self._get_item(pk)
-        formset = _menu_item_image_formset()(request.POST, instance=item)
-        if formset.is_valid():
-            formset.save()
-            messages.success(request, f'Images updated for "{item.name}".')
-            return redirect('staff:menu_item_list')
-        return render(request, 'staff/menu/item_images.html', {
-            'item': item, 'formset': formset,
+        from apps.menu.models import MenuItemImage
+        item = self._item(pk)
+        action = request.POST.get('action')
+        with transaction.atomic():
+            pictures = _tidy_pictures(item)
+            if action == 'add':
+                return self._respond(request, item, self._add(item, pictures, request.POST.getlist('media_ids')))
+            if action not in ('remove', 'primary', 'up', 'down'):
+                return HttpResponse('Unknown action', status=400)
+            picture_id = request.POST.get('picture', '')
+            picture = get_object_or_404(MenuItemImage, pk=picture_id if picture_id.isdigit() else 0, menu_item=item)
+            index = next(i for i, p in enumerate(pictures) if p.pk == picture.pk)
+            if action == 'remove':
+                if picture.is_primary and len(pictures) > 1:
+                    # The picture after it becomes main (or the one before, if it was last).
+                    heir = pictures[index + 1] if index + 1 < len(pictures) else pictures[index - 1]
+                    heir.is_primary = True
+                    heir.save()
+                picture.delete()
+            elif action == 'primary':
+                picture.is_primary = True
+                picture.save()
+            else:
+                other = index - 1 if action == 'up' else index + 1
+                if 0 <= other < len(pictures):
+                    pictures[index], pictures[other] = pictures[other], pictures[index]
+                    for n, p in enumerate(pictures, start=1):
+                        p.display_order = n
+                        p.save(update_fields=['display_order', 'updated_at'])
+            _tidy_pictures(item)
+        return self._respond(request, item)
+
+    def _add(self, item, pictures, ids):
+        from apps.menu.models import MenuItemImage
+        ids = [i for i in ids if str(i).isdigit()]
+        attached = {p.media_item_id for p in pictures}
+        media = (MediaItem.objects
+                 .filter(pk__in=ids, owner_type='staff', media_type='image')
+                 .exclude(pk__in=attached))
+        by_pk = {m.pk: m for m in media}
+        order = len(pictures)
+        added = 0
+        for pk in dict.fromkeys(int(i) for i in ids):       # keep the order they were picked in
+            if pk in by_pk:
+                order += 1
+                MenuItemImage.objects.create(menu_item=item, media_item=by_pk[pk], display_order=order)
+                added += 1
+        _tidy_pictures(item)
+        return f"Added {added} picture{'' if added == 1 else 's'}." if added else 'No new pictures added.'
+
+
+class MenuItemPickerView(StaffRequiredMixin, View):
+    """GET ?q=&category=&page= → a page of the picture picker grid."""
+    staff_access = MANAGER
+
+    def get(self, request, pk):
+        from apps.menu.models import MenuItem
+        item = get_object_or_404(MenuItem, pk=pk)
+        qs = (MediaItem.objects
+              .filter(owner_type='staff', media_type='image')
+              .exclude(file='')
+              .select_related('category')
+              .order_by('name', 'pk'))
+        q = request.GET.get('q', '').strip()
+        if q:
+            qs = qs.filter(name__icontains=q)
+        if 'category' in request.GET:
+            slug = request.GET['category']
+        else:
+            default = _picker_default_category(item)
+            slug = default.slug if default else ''
+        if slug:
+            qs = qs.filter(category__slug=slug)
+        try:
+            page = max(1, int(request.GET.get('page', 1)))
+        except ValueError:
+            page = 1
+        start = (page - 1) * PICKER_PAGE_SIZE
+        media = list(qs[start:start + PICKER_PAGE_SIZE + 1])
+        attached = set(item.images.values_list('media_item_id', flat=True))
+        for m in media:
+            m.added = m.pk in attached
+        return render(request, 'staff/menu/_picker_grid.html', {
+            'media': media[:PICKER_PAGE_SIZE],
+            'next_page': page + 1 if len(media) > PICKER_PAGE_SIZE else None,
         })

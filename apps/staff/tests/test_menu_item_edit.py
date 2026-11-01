@@ -234,3 +234,127 @@ class OptionFlagSyncTests(TestCase):
         im.apply('addons', 'item,name,price\nipa,Lime,0.50\n')
         item.refresh_from_db()
         self.assertTrue(item.has_variations and item.has_addons)
+
+
+class PicturesTests(TestCase):
+    def setUp(self):
+        from apps.media.models import MediaCategory, MediaItem
+        self.MediaItem = MediaItem
+        self.item = MenuItem.objects.create(name='Classic Burger', slug='classic-burger', price=Decimal('14.50'))
+        self.burgers = MediaCategory.objects.create(name='Burgers', slug='burgers')
+        self.photos = [MediaItem.objects.create(name=f'Burger {n}', file=f'media/library/b{n}.jpg',
+                                                category=self.burgers) for n in range(1, 4)]
+        self.url = reverse('staff:menu_item_pictures', args=[self.item.pk])
+        self.picker = reverse('staff:menu_item_picker', args=[self.item.pk])
+        manager = User.objects.create_user('mgr', password='x', is_staff=True)
+        manager.groups.add(Group.objects.get(name=MANAGER_GROUP))
+        self.client.force_login(manager)
+
+    def act(self, action, **data):
+        return self.client.post(self.url, {'action': action, **data}, HTTP_X_REQUESTED_WITH='fetch')
+
+    def add(self, *photos):
+        return self.act('add', media_ids=[p.pk for p in photos])
+
+    def order(self):
+        return [(i.media_item.name, i.display_order, i.is_primary)
+                for i in self.item.images.select_related('media_item').order_by('display_order')]
+
+    def test_add_several_at_once_first_becomes_main(self):
+        response = self.add(*self.photos)
+        self.assertTemplateUsed(response, 'staff/menu/_item_pictures.html')
+        self.assertContains(response, 'Added 3 pictures.')
+        self.assertEqual(self.order(), [('Burger 1', 1, True), ('Burger 2', 2, False), ('Burger 3', 3, False)])
+
+    def test_duplicates_videos_and_member_photos_are_ignored(self):
+        self.add(self.photos[0])
+        video = self.MediaItem.objects.create(name='Clip', media_type='video', video_url='https://example.com/v.mp4')
+        member = self.MediaItem.objects.create(name='Guest', owner_type='member', file='media/submissions/g.jpg')
+        response = self.act('add', media_ids=[self.photos[0].pk, video.pk, member.pk, 'x'])
+        self.assertContains(response, 'No new pictures added.')
+        self.assertEqual(self.item.images.count(), 1)
+
+    def test_new_pictures_go_after_existing_and_main_stays(self):
+        self.add(self.photos[0])
+        self.add(self.photos[2], self.photos[1])
+        self.assertEqual(self.order(), [('Burger 1', 1, True), ('Burger 3', 2, False), ('Burger 2', 3, False)])
+
+    def test_make_main_and_move(self):
+        self.add(*self.photos)
+        pics = list(self.item.images.order_by('display_order'))
+        self.act('primary', picture=pics[2].pk)
+        self.act('up', picture=pics[2].pk)
+        self.act('down', picture=pics[0].pk)
+        self.assertEqual(self.order(), [('Burger 3', 1, True), ('Burger 1', 2, False), ('Burger 2', 3, False)])
+        self.act('up', picture=self.item.images.order_by('display_order').first().pk)   # already first: no change
+        self.assertEqual([o[0] for o in self.order()], ['Burger 3', 'Burger 1', 'Burger 2'])
+
+    def test_remove_keeps_the_media_item_and_promotes_the_next(self):
+        self.add(*self.photos)
+        main = self.item.images.get(is_primary=True)
+        self.act('remove', picture=main.pk)
+        self.assertEqual(self.order(), [('Burger 2', 1, True), ('Burger 3', 2, False)])
+        self.assertEqual(self.MediaItem.objects.filter(name='Burger 1').count(), 1)
+
+    def test_picture_of_another_item_is_404_and_unknown_action_400(self):
+        other = MenuItem.objects.create(name='Fries', slug='fries')
+        from apps.menu.models import MenuItemImage
+        foreign = MenuItemImage.objects.create(menu_item=other, media_item=self.photos[0])
+        self.assertEqual(self.act('remove', picture=foreign.pk).status_code, 404)
+        self.assertEqual(self.act('remove', picture='abc').status_code, 404)
+        self.assertEqual(self.act('explode').status_code, 400)
+
+    def test_plain_form_post_redirects_to_the_pictures_tab(self):
+        response = self.client.post(self.url, {'action': 'add', 'media_ids': [self.photos[0].pk]})
+        self.assertRedirects(response, reverse('staff:menu_item', args=[self.item.pk]) + '#pictures',
+                             fetch_redirect_response=False)
+
+    # ── Picker ───────────────────────────────────────────────────────────────
+
+    def test_picker_lists_images_marks_added_and_filters(self):
+        self.MediaItem.objects.create(name='Patio', file='media/library/patio.jpg')
+        self.MediaItem.objects.create(name='Clip', media_type='video', video_url='https://example.com/v.mp4')
+        self.add(self.photos[0])
+        html = self.client.get(self.picker, {'category': ''}).content.decode()
+        self.assertIn('Patio', html)
+        self.assertNotIn('Clip', html)
+        self.assertRegex(html, rf'data-id="{self.photos[0].pk}" disabled')
+        self.assertIn('Added', html)
+        html = self.client.get(self.picker, {'category': 'burgers', 'q': 'burger 2'}).content.decode()
+        self.assertIn('Burger 2', html)
+        self.assertNotIn('Burger 3', html)
+        self.assertNotIn('Patio', html)
+
+    def test_picker_defaults_to_the_category_matching_the_items_placement(self):
+        self.MediaItem.objects.create(name='Patio', file='media/library/patio.jpg')
+        MenuItemCategoryAssignment.objects.create(
+            menu_item=self.item, category=MenuCategory.objects.create(name='Burgers', slug='burgers-menu'))
+        self.assertNotContains(self.client.get(self.picker), 'Patio')
+        page = self.client.get(reverse('staff:menu_item', args=[self.item.pk]))
+        self.assertEqual(page.context['picker_category'], 'burgers')
+
+    def test_picker_pages(self):
+        from apps.staff.views import PICKER_PAGE_SIZE
+        for n in range(PICKER_PAGE_SIZE):
+            self.MediaItem.objects.create(name=f'Z {n:02}', file=f'media/library/z{n}.jpg')
+        first = self.client.get(self.picker, {'category': ''}).content.decode()
+        self.assertEqual(first.count('class="pk-card'), PICKER_PAGE_SIZE)
+        self.assertIn('data-next="2"', first)
+        second = self.client.get(self.picker, {'category': '', 'page': 2}).content.decode()
+        self.assertEqual(second.count('class="pk-card'), 3)
+        self.assertNotIn('data-next', second)
+
+    # ── Access and old URL ───────────────────────────────────────────────────
+
+    def test_read_only_staff_cannot_use_pictures_or_picker(self):
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
+        self.assertEqual(self.add(self.photos[0]).status_code, 403)
+        self.assertEqual(self.client.get(self.picker).status_code, 403)
+        page = self.client.get(reverse('staff:menu_item', args=[self.item.pk]))
+        self.assertNotContains(page, '+ Add pictures')
+        self.assertNotContains(page, 'Make main')
+
+    def test_old_images_url_redirects_to_the_pictures_tab(self):
+        response = self.client.get(reverse('staff:menu_item_images', args=[self.item.pk]))
+        self.assertRedirects(response, reverse('staff:menu_item', args=[self.item.pk]) + '#pictures',
+                             fetch_redirect_response=False)

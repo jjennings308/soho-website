@@ -1,0 +1,12 @@
+{# One page of the picture picker (staff:menu_item_picker). Cards are handled by itemPage().togglePick. #}
+{% for m in media %}
+  <button type="button" class="pk-card{% if m.added %} is-added{% endif %}" data-id="{{ m.pk }}" {% if m.added %}disabled{% endif %}
+          title="{{ m.name }}{% if m.category %} — {{ m.category.name }}{% endif %}">
+    <img src="{{ m.file.url }}" alt="" loading="lazy">
+    <span class="pk-name">{{ m.name }}</span>
+    {% if m.added %}<span class="pk-flag">Added</span>{% else %}<span class="pk-tick" aria-hidden="true">&#10003;</span>{% endif %}
+  </button>
+{% empty %}
+  {% if not next_page %}<p class="ip-meta pk-empty">No pictures match. Try another category or search.</p>{% endif %}
+{% endfor %}
+{% if next_page %}<span class="pk-more" data-next="{{ next_page }}" hidden></span>{% endif %}
