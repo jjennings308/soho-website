@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
+from django.db import transaction
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -25,8 +26,8 @@ from apps.menu import whole_menu
 from apps.menu.models import Menu
 
 from .forms import (
-    ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuItemForm, NewsletterForm,
-    PopupForm, SiteSettingsForm,
+    AddonFormSet, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuItemForm,
+    NewsletterForm, PopupForm, SiteSettingsForm, VariationFormSet,
 )
 from .help import TOPICS
 from .permissions import MANAGER, STAFF, SUPERUSER, has_access, is_manager
@@ -976,16 +977,27 @@ def _appears_on(item):
 class MenuItemDetailView(StaffRequiredMixin, View):
     """
     The item page. GET is open to every staff tier (read-only for Tier 2);
-    POST saves the Details section and needs a manager (StaffRequiredMixin).
+    POST saves Details + Sizes & add-ons together and needs a manager
+    (StaffRequiredMixin).
     """
     staff_access = STAFF
 
-    def _render(self, request, item, form, back_url):
+    def _render(self, request, item, form, back_url, variations=None, addons=None):
+        can_edit = is_manager(request.user)
+        if can_edit and variations is None:
+            variations = VariationFormSet(instance=item, prefix='variations')
+            addons = AddonFormSet(instance=item, prefix='addons')
+        # After a failed save, open on Sizes & add-ons if that's the only part with errors.
+        options_invalid = (can_edit and variations.is_bound and form.is_valid()
+                           and not (variations.is_valid() and addons.is_valid()))
         return render(request, 'staff/menu/item.html', {
             'item': item,
             'form': form,
+            'variations': variations,
+            'addons': addons,
             'back_url': back_url,
-            'can_edit': is_manager(request.user),
+            'can_edit': can_edit,
+            'initial_tab': 'sizes' if options_invalid else 'details',
             'appears_on': _appears_on(item),
             'pictures': item.images.select_related('media_item').order_by('display_order', 'pk'),
         })
@@ -1004,14 +1016,20 @@ class MenuItemDetailView(StaffRequiredMixin, View):
         item = get_object_or_404(MenuItem, pk=pk)
         back_url = self._back_url(request, request.POST)
         form = MenuItemForm(request.POST, instance=item)
-        if form.is_valid():
-            form.save()
+        variations = VariationFormSet(request.POST, instance=item, prefix='variations')
+        addons = AddonFormSet(request.POST, instance=item, prefix='addons')
+        if all([form.is_valid(), variations.is_valid(), addons.is_valid()]):
+            with transaction.atomic():
+                form.save()
+                variations.save()
+                addons.save()
+                item.sync_option_flags()
             messages.success(request, 'Saved.')
             url = reverse('staff:menu_item', args=[item.pk])
             if back_url != reverse('staff:menu_item_list'):
                 url += '?' + urlencode({'next': back_url})
             return redirect(url)
-        return self._render(request, item, form, back_url)
+        return self._render(request, item, form, back_url, variations, addons)
 
 
 class MenuItemImagesView(StaffRequiredMixin, View):

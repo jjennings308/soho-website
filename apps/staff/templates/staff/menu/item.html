@@ -15,7 +15,7 @@
   .ip-section-title { display: none; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
   /* Tabs on desktop; every section stacked on phones. */
   @media (min-width: 769px) {
-    .ip-section.is-hidden { display: none; }
+    .ip-section.is-hidden, .ip-save.is-hidden { display: none; }
     .ip-section + .ip-section { margin-top: 0; }
   }
   @media (max-width: 768px) {
@@ -23,6 +23,14 @@
     .ip-section-title { display: block; }
   }
   .ip-group { margin-bottom: 1.5rem; }
+  .ip-card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+                   color: var(--color-mid-gray); margin-bottom: 0.5rem; }
+  .ip-option { border: 1px solid var(--color-bg-tertiary); border-radius: 4px; padding: 0.85rem 0.85rem 0.1rem; margin-bottom: 0.75rem; }
+  .ip-option.is-removed { opacity: 0.5; }
+  .ip-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0 0.75rem; }
+  .ip-option-grid .ip-wide { grid-column: 1 / -1; }
+  .ip-link-btn { background: none; border: 0; padding: 0; cursor: pointer; font-size: 0.85rem;
+                 color: var(--color-accent-red-deep); text-decoration: underline; }
   .ip-group h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
                  color: var(--color-mid-gray); margin-bottom: 0.75rem; }
   .ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0 1rem; }
@@ -40,7 +48,7 @@
   .ip-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.75rem; }
   .ip-pic img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; display: block; }
   .ip-pic span { display: block; font-size: 0.75rem; margin-top: 0.3rem; color: var(--color-text-tertiary); }
-  .ip-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 0.5rem; }
+  .ip-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 1rem; }
   @media (max-width: 768px) {
     .ip-actions { position: sticky; bottom: 0; background: var(--color-bg-primary); padding: 0.75rem 0;
                   border-top: 1px solid var(--color-bg-tertiary); }
@@ -53,7 +61,7 @@
 {% endblock %}
 
 {% block content %}
-<div x-data="itemPage()" style="max-width:56rem;">
+<div x-data="itemPage('{{ initial_tab }}')" style="max-width:56rem;">
 
   <p class="ip-meta" style="margin-bottom:1rem;">
     Spreadsheet ID (slug): <code>{{ item.slug }}</code> — stays the same if you rename the item.
@@ -62,15 +70,19 @@
 
   <div class="ip-tabs" role="tablist">
     <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'details').toString()" @click="show('details')">Details</button>
+    <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'sizes').toString()" @click="show('sizes')">Sizes &amp; add-ons</button>
     <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'pictures').toString()" @click="show('pictures')">Pictures ({{ pictures|length }})</button>
   </div>
+
+  {# Details and Sizes & add-ons share one form and one Save. #}
+  <form method="post" id="item-form" {% if can_edit %}@submit="saving = true"{% endif %}>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ back_url }}">
 
   {# ── Details ─────────────────────────────────────────────────────────── #}
   <section id="details" class="ip-section" :class="{ 'is-hidden': tab !== 'details' }">
     <h2 class="ip-section-title">Details</h2>
-    <form method="post" class="sp-card" id="item-form" {% if can_edit %}@submit="saving = true"{% endif %}>
-      {% csrf_token %}
-      <input type="hidden" name="next" value="{{ back_url }}">
+    <div class="sp-card">
       {% for err in form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ err }}</div>{% endfor %}
 
       {% for title, fields in form.groups %}
@@ -100,17 +112,10 @@
         {% endfor %}{% endif %}{% endfor %}
       </div>
       {% endfor %}
-
-      {% if can_edit %}
-      <div class="ip-actions">
-        <button type="submit" class="sp-btn sp-btn--primary">Save</button>
-        <a href="{{ back_url }}" class="sp-btn sp-btn--outline">Back to items</a>
-      </div>
-      {% endif %}
-    </form>
+    </div>
 
     <div class="sp-card" style="margin-top:1.25rem;">
-      <h3 style="font-size:0.75rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--color-mid-gray);margin-bottom:0.5rem;">Appears on</h3>
+      <h3 class="ip-card-title">Appears on</h3>
       {% if appears_on %}
         <ul class="ip-appears">
           {% for line in appears_on %}
@@ -129,6 +134,47 @@
       <p class="ip-help" style="margin-top:0.6rem;">Where the item appears is changed with the menu spreadsheets (Tools &rarr; Import / Export).</p>
     </div>
   </section>
+
+  {# ── Sizes & add-ons ─────────────────────────────────────────────────── #}
+  <section id="sizes" class="ip-section" :class="{ 'is-hidden': tab !== 'sizes' }">
+    <h2 class="ip-section-title">Sizes &amp; add-ons</h2>
+    {% if can_edit %}
+      {% include "staff/menu/_options.html" with formset=variations prefix="variations" title="Sizes" add_label="Add a size" empty_text="No sizes. Add them if the item comes in versions with different prices — Pint / Pitcher, 6 / 12 wings." %}
+      {% include "staff/menu/_options.html" with formset=addons prefix="addons" title="Add-ons" add_label="Add an add-on" empty_text="No add-ons. Add extras a guest can choose — Add bacon, Extra cheese." %}
+    {% else %}
+      <div class="sp-card">
+        <h3 class="ip-card-title">Sizes</h3>
+        {% with options=item.variations.all %}
+        {% if options %}
+          <table class="sp-table">
+            <thead><tr><th>Name</th><th>Size note</th><th>Price</th><th>Available</th></tr></thead>
+            <tbody>{% for v in options %}<tr><td>{{ v.name }}</td><td>{{ v.size|default:"—" }}</td><td>${{ v.price }}</td><td>{{ v.is_available|yesno:"Yes,No" }}</td></tr>{% endfor %}</tbody>
+          </table>
+        {% else %}<p class="ip-meta">No sizes.</p>{% endif %}
+        {% endwith %}
+      </div>
+      <div class="sp-card" style="margin-top:1.25rem;">
+        <h3 class="ip-card-title">Add-ons</h3>
+        {% with options=item.addons.all %}
+        {% if options %}
+          <table class="sp-table">
+            <thead><tr><th>Name</th><th>Price</th><th>Available</th></tr></thead>
+            <tbody>{% for a in options %}<tr><td>{{ a.name }}</td><td>+${{ a.price }}</td><td>{{ a.is_available|yesno:"Yes,No" }}</td></tr>{% endfor %}</tbody>
+          </table>
+        {% else %}<p class="ip-meta">No add-ons.</p>{% endif %}
+        {% endwith %}
+      </div>
+    {% endif %}
+  </section>
+
+    {% if can_edit %}
+    <div class="ip-actions ip-save" :class="{ 'is-hidden': tab === 'pictures' }">
+      <button type="submit" class="sp-btn sp-btn--primary">Save</button>
+      <a href="{{ back_url }}" class="sp-btn sp-btn--outline">Back to items</a>
+      <span class="ip-meta">Saves Details and Sizes &amp; add-ons together.</span>
+    </div>
+    {% endif %}
+  </form>
 
   {# ── Pictures ────────────────────────────────────────────────────────── #}
   <section id="pictures" class="ip-section" :class="{ 'is-hidden': tab !== 'pictures' }">
@@ -158,14 +204,24 @@
 
 {% block extra_js %}
 <script>
-  // Tabs (desktop) + unsaved-changes warning for the Details form.
-  function itemPage() {
+  // Tabs (desktop), add/remove size and add-on rows, and an unsaved-changes warning.
+  function itemPage(initialTab) {
     return {
-      tab: location.hash === '#pictures' ? 'pictures' : 'details',
+      tab: ['details', 'sizes', 'pictures'].includes(location.hash.slice(1)) ? location.hash.slice(1) : initialTab,
       saving: false,
       show(name) {
         this.tab = name;
         history.replaceState(null, '', '#' + name);
+      },
+      // New row from the formset's empty form; Django ignores rows left blank.
+      addRow(prefix) {
+        const total = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+        const html = document.getElementById(prefix + '-empty').innerHTML.replace(/__prefix__/g, total.value);
+        const list = document.getElementById(prefix + '-rows');
+        list.insertAdjacentHTML('beforeend', html);
+        total.value = Number(total.value) + 1;
+        list.lastElementChild.querySelector('input:not([type=hidden])').focus();
+        document.getElementById(prefix + '-none')?.remove();
       },
       init() {
         {% if can_edit %}
@@ -174,7 +230,7 @@
         // taken now matches the page until something is changed.
         const snapshot = () => new URLSearchParams(new FormData(form)).toString();
         const initial = snapshot();
-        const failedSave = {{ form.errors|yesno:'true,false' }};   // typed values not saved yet
+        const failedSave = {{ form.errors|yesno:'true,false' }} || {{ variations.total_error_count|default:0 }} + {{ addons.total_error_count|default:0 }} > 0;
         window.addEventListener('beforeunload', (event) => {
           if (!this.saving && (failedSave || snapshot() !== initial)) {
             event.preventDefault();

@@ -1,0 +1,14 @@
+{# Sizes or add-ons formset on the item page (managers). formset, prefix, title, add_label, empty_text. #}
+<div class="sp-card" style="margin-bottom:1.25rem;">
+  <h3 class="ip-card-title">{{ title }}</h3>
+  {{ formset.management_form }}
+  {% for err in formset.non_form_errors %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ err }}</div>{% endfor %}
+  <div id="{{ prefix }}-rows">
+    {% for row in formset %}
+      {% include "staff/menu/_option_row.html" with form=row %}
+    {% endfor %}
+  </div>
+  {% if not formset.forms %}<p id="{{ prefix }}-none" class="ip-meta" style="margin-bottom:0.75rem;">{{ empty_text }}</p>{% endif %}
+  <template id="{{ prefix }}-empty">{% include "staff/menu/_option_row.html" with form=formset.empty_form %}</template>
+  <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" @click="addRow('{{ prefix }}')">+ {{ add_label }}</button>
+</div>

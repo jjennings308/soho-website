@@ -134,14 +134,17 @@ class SizesAndAddonsHelpTests(TestCase):
         self.client.force_login(User.objects.create_user('viewer2', password='x', is_staff=True))
         response = self.client.get(reverse('staff:help'))
         self.assertContains(response, 'id="sizes-addons"')
-        self.assertContains(response, 'Has variations')
-        self.assertNotContains(response, 'set <code>has_variations</code> to <code>yes</code>')  # manager-only
+        self.assertContains(response, 'This happens automatically once an item has a size.')
+        self.assertNotContains(response, 'Has variations')                 # no box to tick any more
+        self.assertNotContains(response, '+ Add a size')                    # manager-only steps
 
-    def test_managers_get_the_spreadsheet_instructions(self):
+    def test_managers_get_the_editing_instructions(self):
         user = User.objects.create_user('mgr3', password='x', is_staff=True)
         user.groups.add(Group.objects.get(name=MANAGER_GROUP))
         self.client.force_login(user)
-        self.assertContains(self.client.get(reverse('staff:help')), 'set <code>has_variations</code> to <code>yes</code>')
+        response = self.client.get(reverse('staff:help'))
+        self.assertContains(response, '<strong>Sizes &amp; add-ons</strong> tab')
+        self.assertContains(response, '<strong>+ Add a size</strong>')
 
 
 class NavSectionStateTests(TestCase):

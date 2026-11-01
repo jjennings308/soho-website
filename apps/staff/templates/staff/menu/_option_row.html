@@ -1,0 +1,24 @@
+{# One size / add-on row. Saved rows have a Remove tick box (Django's DELETE); new rows a Remove button. #}
+<div class="ip-option" x-data="{ removed: {{ form.DELETE.value|yesno:'true,false' }} }" :class="{ 'is-removed': removed }">
+  {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+  {% for err in form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.5rem;">{{ err }}</div>{% endfor %}
+  <div class="ip-option-grid">
+    {% for field in form.visible_fields %}{% if field.widget_type != 'checkbox' %}
+      <div class="sp-field{% if field.name == 'description' %} ip-wide{% endif %}">
+        <label class="sp-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% for err in field.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+      </div>
+    {% endif %}{% endfor %}
+  </div>
+  <div class="ip-checks">
+    {% for field in form.visible_fields %}{% if field.widget_type == 'checkbox' and field.name != 'DELETE' %}
+      <label class="ip-check">{{ field }} {{ field.label }}</label>
+    {% endif %}{% endfor %}
+    {% if form.instance.pk %}
+      <label class="ip-check" @change="removed = $event.target.checked">{{ form.DELETE }} Remove</label>
+    {% else %}
+      <button type="button" class="ip-link-btn" @click="$el.closest('.ip-option').remove()">Remove</button>
+    {% endif %}
+  </div>
+</div>

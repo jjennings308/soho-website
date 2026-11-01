@@ -347,6 +347,11 @@ def _ref_key(*cols, name_col=None):
     return find
 
 
+def _sync_option_flags(row):
+    """After a size / add-on row is saved, has_variations / has_addons follow the rows."""
+    row.instance.menu_item.sync_option_flags()
+
+
 C = Column
 KINDS = {k.name: k for k in [
     Kind('categories', MenuCategory, [
@@ -379,13 +384,13 @@ KINDS = {k.name: k for k in [
         C('item', field='menu_item', ref='item'), C('name'), C('description'), C('price'),
         C('size'), C('quantity'), C('order'), C('is_default'), C('is_available'),
     ], key=('item', 'name'), export_order=('menu_item__name', 'order', 'name'),
-        find=_ref_key('item', name_col='name')),
+        find=_ref_key('item', name_col='name'), after_save=_sync_option_flags),
 
     Kind('addons', MenuItemAddon, [
         C('item', field='menu_item', ref='item'), C('name'), C('description'), C('price'),
         C('order'), C('is_default'), C('is_available'),
     ], key=('item', 'name'), export_order=('menu_item__name', 'order', 'name'),
-        find=_ref_key('item', name_col='name')),
+        find=_ref_key('item', name_col='name'), after_save=_sync_option_flags),
 
     Kind('menus', Menu, [
         C('title'), C('display_name'), C('slug'), C('description'), C('menu_type'), C('role'),

@@ -106,8 +106,8 @@
   <h3>Change an item</h3>
   <ol>
     <li>Menu Items &rarr; find the item &rarr; <strong>Edit</strong> (or tap its name).</li>
-    <li>Change what you need on the <strong>Details</strong> tab: name, descriptions, price, dietary and allergen info, labels, availability.</li>
-    <li><strong>Save</strong>. You stay on the item; <strong>Back to items</strong> returns to the list with your search and filters as they were.</li>
+    <li>Change what you need on the <strong>Details</strong> tab (name, descriptions, price, dietary and allergen info, labels, availability) and the <strong>Sizes &amp; add-ons</strong> tab — see <a href="#sizes-addons" class="help-back">Sizes and add-ons</a>.</li>
+    <li><strong>Save</strong> — one Save covers both tabs; if anything has an error, nothing is saved and the page shows what to fix. You stay on the item; <strong>Back to items</strong> returns to the list with your search and filters as they were.</li>
   </ol>
   <p>Untick <strong>Available</strong> to hide an item everywhere (e.g. sold out). The <em>spreadsheet ID</em> shown at the top never changes, even if you rename the item. If you try to leave with unsaved changes, the browser asks first.</p>
   <h3>Choose an item's photos</h3>
@@ -120,7 +120,7 @@
   </ol>
   {% endif %}
   {% if staff_is_manager %}
-  <p class="help-note">Sizes and add-ons, new items and which categories an item is in are changed with the spreadsheets in <a href="#menu-import" class="help-back">Import / export</a> for now. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
+  <p class="help-note">New items and which categories an item is in are changed with the spreadsheets in <a href="#menu-import" class="help-back">Import / export</a> for now. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
   {% else %}
   <p class="help-note">You can open any item to answer a guest's question — allergens, dietary labels, prices. Items are changed by a manager.</p>
   {% endif %}
@@ -159,7 +159,7 @@
   <ul>
     <li>Each size has a <strong>name</strong> (Pint), an optional <strong>size note</strong> shown in brackets (16 oz), a <strong>price</strong>, a <strong>position</strong> and an <strong>available</strong> switch.</li>
     <li>When the item is tapped, an <strong>Options</strong> list shows every available size with its price, in position order. The item's own price isn't shown there.</li>
-    <li>In the menu listing, the item shows the <strong>range</strong> of its available size prices (e.g. $6.00 – $18.00), or a single price if they're all the same — <em>but only if the item's <strong>Has variations</strong> box (<code>has_variations</code>) is ticked</em>. If it isn't, the listing shows the item's normal price even though the sizes still appear when tapped.</li>
+    <li>In the menu listing, the item shows the <strong>range</strong> of its available size prices (e.g. $6.00 – $18.00), or a single price if they're all the same. This happens automatically once an item has a size.</li>
     <li>A category's <strong>special price</strong>, or a <em>Market</em> / <em>Hide</em> price setting, replaces the range in the listing. The sizes keep their own prices when tapped.</li>
     <li>Switching a size off hides it from the Options list and from the range.</li>
   </ul>
@@ -167,11 +167,12 @@
   <ul>
     <li>Each add-on has a <strong>name</strong>, a <strong>price</strong> (shown as "+$2.00"), a <strong>position</strong> and an <strong>available</strong> switch.</li>
     <li>When the item is tapped, an <strong>Add-ons</strong> list shows every available add-on. They don't change the price shown in the listing.</li>
-    <li>They appear whenever the item has an available add-on — the item's <em>Has addons</em> box doesn't change anything on the website.</li>
+    <li>They appear whenever the item has an available add-on.</li>
   </ul>
   <p class="help-note">A size's description, quantity and "default" setting, and an add-on's description and "default" setting, are stored but not shown on the website yet.</p>
   {% if staff_is_manager %}
-  <p>To add or change them, use the <em>variations</em> (sizes) and <em>addons</em> files in <a href="#menu-import" class="help-back">Menu import / export</a> — one row per size or add-on, naming the item by its slug. Remember to set <code>has_variations</code> to <code>yes</code> in the <em>items</em> file so the listing shows the price range. The Whole menu sheet doesn't include sizes or add-ons.</p>
+  <p>To add or change them, open the item (Menu Items &rarr; <strong>Edit</strong>) &rarr; <strong>Sizes &amp; add-ons</strong> tab. <strong>+ Add a size</strong> / <strong>+ Add an add-on</strong> adds a row; tick <strong>Remove</strong> to take one away; then <strong>Save</strong> (it saves the Details tab too). A row left completely blank is ignored. Two sizes (or two add-ons) on one item can't have the same name.</p>
+  <p>For many items at once, use the <em>variations</em> (sizes) and <em>addons</em> files in <a href="#menu-import" class="help-back">Import / export</a> — one row per size or add-on, naming the item by its slug. The Whole menu sheet doesn't include sizes or add-ons.</p>
   {% endif %}
 
   <h3>2. Categories — the sections of a menu</h3>

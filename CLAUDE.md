@@ -437,7 +437,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
 | `/staff/media/` | Media library — thumbnail grid; publish/hide toggle; upload; import from disk; edit (name, category, alt text); page-retention via `?next=` |
 | `/staff/menu/items/` | Menu item list with filters (name, availability, flags); name + Edit (managers) / View (Tier 2) per row open the item page, with `?next=` back to the filtered list |
-| `/staff/menu/items/<pk>/` | Item page — Details tab (edit for managers, read-only for Tier 2), "Appears on" list, Pictures tab (view; "Change pictures" → the images page until E3). See *Menu item editing in the staff portal* |
+| `/staff/menu/items/<pk>/` | Item page — Details and Sizes & add-ons tabs (edit for managers, read-only for Tier 2; one Save), "Appears on" list, Pictures tab (view; "Change pictures" → the images page until E3). See *Menu item editing in the staff portal* |
 | `/staff/menu/items/<pk>/images/` | Formset to assign, order, and set primary image for a menu item (**planned:** replaced by the Pictures section of the item page) |
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
 | `/staff/popups/` | List, add, edit, delete site popups |
@@ -1981,7 +1981,7 @@ The staff portal dashboard is built and functional. Do not add features beyond w
 - Full portal access
 - Can change menu mode, manage events, upload media, send newsletters, manage inquiries
 - Can import/export the menu as CSV (`/staff/import/`) — James, 2026-10-21
-- Can edit menu items (details, sizes, add-ons, pictures) in the portal — James, 2026-11-01 (E1 details built; sizes/add-ons and pictures planned — see *Menu item editing in the staff portal*)
+- Can edit menu items (details, sizes, add-ons, pictures) in the portal — James, 2026-11-01 (details, sizes and add-ons built; pictures planned — see *Menu item editing in the staff portal*)
 - Cannot access SiteSettings, user management, or anything on the superuser-only list
 
 **Tier 2 — General Staff**
@@ -2042,7 +2042,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 - Change the nav groupings (Operations / Content / Tools) without discussion
 - Add inline color styles to portal templates — the same design system enforcement rules apply
 
-## Menu item editing in the staff portal — E1 BUILT, E2–E3 PLANNED (spec 2026-11-01)
+## Menu item editing in the staff portal — E1–E2 BUILT, E3 PLANNED (spec 2026-11-01)
 
 Managers edit menu items — details, sizes, add-ons and pictures — from the portal, without Django
 admin. Build in the phases at the end, one branch each. This is an approved exception to *Staff
@@ -2215,6 +2215,21 @@ fail if a portal page has no tip.
 - After save: redirect to the item page, carrying `?next=` only when it isn't the plain list URL.
 - Tests: `apps/staff/tests/test_menu_item_edit.py`; `menu_item` added to Tier-2-readable pages in
   `test_permissions.py`.
+
+### E2 implementation notes (2026-11-01)
+
+- `VariationFormSet` / `AddonFormSet` (`apps/staff/forms.py`, prefixes `variations` / `addons`) sit in the
+  same `<form>` as Details; the Save bar is under both tabs (hidden on the Pictures tab, desktop).
+- Partials `staff/menu/_options.html` (one list + management form + `<template id="<prefix>-empty">`)
+  and `_option_row.html`. `itemPage().addRow(prefix)` copies the template with the next index and bumps
+  `TOTAL_FORMS`; unsaved new rows have a Remove button that deletes the DOM row (the missing index is
+  an empty extra form, which Django skips); saved rows use the DELETE tick box.
+- Tab ids: `details`, `sizes`, `pictures`. A failed save with valid Details opens on `sizes`
+  (`initial_tab` in the context); the URL hash wins over it.
+- `MenuItem.sync_option_flags()` runs after the portal save and after every CSV `variations` / `addons`
+  row (`Kind.after_save`). Tier 2 sees sizes and add-ons as plain tables.
+- The add/remove buttons are untested in a real browser here (headless Chromium lacks system libs on the
+  dev machine); the server side is covered by `SizesAndAddonsTests`.
 
 ### Future (not specced — do not build without a spec update)
 
@@ -2403,6 +2418,8 @@ Match key = how a row finds an existing record (match → update, no match → c
 - Portal: kind `events` on `/staff/import/` (open preselected with `?kind=events`; Events page has an
   "Import / Export CSV" button for managers). Confirm redirects to the Events page. Same `MANAGER`
   access as adding/editing events. No management command.
+- `has_variations` / `has_addons` on the items CSV: since E2 (2026-11-01) importing a size / add-on
+  sets them from the rows, so the columns only matter for items with no sizes / add-ons.
 - Time cells accept 12-hour times too (`6:40 PM`, `4pm`) — Excel saves time cells as displayed. This
   applies to every kind.
 - Tests: `apps/events/tests/test_importers.py`.

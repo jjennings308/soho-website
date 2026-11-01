@@ -294,6 +294,14 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
 
     # ── Properties ────────────────────────────────────────────────────────────
 
+    def sync_option_flags(self):
+        """Set has_variations / has_addons from whether the item has any sizes / add-ons.
+        Called by the staff item page and the CSV variations / addons imports."""
+        has_variations, has_addons = self.variations.exists(), self.addons.exists()
+        if (has_variations, has_addons) != (self.has_variations, self.has_addons):
+            self.has_variations, self.has_addons = has_variations, has_addons
+            self.save(update_fields=['has_variations', 'has_addons', 'updated_at'])
+
     @property
     def current_price(self):
         if self.price_display != 'price':

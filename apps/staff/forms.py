@@ -6,7 +6,7 @@ from apps.core.models import ColorScheme
 from apps.events.models import EventDay
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter
-from apps.menu.models import MenuItem
+from apps.menu.models import MenuItem, MenuItemAddon, MenuItemVariation
 
 
 class EventForm(forms.ModelForm):
@@ -86,6 +86,38 @@ class MenuItemForm(forms.ModelForm):
     def groups(self):
         """[(heading, [bound fields])] for the template."""
         return [(title, [self[name] for name in names]) for title, names in MENU_ITEM_GROUPS]
+
+
+class _OptionForm(forms.ModelForm):
+    """One size or add-on row on the item page."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault('class', 'sp-input')
+
+
+class VariationForm(_OptionForm):
+    class Meta:
+        model = MenuItemVariation
+        fields = ['name', 'size', 'quantity', 'price', 'description', 'order', 'is_default', 'is_available']
+        labels = {'size': 'Size note', 'order': 'Position', 'is_default': 'Default',
+                  'is_available': 'Available'}
+
+
+class AddonForm(_OptionForm):
+    class Meta:
+        model = MenuItemAddon
+        fields = ['name', 'price', 'description', 'order', 'is_default', 'is_available']
+        labels = {'order': 'Position', 'is_default': 'Default', 'is_available': 'Available'}
+
+
+# Sizes and add-ons on the item page: no blank rows — "Add a size" adds one in the browser.
+VariationFormSet = forms.inlineformset_factory(
+    MenuItem, MenuItemVariation, form=VariationForm, extra=0, can_delete=True)
+AddonFormSet = forms.inlineformset_factory(
+    MenuItem, MenuItemAddon, form=AddonForm, extra=0, can_delete=True)
 
 
 class NewsletterForm(forms.ModelForm):
