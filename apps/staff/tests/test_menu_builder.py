@@ -1,12 +1,15 @@
 from datetime import date
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from apps.core.models import ColorScheme
-from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment
+from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemCategoryAssignment
 from apps.staff.permissions import MANAGER_GROUP
 
 User = get_user_model()
@@ -65,7 +68,7 @@ class AddTests(MenuBuilderTestCase):
     def test_add_creates_the_menu_and_opens_it(self):
         response = self.client.post(self.add_url, settings(display_name='Sunday Brunch', description='Eggs'))
         menu = Menu.objects.get()
-        self.assertRedirects(response, self.url(menu), fetch_redirect_response=False)
+        self.assertRedirects(response, self.url(menu) + '#categories', fetch_redirect_response=False)
         self.assertEqual((menu.title, menu.slug, menu.menu_type, menu.display_name, menu.is_active),
                          ('Brunch', 'brunch', 'food', 'Sunday Brunch', True))
         self.assertContains(self.client.get(response.url), 'No categories yet')
@@ -107,7 +110,7 @@ class EditTests(MenuBuilderTestCase):
         response = self.client.post(self.add_url, settings(
             color_scheme=scheme.pk, homepage_slot='slot_1', valid_from='2027-01-01', valid_until='2027-01-07'))
         menu = Menu.objects.get()
-        self.assertRedirects(response, self.url(menu), fetch_redirect_response=False)
+        self.assertRedirects(response, self.url(menu) + '#categories', fetch_redirect_response=False)
         self.assertEqual((menu.color_scheme, menu.homepage_slot, menu.valid_from, menu.valid_until),
                          (None, 'none', None, None))
 
@@ -180,3 +183,171 @@ class LiveSiteGuardTests(MenuBuilderTestCase):
         old.refresh_from_db()
         self.assertEqual(old.homepage_slot, 'none')
         self.assertEqual(Menu.objects.get(slug='brunch').homepage_slot, 'slot_2')
+
+
+class MenuCategoriesTests(MenuBuilderTestCase):
+    def setUp(self):
+        super().setUp()
+        self.menu = Menu.objects.create(title='Brunch', slug='brunch', menu_type='food')
+        self.burgers = MenuCategory.objects.create(name='Burgers', slug='burgers', category_type='food')
+        self.beer = MenuCategory.objects.create(name='Beer', slug='beer', category_type='drinks')
+        self.salads = MenuCategory.objects.create(name='Salads', slug='salads', category_type='food')
+        self.item = MenuItem.objects.create(name='Classic Burger', slug='classic-burger', price=Decimal('14.50'))
+        self.placement = MenuItemCategoryAssignment.objects.create(menu_item=self.item, category=self.burgers)
+        self.page = self.url(self.menu)
+        self.actions = reverse('staff:menu_categories', args=[self.menu.pk])
+
+    def fetch(self, **data):
+        return self.client.post(self.actions, data, HTTP_X_REQUESTED_WITH='fetch')
+
+    def on_menu(self):
+        return list(self.menu.menu_category_assignments.order_by('display_order').values_list('category__name', 'display_order'))
+
+    def put(self, *categories):
+        return [MenuCategoryAssignment.objects.create(menu=self.menu, category=c, display_order=0) for c in categories]
+
+    def test_read_only_staff_see_the_items_and_cannot_change_anything(self):
+        assignment = self.put(self.burgers)[0]
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
+        page = self.client.get(self.page)
+        self.assertContains(page, 'Classic Burger')
+        self.assertNotContains(page, 'Remove from this menu')
+        self.assertNotContains(page, 'New category')
+        self.assertEqual(self.client.get(self.actions).status_code, 403)
+        for action in ('add', 'new', 'up', 'down', 'remove'):
+            self.assertEqual(self.fetch(action=action, assignment=assignment.pk).status_code, 403)
+        self.assertEqual(len(self.on_menu()), 1)
+
+    def test_adding_a_category_brings_its_items_without_copying(self):
+        response = self.fetch(**{'action': 'add', 'add-category': self.burgers.pk})
+        self.assertTemplateUsed(response, 'staff/menu/_menu_categories.html')
+        self.assertContains(response, 'Added Burgers with 1 item.')
+        self.assertContains(response, 'Classic Burger')
+        self.assertEqual(self.on_menu(), [('Burgers', 1)])
+        self.assertEqual(MenuItemCategoryAssignment.objects.count(), 1)     # nothing copied
+
+    def test_items_added_to_the_category_later_appear(self):
+        self.put(self.burgers)
+        other = MenuItem.objects.create(name='Veggie Burger', slug='veggie-burger')
+        MenuItemCategoryAssignment.objects.create(menu_item=other, category=self.burgers)
+        self.assertContains(self.client.get(self.page), 'Veggie Burger')
+
+    def test_add_goes_to_the_end(self):
+        self.put(self.burgers)
+        self.fetch(**{'action': 'add', 'add-category': self.beer.pk})
+        self.assertEqual(self.on_menu(), [('Burgers', 1), ('Beer', 2)])
+
+    def test_category_already_on_the_menu_is_refused_and_not_offered(self):
+        self.put(self.burgers)
+        self.assertNotContains(self.client.get(self.page), f'<option value="{self.burgers.pk}"')
+        response = self.fetch(**{'action': 'add', 'add-category': self.burgers.pk})
+        self.assertContains(response, "isn&#x27;t on this menu yet")
+        self.assertEqual(len(self.on_menu()), 1)
+
+    def test_choices_are_grouped_with_counts_and_skip_inactive(self):
+        MenuCategory.objects.create(name='Old Stuff', slug='old-stuff', is_active=False)
+        html = self.client.get(self.page).content.decode()
+        self.assertIn('<optgroup label="Food">', html)
+        self.assertIn('<optgroup label="Drinks">', html)
+        self.assertIn('Burgers (1 item)', html)
+        self.assertIn('Beer (0 items)', html)
+        self.assertNotIn('Old Stuff', html)
+
+    def test_new_category_is_created_and_added_with_the_name_as_heading(self):
+        response = self.fetch(**{'action': 'new', 'newcat-name': 'Omelettes & More', 'newcat-display_name': '',
+                                 'newcat-category_type': 'food'})
+        self.assertContains(response, 'Created Omelettes &amp; More.')
+        category = MenuCategory.objects.get(name='Omelettes & More')
+        self.assertEqual((category.slug, category.display_name), ('omelettes-more', 'Omelettes & More'))
+        self.assertEqual(self.on_menu(), [('Omelettes & More', 1)])
+
+    def test_new_category_keeps_a_given_heading(self):
+        self.fetch(**{'action': 'new', 'newcat-name': 'Fall', 'newcat-display_name': 'Fall Favorites',
+                      'newcat-category_type': 'drinks'})
+        category = MenuCategory.objects.get(name='Fall')
+        self.assertEqual((category.display_name, category.category_type), ('Fall Favorites', 'drinks'))
+
+    def test_duplicate_category_name_is_refused(self):
+        response = self.fetch(**{'action': 'new', 'newcat-name': 'burgers', 'newcat-category_type': 'food'})
+        self.assertContains(response, 'already exists')
+        self.assertEqual(MenuCategory.objects.filter(name__iexact='burgers').count(), 1)
+        self.assertEqual(self.on_menu(), [])
+
+    def test_new_category_type_defaults_from_the_menu(self):
+        drinks = Menu.objects.create(title='Bar', slug='bar', menu_type='drinks')
+        self.assertRegex(' '.join(self.client.get(self.url(drinks)).content.decode().split()),
+                         r'value="drinks" selected')
+
+    def test_reorder_only_changes_this_menu(self):
+        first, second, third = self.put(self.burgers, self.beer, self.salads)
+        other = Menu.objects.create(title='Other', slug='other', menu_type='food')
+        kept = MenuCategoryAssignment.objects.create(menu=other, category=self.burgers, display_order=9)
+        self.fetch(action='up', assignment=third.pk)
+        self.assertEqual([n for n, _ in self.on_menu()], ['Burgers', 'Salads', 'Beer'])
+        self.fetch(action='down', assignment=first.pk)
+        self.assertEqual(self.on_menu(), [('Salads', 1), ('Burgers', 2), ('Beer', 3)])
+        kept.refresh_from_db()
+        self.assertEqual(kept.display_order, 9)
+
+    def test_moving_past_the_end_changes_nothing(self):
+        first, second = self.put(self.burgers, self.beer)
+        self.fetch(action='up', assignment=first.pk)
+        self.fetch(action='down', assignment=second.pk)
+        self.assertEqual(self.on_menu(), [('Burgers', 1), ('Beer', 2)])
+
+    def test_remove_keeps_the_category_and_its_items(self):
+        assignment = self.put(self.burgers)[0]
+        response = self.fetch(action='remove', assignment=assignment.pk)
+        self.assertContains(response, 'Took Burgers off this menu')
+        self.assertEqual(self.on_menu(), [])
+        self.assertTrue(MenuCategory.objects.filter(pk=self.burgers.pk).exists())
+        self.assertTrue(MenuItemCategoryAssignment.objects.filter(pk=self.placement.pk).exists())
+
+    def test_shared_category_names_its_other_menus(self):
+        self.put(self.burgers)
+        other = Menu.objects.create(title='Event Food', slug='event-food', menu_type='food')
+        MenuCategoryAssignment.objects.create(menu=other, category=self.burgers)
+        self.assertContains(self.client.get(self.page), 'Also on: Event Food')
+
+    def test_item_flags_and_special_price_show(self):
+        self.put(self.burgers)
+        self.placement.override_price = Decimal('9.00')
+        self.placement.is_active = False
+        self.placement.save()
+        self.item.is_available = False
+        self.item.save()
+        page = self.client.get(self.page)
+        self.assertContains(page, '$9.00')
+        self.assertContains(page, 'Hidden here')
+        self.assertContains(page, 'Unavailable')
+
+    def test_assignment_of_another_menu_is_404_and_unknown_action_400(self):
+        other = Menu.objects.create(title='Other', slug='other', menu_type='food')
+        foreign = MenuCategoryAssignment.objects.create(menu=other, category=self.burgers)
+        self.assertEqual(self.fetch(action='remove', assignment=foreign.pk).status_code, 404)
+        self.assertEqual(self.fetch(action='up', assignment='abc').status_code, 404)
+        self.assertEqual(self.fetch(action='explode').status_code, 400)
+
+    def test_plain_post_redirects_to_the_tab(self):
+        response = self.client.post(self.actions, {'action': 'add', 'add-category': self.burgers.pk})
+        self.assertRedirects(response, self.page + '#categories', fetch_redirect_response=False)
+
+    def test_new_menu_opens_on_categories_and_reaches_the_public_page(self):
+        response = self.client.post(self.add_url, settings(title='Late Night', menu_type='promo'))
+        menu = Menu.objects.get(slug='late-night')
+        self.assertRedirects(response, self.url(menu) + '#categories', fetch_redirect_response=False)
+        self.client.post(reverse('staff:menu_categories', args=[menu.pk]),
+                         {'action': 'add', 'add-category': self.burgers.pk}, HTTP_X_REQUESTED_WITH='fetch')
+        self.assertContains(self.client.get(reverse('menu:menu_detail', args=['late-night'])), 'Classic Burger')
+
+    def test_query_count_doesnt_grow_with_the_items(self):
+        self.put(self.burgers)
+        self.client.get(self.page)                                  # settle session and site settings
+        with CaptureQueriesContext(connection) as few:
+            self.client.get(self.page)
+        for n in range(10):
+            item = MenuItem.objects.create(name=f'Burger {n}', slug=f'burger-{n}')
+            MenuItemCategoryAssignment.objects.create(menu_item=item, category=self.burgers)
+        with CaptureQueriesContext(connection) as many:
+            self.client.get(self.page)
+        self.assertEqual(len(many), len(few))

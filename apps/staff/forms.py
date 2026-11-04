@@ -1,5 +1,5 @@
 from django import forms
-from django.db.models import Max, Q
+from django.db.models import Count, Max, Q
 from django_ckeditor_5.widgets import CKEditor5Widget
 
 from apps.core.models import SitePopup, SiteSettings
@@ -320,6 +320,55 @@ class MenuForm(forms.ModelForm):
         """[(heading, menu type or None, [bound fields])] for the template."""
         return [(title, only_for, [self[name] for name in names if name in self.fields])
                 for title, names, only_for in MENU_GROUPS]
+
+
+class MenuCategoryAddForm(forms.Form):
+    """Put an existing category on a menu: offers active ones not on it yet, by type."""
+    category = forms.TypedChoiceField(
+        coerce=int, label='Category',
+        error_messages={'invalid_choice': "Choose a category that isn't on this menu yet."},
+    )
+
+    def __init__(self, *args, menu, **kwargs):
+        super().__init__(*args, **kwargs)
+        categories = (
+            MenuCategory.objects.filter(is_active=True)
+            .exclude(menu_assignments__menu=menu)
+            .annotate(item_count=Count('item_assignments'))
+            .order_by('name')
+        )
+        self.has_choices = bool(categories)
+        groups = [
+            (label, [(c.pk, f"{c.name} ({c.item_count} item{'' if c.item_count == 1 else 's'})")
+                     for c in categories if c.category_type == code])
+            for code, label in MenuCategory.CATEGORY_TYPE_CHOICES
+        ]
+        self.fields['category'].choices = [('', 'Choose a category…')] + [g for g in groups if g[1]]
+        self.fields['category'].widget.attrs['class'] = 'sp-select'
+
+
+class MenuCategoryNewForm(forms.ModelForm):
+    """Create a category on the spot. Blank display name would hide its heading, so it defaults to the name."""
+
+    class Meta:
+        model = MenuCategory
+        fields = ['name', 'display_name', 'category_type']
+        labels = {'display_name': 'Heading customers see', 'category_type': 'Type'}
+        help_texts = {'name': 'For staff.', 'display_name': 'Blank uses the name.', 'category_type': ''}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'sp-select' if isinstance(field.widget, forms.Select) else 'sp-input'
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if MenuCategory.objects.filter(name__iexact=name).exists():
+            raise forms.ValidationError('A category with this name already exists. Add it from the list above.')
+        return name
+
+    def clean_display_name(self):
+        return self.cleaned_data['display_name'] or self.cleaned_data.get('name', '')
 
 
 class NewsletterForm(forms.ModelForm):

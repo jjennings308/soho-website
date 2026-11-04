@@ -1,0 +1,96 @@
+{# Categories tab of the menu page; also the response to every action (swapped in by menuPage()). Items belong to the category, so they are listed, never copied. #}
+<div id="categories-body" data-count="{{ category_rows|length }}">
+  {% if categories_notice %}<p class="ip-notice">{{ categories_notice }}</p>{% endif %}
+  <p class="ip-help" style="margin-bottom:0.9rem;">A category brings all its items with it. Items added to it later appear here too.</p>
+
+  {% for row in category_rows %}
+  <div class="ip-option" x-data="{ confirming: false }">
+    <details data-category="{{ row.category.pk }}">
+      <summary class="mc-summary">
+        <strong>{{ row.category.name }}</strong>
+        <span class="ip-meta"> — {{ row.placements|length }} item{{ row.placements|length|pluralize }}</span>
+        {% if not row.category.is_active %}<span class="sp-pill sp-pill--gray">Switched off</span>{% endif %}
+      </summary>
+      {% if row.placements %}
+      <div style="overflow-x:auto;margin-top:0.6rem;">
+        <table class="sp-table">
+          <thead><tr>{% if row.has_groups %}<th>Group</th>{% endif %}<th>Item</th><th>Price</th><th></th></tr></thead>
+          <tbody>
+            {% for placement in row.placements %}
+            <tr>
+              {% if row.has_groups %}<td class="ip-meta">{{ placement.subcategory.name|default:"—" }}</td>{% endif %}
+              <td><a href="{% url 'staff:menu_item' placement.menu_item_id %}" style="color:inherit;">{{ placement.menu_item.name }}</a></td>
+              <td>{% if placement.override_price is not None %}${{ placement.override_price }} <span class="ip-meta">special</span>{% else %}{{ placement.menu_item.display_price|default:"—" }}{% endif %}</td>
+              <td style="text-align:right;">
+                {% if not placement.menu_item.is_available %}<span class="sp-pill sp-pill--gray">Unavailable</span>{% endif %}
+                {% if not placement.is_active %}<span class="sp-pill sp-pill--gray">Hidden here</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="ip-meta" style="margin-top:0.6rem;">No items yet, so this section won't show. Add items from each item's On menus tab.</p>
+      {% endif %}
+    </details>
+
+    {% if row.also_on %}<p class="ip-meta" style="margin-top:0.5rem;">Also on: {{ row.also_on|join:", " }}. Changing its items changes those menus too.</p>{% endif %}
+
+    {% if can_edit %}
+    <form method="post" action="{% url 'staff:menu_categories' menu.pk %}" class="ip-pic-actions" style="margin:0.6rem 0 0.85rem;">
+      {% csrf_token %}
+      <input type="hidden" name="assignment" value="{{ row.assignment.pk }}">
+      <div x-show="!confirming">
+        {% if not forloop.first %}<button type="submit" name="action" value="up" class="ip-mini" title="Move earlier" aria-label="Move {{ row.category.name }} earlier">&uarr;</button>{% endif %}
+        {% if not forloop.last %}<button type="submit" name="action" value="down" class="ip-mini" title="Move later" aria-label="Move {{ row.category.name }} later">&darr;</button>{% endif %}
+        <button type="button" class="ip-mini ip-mini--danger" @click="confirming = true">Remove from this menu</button>
+      </div>
+      <div x-show="confirming" x-cloak>
+        Remove from this menu?
+        <button type="submit" name="action" value="remove" class="ip-mini ip-mini--danger">Yes</button>
+        <button type="button" class="ip-mini" @click="confirming = false">No</button>
+      </div>
+    </form>
+    {% else %}<div style="height:0.85rem;"></div>{% endif %}
+  </div>
+  {% empty %}
+  <p class="ip-meta" style="margin-bottom:0.9rem;">No categories yet, so this menu has nothing to show.</p>
+  {% endfor %}
+
+  {% if can_edit %}
+  <div class="mc-add">
+    {% if add_form.has_choices %}
+    <form method="post" action="{% url 'staff:menu_categories' menu.pk %}" class="mc-add-row">
+      {% csrf_token %}
+      <div class="sp-field" style="flex:1 1 16rem;margin-bottom:0;">
+        <label class="sp-label" for="{{ add_form.category.id_for_label }}">Add a category</label>
+        {{ add_form.category }}
+        {% for err in add_form.category.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+      </div>
+      <button type="submit" name="action" value="add" class="sp-btn sp-btn--primary">Add</button>
+    </form>
+    {% else %}
+    <p class="ip-meta">Every active category is on this menu.</p>
+    {% endif %}
+
+    <details class="ip-place-add" style="margin-top:1rem;" {% if new_form_open %}open{% endif %}>
+      <summary class="sp-btn sp-btn--outline sp-btn--sm">+ New category</summary>
+      <form method="post" action="{% url 'staff:menu_categories' menu.pk %}" class="ip-option" style="margin-top:0.75rem;">
+        {% csrf_token %}
+        <div class="ip-option-grid">
+          {% for field in new_form %}
+          <div class="sp-field">
+            <label class="sp-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}<div class="ip-help">{{ field.help_text }}</div>{% endif %}
+            {% for err in field.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="ip-checks"><button type="submit" name="action" value="new" class="sp-btn sp-btn--primary sp-btn--sm">Create and add</button></div>
+      </form>
+    </details>
+  </div>
+  {% endif %}
+</div>

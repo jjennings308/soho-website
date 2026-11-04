@@ -8,7 +8,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -25,10 +25,11 @@ from apps.members.newsletter import send_newsletter
 from apps.events import importers as event_importers
 from apps.menu import importers as menu_importers
 from apps.menu import whole_menu
-from apps.menu.models import Menu, MenuItem
+from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment, MenuItem
 
 from .forms import (
-    AddonFormSet, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuForm, MenuItemForm,
+    AddonFormSet, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuCategoryAddForm,
+    MenuCategoryNewForm, MenuForm, MenuItemForm,
     NewsletterForm, PlacementAddForm, PlacementForm, PopupForm, SiteSettingsForm, VariationFormSet,
 )
 from .help import TOPICS
@@ -968,7 +969,7 @@ def _item_url(item, back_url):
 
 def _unique_slug(model, name, fallback):
     """Slug from the name; -2, -3 … if taken (two records may share a name)."""
-    base = slugify(name)[:190] or fallback
+    base = slugify(name)[:model._meta.get_field('slug').max_length - 10] or fallback
     slug, n = base, 1
     while model.objects.filter(slug=slug).exists():
         n += 1
@@ -1057,8 +1058,8 @@ class MenuAddView(StaffRequiredMixin, View):
         menu.save()
         form.save_m2m()
         form.save()                     # empties the homepage slot's previous holder
-        messages.success(request, f'Added "{menu.title}".')
-        return redirect('staff:menu_detail', pk=menu.pk)
+        messages.success(request, f'Added "{menu.title}". Now add its categories.')
+        return redirect(reverse('staff:menu_detail', args=[menu.pk]) + '#categories')
 
 
 class MenuDetailView(StaffRequiredMixin, View):
@@ -1066,11 +1067,9 @@ class MenuDetailView(StaffRequiredMixin, View):
     staff_access = STAFF
 
     def _render(self, request, menu, form):
-        assignments = menu.menu_category_assignments.select_related('category').annotate(
-            item_count=Count('category__item_assignments')).order_by('display_order')
+        can_edit = is_manager(request.user)
         return render(request, 'staff/menu/menu_form.html', {
-            'form': form, 'menu': menu, 'title': menu.title,
-            'can_edit': is_manager(request.user), 'assignments': assignments,
+            'form': form, 'title': menu.title, **_menu_categories_context(menu, can_edit),
         })
 
     def get(self, request, pk):
@@ -1085,6 +1084,126 @@ class MenuDetailView(StaffRequiredMixin, View):
         form.save()
         messages.success(request, 'Saved.')
         return redirect('staff:menu_detail', pk=menu.pk)
+
+
+def _menu_assignments(menu):
+    return list(menu.menu_category_assignments.select_related('category').order_by('display_order', 'pk'))
+
+
+def _tidy_menu_categories(menu):
+    """Number the menu's categories 1..n in their current order."""
+    assignments = _menu_assignments(menu)
+    for n, assignment in enumerate(assignments, start=1):
+        if assignment.display_order != n:
+            assignment.display_order = n
+            assignment.save(update_fields=['display_order'])
+    return assignments
+
+
+def _menu_categories_context(menu, can_edit, add_form=None, new_form=None, notice='', new_form_open=False):
+    """Context for staff/menu/_menu_categories.html: each category on the menu with its items."""
+    from apps.menu.models import MenuItemCategoryAssignment
+
+    placements = (
+        MenuItemCategoryAssignment.objects
+        .select_related('menu_item', 'subcategory')
+        .prefetch_related('menu_item__variations')
+        .order_by('subcategory__order', 'order', 'menu_item__name')
+    )
+    assignments = (
+        menu.menu_category_assignments
+        .select_related('category')
+        .prefetch_related(
+            Prefetch('category__item_assignments', queryset=placements, to_attr='staff_placements'),
+            'category__menu_assignments__menu',
+        )
+        .order_by('display_order', 'pk')
+    )
+    rows = [{
+        'assignment': a,
+        'category': a.category,
+        'placements': a.category.staff_placements,
+        'has_groups': any(p.subcategory_id for p in a.category.staff_placements),
+        'also_on': sorted(x.menu.title for x in a.category.menu_assignments.all() if x.menu_id != menu.pk),
+    } for a in assignments]
+    if can_edit:
+        add_form = add_form or MenuCategoryAddForm(menu=menu, prefix='add')
+        new_form = new_form or MenuCategoryNewForm(
+            prefix='newcat', initial={'category_type': 'drinks' if menu.menu_type == 'drinks' else 'food'})
+    return {
+        'menu': menu, 'can_edit': can_edit, 'category_rows': rows, 'add_form': add_form, 'new_form': new_form,
+        'categories_notice': notice, 'new_form_open': new_form_open,
+    }
+
+
+class MenuCategoriesView(StaffRequiredMixin, View):
+    """
+    Categories on a menu. GET: the partial. POST action=add|new|up|down|remove saves
+    straight away; a fetch() request gets the partial back, a plain form post is
+    redirected to the menu page. Remove only takes the category off this menu.
+    """
+    staff_access = MANAGER
+
+    def _respond(self, request, menu, notice='', invalid=False, **kwargs):
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return render(request, 'staff/menu/_menu_categories.html',
+                          _menu_categories_context(menu, True, notice=notice, **kwargs))
+        if invalid:
+            messages.error(request, 'Nothing was saved — please check that entry and try again.')
+        elif notice:
+            messages.success(request, notice)
+        return redirect(reverse('staff:menu_detail', args=[menu.pk]) + '#categories')
+
+    def get(self, request, pk):
+        menu = get_object_or_404(Menu, pk=pk)
+        return render(request, 'staff/menu/_menu_categories.html', _menu_categories_context(menu, True))
+
+    def post(self, request, pk):
+        menu = get_object_or_404(Menu, pk=pk)
+        action = request.POST.get('action')
+        with transaction.atomic():
+            assignments = _tidy_menu_categories(menu)
+            if action == 'add':
+                return self._add(request, menu, assignments)
+            if action == 'new':
+                return self._new(request, menu, assignments)
+            if action not in ('up', 'down', 'remove'):
+                return HttpResponse('Unknown action', status=400)
+            assignment_id = request.POST.get('assignment', '')
+            assignment = get_object_or_404(
+                MenuCategoryAssignment, pk=assignment_id if assignment_id.isdigit() else 0, menu=menu)
+            name = assignment.category.name
+            if action == 'remove':
+                assignment.delete()
+                _tidy_menu_categories(menu)
+                return self._respond(request, menu, f'Took {name} off this menu. Its items are unchanged.')
+            index = next(i for i, a in enumerate(assignments) if a.pk == assignment.pk)
+            other = index - 1 if action == 'up' else index + 1
+            if 0 <= other < len(assignments):
+                assignments[index], assignments[other] = assignments[other], assignments[index]
+                for n, a in enumerate(assignments, start=1):
+                    a.display_order = n
+                    a.save(update_fields=['display_order'])
+        return self._respond(request, menu)
+
+    def _add(self, request, menu, assignments):
+        form = MenuCategoryAddForm(request.POST, menu=menu, prefix='add')
+        if not form.is_valid():
+            return self._respond(request, menu, invalid=True, add_form=form)
+        category = get_object_or_404(MenuCategory, pk=form.cleaned_data['category'])
+        MenuCategoryAssignment.objects.create(menu=menu, category=category, display_order=len(assignments) + 1)
+        count = category.item_assignments.count()
+        return self._respond(request, menu, f"Added {category.name} with {count} item{'' if count == 1 else 's'}.")
+
+    def _new(self, request, menu, assignments):
+        form = MenuCategoryNewForm(request.POST, prefix='newcat')
+        if not form.is_valid():
+            return self._respond(request, menu, invalid=True, new_form=form, new_form_open=True)
+        category = form.save(commit=False)
+        category.slug = _unique_slug(MenuCategory, category.name, 'category')
+        category.save()
+        MenuCategoryAssignment.objects.create(menu=menu, category=category, display_order=len(assignments) + 1)
+        return self._respond(request, menu, f'Created {category.name}. It has no items yet.')
 
 
 class MenuItemAddView(StaffRequiredMixin, View):

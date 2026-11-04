@@ -2330,7 +2330,7 @@ order, bulk placement.
 - Touch `available_game_day`, recurrence fields, or the menu-mode logic.
 - Add inline colour styles beyond the portal's existing brand-variable pattern.
 
-## Menu builder in the staff portal — B1 BUILT, B2–B3 PLANNED (spec 2026-11-03, approved by James)
+## Menu builder in the staff portal — B1–B2 BUILT, B3 PLANNED (spec 2026-11-03, approved by James)
 
 Requested by James 2026-11-03: build menus in the portal; adding a category to a menu brings its list of
 items. An approved exception to *Staff portal phasing*, like item editing. Build in the phases below, and
@@ -2376,8 +2376,8 @@ Access: list and page `STAFF` (read-only for Tier 2); every change and the add p
 
 - Categories in display order, each collapsible with its **items listed**: name (links to the item page), price,
   special price, Shown; a count; and "Also on: Drinks Menu, Event Drinks".
-- **+ Add a category:** dropdown of categories not on this menu, grouped Food / Drinks, with item counts;
-  blank = the end of the list. The new section opens showing its items.
+- **Add a category:** dropdown of active categories not on this menu, grouped Food / Drinks, with item counts;
+  it goes to the end of the list.
 - ↑ / ↓ reorder categories on this menu only (renumbers `display_order` 1..n).
 - **Remove from this menu** (inline Yes / No) deletes the `MenuCategoryAssignment` only. Category and items stay.
 - **+ New category** (name, display name, food/drinks), then added to this menu. Display name defaults to the
@@ -2400,8 +2400,17 @@ Access: list and page `STAFF` (read-only for Tier 2); every change and the add p
 - `MenuForm` (`apps/staff/forms.py`, groups in `MENU_GROUPS`), `MenuListView`, `MenuAddView`, `MenuDetailView`,
   templates `staff/menu/menu_list.html`, `menu_form.html`. Slug via `_unique_slug`. Sections for other types are
   hidden by Alpine and also cleared in `clean()`. New menus must choose a type. A legacy type drops the
-  `menu_type` field from the form. B1 has no tabs: the page lists categories read-only until B2.
+  `menu_type` field from the form.
 - Tests: `apps/staff/tests/test_menu_builder.py`.
+
+### B2 implementation notes (2026-11-03)
+
+- `MenuCategoriesView` (`MANAGER`), `_menu_categories_context()`, `_tidy_menu_categories()`, forms
+  `MenuCategoryAddForm` / `MenuCategoryNewForm`, partial `staff/menu/_menu_categories.html`, `menuPage()` Alpine
+  function with tabs `#settings` / `#categories` (fetch pattern as Pictures; open sections stay open across a swap).
+- A new category's name must be unique (case-insensitive), since CSV lookups by name refuse duplicates. Its blank
+  display name becomes the name. Inactive categories aren't offered. New menus open on `#categories`.
+- Browser-side code hasn't been run in a real browser here; `MenuCategoriesTests` covers the views.
 
 ### Not in scope
 

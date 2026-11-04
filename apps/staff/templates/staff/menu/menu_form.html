@@ -8,6 +8,9 @@
 <style>
   .ip-days { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.875rem; }
   .ip-days label { display: flex; align-items: center; gap: 0.35rem; }
+  .mc-summary { cursor: pointer; font-size: 0.9rem; }
+  .mc-add { border-top: 1px solid var(--color-bg-tertiary); padding-top: 1rem; margin-top: 1rem; }
+  .mc-add-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
   .ip-confirm { border-left: 3px solid var(--color-gold-primary); padding: 0.6rem 0.75rem; margin-bottom: 1rem; }
 </style>
 {% endblock %}
@@ -17,7 +20,7 @@
 {% endblock %}
 
 {% block content %}
-<div style="max-width:56rem;" x-data="{ type: '{{ form.selected_type|escapejs }}' }">
+<div style="max-width:56rem;" x-data="menuPage('{{ form.selected_type|escapejs }}')">
   {% if menu %}
   <p class="ip-meta" style="margin-bottom:1rem;">
     Spreadsheet ID (slug): <code>{{ menu.slug }}</code> — stays the same if you rename the menu.
@@ -25,6 +28,15 @@
   </p>
   {% endif %}
 
+  {% if menu %}
+  <div class="ip-tabs" role="tablist">
+    <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'settings').toString()" @click="show('settings')">Settings</button>
+    <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'categories').toString()" @click="show('categories')">Categories (<span x-text="categoryCount">{{ category_rows|length }}</span>)</button>
+  </div>
+  {% endif %}
+
+  <section id="settings" class="ip-section" {% if menu %}:class="{ 'is-hidden': tab !== 'settings' }"{% endif %}>
+  {% if menu %}<h2 class="ip-section-title">Settings</h2>{% endif %}
   <form method="post" id="menu-form">
     {% csrf_token %}
     <div class="sp-card">
@@ -79,45 +91,76 @@
     </div>
     {% endif %}
   </form>
+  </section>
 
   {% if menu %}
-  <div class="sp-card" style="margin-top:1.25rem;">
-    <h3 class="ip-card-title">Categories on this menu</h3>
-    {% if assignments %}
-      <table class="sp-table">
-        <thead><tr><th>Category</th><th style="text-align:center;">Items</th></tr></thead>
-        <tbody>
-          {% for a in assignments %}<tr><td>{{ a.category.name }}</td><td style="text-align:center;">{{ a.item_count }}</td></tr>{% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p class="ip-meta">No categories yet, so this menu has nothing to show.</p>
-    {% endif %}
-    {% if can_edit %}<p class="ip-help" style="margin-top:0.6rem;">Categories are changed with the <em>menu_categories</em> spreadsheet (Tools &rarr; Import / Export).</p>{% endif %}
-  </div>
+  {# ── Categories ─ outside the form above: each change here saves on its own. #}
+  <section id="categories" class="ip-section" :class="{ 'is-hidden': tab !== 'categories' }">
+    <h2 class="ip-section-title">Categories</h2>
+    <div class="sp-card" id="categories-wrap" {% if can_edit %}@submit.prevent="categoryAction($event)" @input="categoriesDirty = true" @change="categoriesDirty = true"{% endif %}>
+      {% include "staff/menu/_menu_categories.html" %}
+    </div>
+  </section>
   {% endif %}
 </div>
 {% endblock %}
 
 {% block extra_js %}
-{% if can_edit %}
 <script>
-  // Warn before leaving with unsaved settings (same check as the item page).
-  (function () {
-    const form = document.getElementById('menu-form');
-    const snapshot = () => new URLSearchParams(new FormData(form)).toString();
-    const initial = snapshot();
-    const failedSave = {{ form.errors|yesno:'true,false' }};
-    let saving = false;
-    form.addEventListener('submit', () => { saving = true; });
-    window.addEventListener('beforeunload', (event) => {
-      if (saving) return;
-      if (failedSave || snapshot() !== initial) {
-        event.preventDefault();
-        event.returnValue = '';
-      }
-    });
-  })();
+  // Tabs (desktop), Categories actions and an unsaved-changes warning.
+  function menuPage(type) {
+    return {
+      type,
+      tab: location.hash === '#categories' ? 'categories' : 'settings',
+      saving: false,
+      categoriesDirty: false,
+      categoryCount: {{ category_rows|length|default:0 }},
+      show(name) {
+        this.tab = name;
+        history.replaceState(null, '', '#' + name);
+      },
+      {% if can_edit and menu %}
+      // Post the clicked form and swap in the new section, keeping open sections open.
+      async categoryAction(event) {
+        const form = event.target;
+        const wrap = document.getElementById('categories-wrap');
+        const open = [...wrap.querySelectorAll('details[data-category][open]')].map(d => d.dataset.category);
+        try {
+          const response = await fetch(form.action, {
+            method: 'POST', body: new FormData(form, event.submitter), headers: { 'X-Requested-With': 'fetch' },
+          });
+          if (response.ok === false) throw new Error(response.status);
+          wrap.innerHTML = await response.text();
+          open.forEach(id => wrap.querySelector('details[data-category="' + id + '"]')?.setAttribute('open', ''));
+          this.categoryCount = Number(wrap.querySelector('#categories-body').dataset.count);
+          this.categoriesDirty = wrap.querySelector('.sp-field-error') !== null;
+        } catch (e) {
+          // Fall back to a normal post (page reload); form.submit() leaves out the clicked button.
+          const button = event.submitter;
+          if (button?.name) form.append(Object.assign(document.createElement('input'),
+            { type: 'hidden', name: button.name, value: button.value }));
+          this.saving = true;
+          this.categoriesDirty = false;
+          form.submit();
+        }
+      },
+      {% endif %}
+      init() {
+        {% if can_edit %}
+        const form = document.getElementById('menu-form');
+        const snapshot = () => new URLSearchParams(new FormData(form)).toString();
+        const initial = snapshot();
+        const failedSave = {{ form.errors|yesno:'true,false' }};
+        form.addEventListener('submit', () => { this.saving = true; });
+        window.addEventListener('beforeunload', (event) => {
+          if (this.categoriesDirty || (this.saving === false && (failedSave || snapshot() !== initial))) {
+            event.preventDefault();
+            event.returnValue = '';
+          }
+        });
+        {% endif %}
+      },
+    };
+  }
 </script>
-{% endif %}
 {% endblock %}
