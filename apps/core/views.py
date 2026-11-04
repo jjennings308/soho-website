@@ -11,7 +11,7 @@ from .models import Review, SitePopup, SiteSettings
 from .spam import spam_reasons
 from .utils import client_ip, get_banner, get_panel_side, honeypot_tripped, is_throttled
 from apps.content.models import ContentGroup
-from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
+from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment, available_now_q
 
 
 def get_content_group(slug):
@@ -65,9 +65,9 @@ def _build_promo_grid(menu):
         item_assignments = (
             MenuItemCategoryAssignment.objects
             .filter(
+                available_now_q('menu_item__'),
                 category=cat_assignment.category,
                 is_active=True,
-                menu_item__is_available=True,
             )
             .select_related('menu_item', 'subcategory')
             .order_by('subcategory__order', 'order')[:remaining]
@@ -95,9 +95,9 @@ def _get_random_promo_item(menu):
     qs = (
         MenuItemCategoryAssignment.objects
         .filter(
+            available_now_q('menu_item__'),
             category__menu_assignments__menu=menu,
             is_active=True,
-            menu_item__is_available=True,
         )
         .select_related('menu_item', 'category')
         .order_by('?')

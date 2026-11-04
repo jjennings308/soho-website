@@ -242,14 +242,14 @@ def get_category_assignments(category):
     Usage:
         {% get_category_assignments category as assignments %}
     """
-    from apps.menu.models import MenuItemCategoryAssignment
+    from apps.menu.models import MenuItemCategoryAssignment, available_now_q
 
     from apps.menu.models import MenuItemVariation, MenuItemAddon, MenuItemImage
 
     return MenuItemCategoryAssignment.objects.filter(
+        available_now_q('menu_item__'),
         category=category,
         is_active=True,
-        menu_item__is_available=True,
     ).select_related(
         'menu_item',
         'subcategory',

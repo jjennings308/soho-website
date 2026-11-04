@@ -2263,9 +2263,60 @@ fail if a portal page has no tip.
   Django admin) places it; the success message and help say so. Placements stay unspecced in the portal.
 - Tests: `MenuItemAddTests` in `apps/staff/tests/test_menu_item_edit.py`.
 
+### Placements section — PLANNED (spec 2026-11-03, awaiting James's approval)
+
+Lets managers put an item on a menu from its page, so a new item can go live without a spreadsheet.
+Requested by James 2026-11-03. CSV `placements` and the Whole menu sheet stay as they are.
+
+**What a placement is:** an item goes into a *category*, and every menu showing that category then shows
+it. So the portal places items in categories, not on menus, and the page must always say which menus
+that means. Creating or arranging categories and menus stays out of scope (CSV / Django admin).
+
+**Page:** a new tab, **On menus**, between Sizes & add-ons and Pictures (stacked on phones). It replaces the
+read-only "Appears on" card under Details. Saving **+ Add Item** opens the new item on this tab.
+
+**Saved rows**, one per placement, each with:
+- Category name and the menus it reaches, e.g. *Burgers — on Food Menu, Event Food*. A category on no menu
+  shows a warning: "Customers won't see this: the category isn't on a menu."
+- Editable: subcategory (only that category's; hidden if it has none), position, special price, note, shown.
+- **Save** per row and **Remove** with an inline "Remove? Yes / No". Remove deletes the
+  `MenuItemCategoryAssignment` only, never the item or the category.
+
+**+ Add to a category:** a dropdown listing each active category with its menus (*Burgers — Food Menu*),
+leaving out those the item is already in. Then the same fields. A blank position means the end of the
+category (highest current `order` + 1); other items' positions are never changed (much existing data has
+ties at 0, which this neither fixes nor depends on).
+
+**Saving:** each action saves straight away and swaps the section in place, like Pictures, so it never
+loses unsaved Details typing. Validation is a `ModelForm` (`subcategory`, `order`, `override_price`, `note`,
+`is_active`, plus `category` on add); the subcategory must belong to the category. Errors show on the row.
+
+**Access and URLs:** `/staff/menu/items/<pk>/placements/` (`staff:menu_item_placements`, view
+`MenuItemPlacementsView`, `staff_access = MANAGER`). GET: partial `staff/menu/_item_placements.html`. POST
+`action=add|save|remove`; fetch gets the partial back, a plain post redirects to `#menus`. Tier 2 sees the
+same list read-only and gets 403 on every POST.
+
+**Help and tests:** update the menu-items topic, *How menus work* and the `menu_item` / `menu_item_add` tips
+(no more "use a spreadsheet to place it"), and the Add Item success message. Tests: Tier 2 read-only and 403;
+add (end position, blank and given); category already placed refused; subcategory from another category
+refused; bad price keeps the typed values; edit; remove keeps item and category; menus-reached text;
+no-menu warning; plain-post redirect; `MenuItem` flags and `available_game_day` untouched.
+
+**Not in this section:** creating categories or menus, reordering a whole category, the menus' own category
+order, bulk placement.
+
+### Item time bands (2026-11-03)
+
+- `available_from` / `available_until` and an item's `days_of_week` now apply on the public site. All public
+  placement queries filter with `available_now_q('menu_item__')` (`apps/menu/models.py`), which must agree with
+  `MenuItem.is_available_now`; don't filter on `menu_item__is_available` alone in new public code.
+- Local (Eastern) time; `RecurrenceMixin.is_active_today` also moved from UTC to local. A start after the end
+  runs overnight. The day check uses the calendar day, so a Friday-only 22:00–02:00 item is hidden from
+  midnight. Days are editable only in Django admin (recurrence stays out of the portal and CSVs).
+- Tests: `apps/menu/tests/test_availability.py`.
+
 ### Future (not specced — do not build without a spec update)
 
-- Placements section: add/remove the item from menus/categories, order, special price, note.
 - Delete / archive an item.
 - Upload photos from the item page.
 

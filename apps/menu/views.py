@@ -13,6 +13,7 @@ from .models import (
     MenuItemVariation,
     MenuItemAddon,
     MenuItem,
+    available_now_q,
 )
 from .utils import get_active_menus
 
@@ -42,8 +43,8 @@ def _item_assignment_qs():
     fully prefetched. Used by views and template tags.
     """
     return MenuItemCategoryAssignment.objects.filter(
+        available_now_q('menu_item__'),
         is_active=True,
-        menu_item__is_available=True,
     ).select_related(
         'menu_item',
         'subcategory',

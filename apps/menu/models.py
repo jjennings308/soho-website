@@ -1,5 +1,6 @@
 import os
 from django.db import models
+from django.db.models import F, Q
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from decimal import Decimal
@@ -147,6 +148,26 @@ class MenuSubCategory(TimeStampedModel):
 # =============================================================================
 # MENU ITEM  (item library — no inherent menu home)
 # =============================================================================
+
+def available_now_q(prefix=''):
+    """
+    Q for "this item is showing right now", the database form of
+    MenuItem.is_available_now: the Available switch, its days and its time band,
+    in local (Eastern) time. A band whose start is after its end runs overnight.
+
+    prefix is the path to the item, e.g. 'menu_item__' on a placement queryset.
+    """
+    now = timezone.localtime()
+    time, day = now.time(), now.weekday()
+    start, end = f'{prefix}available_from', f'{prefix}available_until'
+    same_day = (
+        (Q(**{f'{start}__isnull': True}) | Q(**{f'{start}__lte': time}))
+        & (Q(**{f'{end}__isnull': True}) | Q(**{f'{end}__gte': time}))
+    )
+    overnight = Q(**{f'{start}__gt': F(end)}) & (Q(**{f'{start}__lte': time}) | Q(**{f'{end}__gte': time}))
+    any_day = Q(**{f'{prefix}days_of_week': []}) | Q(**{f'{prefix}days_of_week__contains': day})
+    return Q(**{f'{prefix}is_available': True}) & any_day & (same_day | overnight)
+
 
 class MenuItem(TimeStampedModel, RecurrenceMixin):
     """
@@ -347,18 +368,22 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
     def is_available_now(self):
         """
         True if the item is available right now based on all three checks:
-        global switch, day of week, and time of day window.
+        global switch, day of week, and time of day window (local time; a
+        window whose start is after its end runs overnight). Public queries
+        use available_now_q(), which must agree with this.
         """
         if not self.is_available:
             return False
         if not self.is_active_today():
             return False
-        if self.available_from or self.available_until:
-            now = timezone.now().time()
-            if self.available_from and now < self.available_from:
-                return False
-            if self.available_until and now > self.available_until:
-                return False
+        now = timezone.localtime().time()
+        start, end = self.available_from, self.available_until
+        if start and end and start > end:
+            return now >= start or now <= end
+        if start and now < start:
+            return False
+        if end and now > end:
+            return False
         return True
 
 # =============================================================================

@@ -61,6 +61,10 @@ class MenuItemForm(forms.ModelForm):
             'available_from': 'Available from',
             'available_until': 'Available until',
         }
+        help_texts = {
+            'available_from': 'Eastern time. Customers only see the item during these hours. Leave blank for no start time.',
+            'available_until': 'A time earlier than the start runs past midnight (22:00 until 02:00). Leave blank for no end time.',
+        }
         widgets = {
             'description': CKEditor5Widget(config_name='default'),
             'allergen_info': forms.Textarea(attrs={'rows': 2}),

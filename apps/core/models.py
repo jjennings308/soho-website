@@ -156,7 +156,7 @@ class RecurrenceMixin(models.Model):
         """
         if not self.days_of_week:
             return True
-        return timezone.now().weekday() in self.days_of_week
+        return timezone.localdate().weekday() in self.days_of_week
 
     def get_active_days_display(self):
         """Returns a human-readable list of active days, e.g. ['Monday', 'Tuesday']."""
