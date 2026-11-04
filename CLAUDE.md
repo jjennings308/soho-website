@@ -2368,8 +2368,9 @@ Access: list and page `STAFF` (read-only for Tier 2); every change and the add p
   leaving a role empty, warns by name and needs a confirm tick (`confirm_live`) before saving; only one menu may
   hold a homepage slot (`MenuForm.save` empties the old holder's; CSV and admin aren't changed).
 - **What settings really do**, stated in the form's help texts: `get_active_menus` ignores `is_active`, dates and
-  days, so a role menu always shows. Homepage slots honour `is_active` only. Promotions and a menu's own page honour
-  `is_active` and dates. A menu's `days_of_week` is applied nowhere (happy-hour has Mon–Thu stored). Not changed by B1.
+  days, so a role menu always shows. Homepage slots honour `is_active` and days, not dates. Promotions and a menu's
+  own page honour all three (`Menu.is_showing_now`; off-days 404 like expired dates). Weekly specials use their
+  valid dates. Days were applied 2026-11-03, James; before that they did nothing.
 
 ### Categories tab
 
@@ -2477,9 +2478,8 @@ Match key = how a row finds an existing record (match → update, no match → c
 | 8 | `placements` (`MenuItemCategoryAssignment`) | `item` + `category` | item, category, subcategory, order, override_price, note, is_active |
 
 - Recurrence fields from `RecurrenceMixin` (`days_of_week`, etc.) are **not** in any CSV — James,
-  2026-10-21: a minor setting, edited per menu instead. (Today that's the Django admin Menu form,
-  superusers only; the staff portal has no menu editing. Adding it to the portal is a separate,
-  unspecced request.)
+  2026-10-21: a minor setting, edited per menu instead: the portal's menu Settings form (B1) edits a menu's days.
+  An item's days are still edited only in Django admin.
 - An unknown column is an error (catches typos); missing optional columns are fine.
 - A lookup that matches nothing (e.g. a placement naming a category that doesn't exist) is a row
   error with the value shown — never a silent create.

@@ -107,7 +107,7 @@ def menu_detail(request, slug):
         is_active=True,
     )
 
-    if not menu.is_currently_active:
+    if not menu.is_showing_now:
         raise Http404
 
     colors = menu.resolve_colors()
@@ -135,7 +135,7 @@ def promotions(request):
         ),
     ).order_by('active_from', 'title')
 
-    active_promos = [m for m in promo_menus if m.is_currently_active]
+    active_promos = [m for m in promo_menus if m.is_showing_now]
 
     # TODO: add show_in_event_mode boolean to Menu to control promo visibility
     # during event mode (e.g. hide Happy Hour during game days)

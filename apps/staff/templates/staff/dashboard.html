@@ -155,7 +155,7 @@
             <span style="font-size:0.875rem;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ menu.title }}</span>
           </div>
           <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-            {% if menu.is_currently_active %}<span class="sp-pill sp-pill--green">Active</span>
+            {% if menu.is_showing_now %}<span class="sp-pill sp-pill--green">Active</span>
             {% elif menu.is_active %}<span class="sp-pill sp-pill--gold">Scheduled</span>
             {% else %}<span class="sp-pill sp-pill--gray">Off</span>{% endif %}
             <span class="sp-pill {{ item.badge_class }}">{{ item.badge_label }}</span>

@@ -214,7 +214,8 @@ class MenuForm(forms.ModelForm):
     days_of_week = forms.TypedMultipleChoiceField(
         choices=Menu.DAYS_OF_WEEK, coerce=int, required=False,
         widget=forms.CheckboxSelectMultiple, label='Days of the week',
-        help_text='Stored only: not applied on the website yet.',
+        help_text='Promotions, their homepage slot and the menu\'s own page show on these days only '
+                  '(Eastern time). None ticked means every day. A live role isn\'t affected.',
     )
     confirm_live = forms.BooleanField(required=False, label='Yes, change the live site')
 

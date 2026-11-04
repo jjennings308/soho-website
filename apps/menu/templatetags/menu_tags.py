@@ -221,7 +221,7 @@ def get_active_menus(menu_type=None, homepage_only=False, limit=None):
         ),
     )
 
-    active = [m for m in qs if m.is_currently_active]
+    active = [m for m in qs if m.is_showing_now]
 
     if limit:
         active = active[:limit]

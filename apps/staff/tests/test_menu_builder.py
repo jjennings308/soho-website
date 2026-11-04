@@ -95,7 +95,7 @@ class EditTests(MenuBuilderTestCase):
         self.assertRedirects(response, self.url(menu), fetch_redirect_response=False)
         menu.refresh_from_db()
         self.assertEqual((menu.title, menu.slug, menu.days_of_week), ('Dinner', 'food', [0, 4]))
-        self.assertContains(self.client.get(self.url(menu)), 'not applied on the website yet')
+        self.assertContains(self.client.get(self.url(menu)), 'None ticked means every day')
 
     def test_saved_days_stay_ticked(self):
         menu = Menu.objects.create(title='HH', slug='hh', menu_type='promo', days_of_week=[1])

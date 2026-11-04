@@ -121,3 +121,55 @@ class PublicPagesTests(TestCase):
             self.assertEqual(_get_random_promo_item(promo).menu_item, self.lunch)
         with at(18):
             self.assertIsNone(_get_random_promo_item(promo))
+
+
+class MenuDaysTests(TestCase):
+    """2 Nov 2026 is a Monday, 6 Nov a Friday."""
+
+    def setUp(self):
+        category = MenuCategory.objects.create(name='Happy', slug='happy', display_name='Happy Drinks')
+        item = MenuItem.objects.create(name='House Lager', slug='house-lager', price=Decimal('4'))
+        MenuItemCategoryAssignment.objects.create(menu_item=item, category=category)
+        self.menu = Menu.objects.create(title='Happy Hour', slug='happy-hour', menu_type='promo',
+                                        homepage_slot='slot_2', days_of_week=[0, 1, 2, 3])
+        MenuCategoryAssignment.objects.create(menu=self.menu, category=category)
+
+    def test_is_showing_now_needs_its_day_and_uses_eastern_time(self):
+        with at(12):
+            self.assertTrue(self.menu.is_showing_now)
+        with at(12, day=6):
+            self.assertFalse(self.menu.is_showing_now)
+            self.assertTrue(self.menu.is_currently_active)      # dates alone say yes
+        with at(23, 30, day=5):                                 # Thursday night: already Friday in UTC
+            self.assertTrue(self.menu.is_showing_now)
+
+    def test_promotions_page_and_own_page_follow_the_days(self):
+        detail = reverse('menu:menu_detail', args=['happy-hour'])
+        with at(12):
+            self.assertContains(self.client.get(reverse('menu:promotions')), 'Happy Hour')
+            self.assertEqual(self.client.get(detail).status_code, 200)
+        with at(12, day=6):
+            self.assertNotContains(self.client.get(reverse('menu:promotions')), 'Happy Hour')
+            self.assertEqual(self.client.get(detail).status_code, 404)
+
+    def test_homepage_slot_follows_the_days(self):
+        with at(12):
+            self.assertEqual(self.client.get(reverse('core:home')).context['promo_slot_2'], self.menu)
+        with at(12, day=6):
+            response = self.client.get(reverse('core:home'))
+            self.assertEqual(response.status_code, 200)
+            self.assertIsNone(response.context['promo_slot_2'])
+            self.assertNotContains(response, 'House Lager')
+
+    def test_live_role_menu_ignores_its_days(self):
+        self.menu.role, self.menu.menu_type = 'default_food', 'food'
+        self.menu.save()
+        with at(12, day=6):
+            self.assertContains(self.client.get(reverse('menu:full')), 'House Lager')
+
+    def test_blank_display_name_uses_the_title_on_public_pages(self):
+        self.assertEqual(self.menu.display_name, '')
+        with at(12):
+            self.assertContains(self.client.get(reverse('menu:menu_detail', args=['happy-hour'])), 'Happy Hour')
+            home = self.client.get(reverse('core:home'))
+        self.assertContains(home, 'Happy Hour')

@@ -678,6 +678,14 @@ class Menu(RecurrenceMixin, ScheduledModel):
 
     # ── Properties ────────────────────────────────────────────────────────────
 
+    @property
+    def is_showing_now(self):
+        """
+        Active, within its dates and on one of its days (local time). Used for
+        promotions and a menu's own page. Live-role menus don't check this.
+        """
+        return self.is_currently_active and self.is_active_today()
+
     def resolve_colors(self):
         """
         Returns resolved hex values for all four color slots.

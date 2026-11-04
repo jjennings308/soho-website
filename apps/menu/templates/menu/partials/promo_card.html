@@ -32,7 +32,7 @@
 
   {# ── Promo heading ── #}
   <h2 class="text-center mb-1" style="color: var(--color-promo-primary);">
-    {{ menu.display_name }}
+    {{ menu.display_name|default:menu.title }}
   </h2>
 
   {% if menu.description %}

@@ -129,8 +129,13 @@ class HomeView(TemplateView):
             'menu_category_assignments__category',
         )
 
+        # A slot stays empty on days its menu doesn't run.
         promo_slot_1 = promo_qs.filter(homepage_slot='slot_1').first()
         promo_slot_2 = promo_qs.filter(homepage_slot='slot_2').first()
+        if promo_slot_1 and not promo_slot_1.is_active_today():
+            promo_slot_1 = None
+        if promo_slot_2 and not promo_slot_2.is_active_today():
+            promo_slot_2 = None
 
         context['promo_slot_1']      = promo_slot_1
         context['promo_slot_2']      = promo_slot_2
