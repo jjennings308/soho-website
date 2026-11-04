@@ -14,7 +14,7 @@
       {% if row.placements %}
       <div style="overflow-x:auto;margin-top:0.6rem;">
         <table class="sp-table">
-          <thead><tr>{% if row.has_groups %}<th>Group</th>{% endif %}<th>Item</th><th>Price</th><th></th></tr></thead>
+          <thead><tr>{% if row.has_groups %}<th>Group</th>{% endif %}<th>Item</th><th>Price</th><th></th>{% if can_edit %}<th></th>{% endif %}</tr></thead>
           <tbody>
             {% for placement in row.placements %}
             <tr>
@@ -25,13 +25,36 @@
                 {% if not placement.menu_item.is_available %}<span class="sp-pill sp-pill--gray">Unavailable</span>{% endif %}
                 {% if not placement.is_active %}<span class="sp-pill sp-pill--gray">Hidden here</span>{% endif %}
               </td>
+              {% if can_edit %}
+              <td x-data="{ confirming: false }" style="white-space:nowrap;text-align:right;">
+                <form method="post" action="{% url 'staff:menu_categories' menu.pk %}" class="mc-item-actions">
+                  {% csrf_token %}
+                  <input type="hidden" name="placement" value="{{ placement.pk }}">
+                  <span x-show="!confirming">
+                    {% if placement.can_up %}<button type="submit" name="action" value="item_up" class="ip-mini" title="Move earlier" aria-label="Move {{ placement.menu_item.name }} earlier">&uarr;</button>{% endif %}
+                    {% if placement.can_down %}<button type="submit" name="action" value="item_down" class="ip-mini" title="Move later" aria-label="Move {{ placement.menu_item.name }} later">&darr;</button>{% endif %}
+                    <button type="button" class="ip-mini ip-mini--danger" @click="confirming = true">Take out</button>
+                  </span>
+                  <span x-show="confirming" x-cloak>
+                    {% if row.also_on %}Also leaves {{ row.also_on|join:", " }}. {% endif %}Take out?
+                    <button type="submit" name="action" value="item_remove" class="ip-mini ip-mini--danger">Yes</button>
+                    <button type="button" class="ip-mini" @click="confirming = false">No</button>
+                  </span>
+                </form>
+              </td>
+              {% endif %}
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       {% else %}
-      <p class="ip-meta" style="margin-top:0.6rem;">No items yet, so this section won't show. Add items from each item's On menus tab.</p>
+      <p class="ip-meta" style="margin-top:0.6rem;">No items yet, so this section won't show.</p>
+      {% endif %}
+      {% if can_edit %}
+      <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" style="margin-top:0.6rem;"
+              data-assignment="{{ row.assignment.pk }}" data-category="{{ row.category.pk }}" data-name="{{ row.category.name }}"
+              @click="openItemPicker($el.dataset)">+ Add items</button>
       {% endif %}
     </details>
 

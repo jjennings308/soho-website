@@ -11,6 +11,15 @@
   .mc-summary { cursor: pointer; font-size: 0.9rem; }
   .mc-add { border-top: 1px solid var(--color-bg-tertiary); padding-top: 1rem; margin-top: 1rem; }
   .mc-add-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; }
+  .mc-item-actions { display: inline; font-size: 0.75rem; }
+  .pk-row { display: flex; align-items: center; gap: 0.75rem; width: 100%; text-align: left; background: none; cursor: pointer;
+            border: 0; border-bottom: 1px solid var(--color-bg-tertiary); padding: 0.6rem 0.4rem; font-size: 0.875rem; min-height: 2.75rem; }
+  .pk-row-name { flex: 1; }
+  .pk-row-tick { visibility: hidden; color: var(--color-gold-deep); font-weight: 700; }
+  .pk-row.is-selected { background: var(--color-bg-secondary); }
+  .pk-row.is-selected .pk-row-tick { visibility: visible; }
+  .pk-row.is-added { cursor: default; opacity: 0.55; }
+  .pk-row-flag { font-size: 0.7rem; background: var(--color-bg-tertiary); padding: 0.1rem 0.45rem; border-radius: 10px; }
   .ip-confirm { border-left: 3px solid var(--color-gold-primary); padding: 0.6rem 0.75rem; margin-bottom: 1rem; }
 </style>
 {% endblock %}
@@ -101,6 +110,34 @@
       {% include "staff/menu/_menu_categories.html" %}
     </div>
   </section>
+
+  {% if can_edit %}
+  {# ── Item picker (modal; full screen on phones) ──────────────────────────── #}
+  <div class="pk-overlay" x-show="pickerOpen" x-cloak @keydown.escape.window="pickerOpen = false">
+    <div class="pk-modal" role="dialog" aria-modal="true" aria-labelledby="pk-title" @click.outside="pickerOpen = false">
+      <div class="pk-head">
+        <h2 id="pk-title" x-text="'Add items to ' + pickerName"></h2>
+        <button type="button" class="ip-mini" @click="pickerOpen = false" aria-label="Close">&times;</button>
+      </div>
+      <div class="pk-filters">
+        <input class="sp-input" type="search" placeholder="Search by name…" x-model="pickerQ"
+               @input.debounce.300ms="loadPicker(1)" aria-label="Search items">
+      </div>
+      <div class="pk-body">
+        <div id="picker-grid" @click="togglePick($event)"></div>
+        <div style="text-align:center;margin:1rem 0;" x-show="pickerNext">
+          <button type="button" class="sp-btn sp-btn--outline sp-btn--sm" @click="loadPicker(pickerNext)" :disabled="pickerLoading">Load more</button>
+        </div>
+        <p class="ip-meta" x-show="pickerLoading" style="text-align:center;">Loading…</p>
+      </div>
+      <div class="pk-foot">
+        <span class="ip-meta" x-text="selected.length + ' selected'"></span>
+        <button type="button" class="sp-btn sp-btn--primary" :disabled="selected.length === 0 || adding" @click="addPicked()"
+                x-text="selected.length > 1 ? 'Add ' + selected.length + ' items' : 'Add item'"></button>
+      </div>
+    </div>
+  </div>
+  {% endif %}
   {% endif %}
 </div>
 {% endblock %}
@@ -115,25 +152,79 @@
       saving: false,
       categoriesDirty: false,
       categoryCount: {{ category_rows|length|default:0 }},
+      // Item picker
+      pickerOpen: false, pickerAssignment: '', pickerCategory: '', pickerName: '', pickerQ: '',
+      pickerNext: null, pickerLoading: false, selected: [], adding: false,
       show(name) {
         this.tab = name;
         history.replaceState(null, '', '#' + name);
       },
       {% if can_edit and menu %}
-      // Post the clicked form and swap in the new section, keeping open sections open.
-      async categoryAction(event) {
-        const form = event.target;
+      // Post to the section and swap in the new one, keeping open sections open.
+      async postCategories(url, body, alsoOpen) {
         const wrap = document.getElementById('categories-wrap');
         const open = [...wrap.querySelectorAll('details[data-category][open]')].map(d => d.dataset.category);
+        if (alsoOpen) open.push(alsoOpen);
+        const response = await fetch(url, { method: 'POST', body, headers: { 'X-Requested-With': 'fetch' } });
+        if (response.ok === false) throw new Error(response.status);
+        wrap.innerHTML = await response.text();
+        open.forEach(id => wrap.querySelector('details[data-category="' + id + '"]')?.setAttribute('open', ''));
+        this.categoryCount = Number(wrap.querySelector('#categories-body').dataset.count);
+        this.categoriesDirty = wrap.querySelector('.sp-field-error') !== null;
+      },
+      openItemPicker(data) {
+        this.pickerAssignment = data.assignment;
+        this.pickerCategory = data.category;
+        this.pickerName = data.name;
+        this.pickerQ = '';
+        this.selected = [];
+        this.pickerOpen = true;
+        this.loadPicker(1);
+      },
+      async loadPicker(page) {
+        const grid = document.getElementById('picker-grid');
+        const params = new URLSearchParams({ assignment: this.pickerAssignment, q: this.pickerQ, page });
+        this.pickerLoading = true;
         try {
-          const response = await fetch(form.action, {
-            method: 'POST', body: new FormData(form, event.submitter), headers: { 'X-Requested-With': 'fetch' },
-          });
-          if (response.ok === false) throw new Error(response.status);
-          wrap.innerHTML = await response.text();
-          open.forEach(id => wrap.querySelector('details[data-category="' + id + '"]')?.setAttribute('open', ''));
-          this.categoryCount = Number(wrap.querySelector('#categories-body').dataset.count);
-          this.categoriesDirty = wrap.querySelector('.sp-field-error') !== null;
+          const response = await fetch('{% url 'staff:menu_category_items' menu.pk %}?' + params);
+          const html = await response.text();
+          if (page === 1) grid.innerHTML = html; else grid.insertAdjacentHTML('beforeend', html);
+          const more = grid.querySelector('.pk-more');
+          this.pickerNext = more ? Number(more.dataset.next) : null;
+          more?.remove();
+          grid.querySelectorAll('.pk-row').forEach(row =>
+            row.classList.toggle('is-selected', this.selected.includes(row.dataset.id)));
+        } finally {
+          this.pickerLoading = false;
+        }
+      },
+      togglePick(event) {
+        const row = event.target.closest('.pk-row');
+        if (row === null || row.disabled) return;
+        const id = row.dataset.id;
+        this.selected = this.selected.includes(id) ? this.selected.filter(x => x !== id) : [...this.selected, id];
+        row.classList.toggle('is-selected', this.selected.includes(id));
+      },
+      async addPicked() {
+        const body = new FormData();
+        body.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        body.append('action', 'items_add');
+        body.append('assignment', this.pickerAssignment);
+        this.selected.forEach(id => body.append('item_ids', id));
+        this.adding = true;
+        try {
+          await this.postCategories('{% url 'staff:menu_categories' menu.pk %}', body, this.pickerCategory);
+          this.pickerOpen = false;
+        } catch (e) {
+          alert('Could not add the items — please try again.');
+        } finally {
+          this.adding = false;
+        }
+      },
+      async categoryAction(event) {
+        const form = event.target;
+        try {
+          await this.postCategories(form.action, new FormData(form, event.submitter));
         } catch (e) {
           // Fall back to a normal post (page reload); form.submit() leaves out the clicked button.
           const button = event.submitter;

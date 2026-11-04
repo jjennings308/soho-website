@@ -15,7 +15,7 @@ User = get_user_model()
 # Portal pages that need no tip: auth, the help page itself, and POST-only actions.
 NO_TIP = {'login', 'logout', 'help', 'menu_import_template', 'menu_export',  # + CSV downloads
           'menu_item_images',                          # redirect to the item page
-          'menu_item_pictures', 'menu_item_picker', 'menu_item_placements', 'menu_categories'}  # parts of the item page
+          'menu_item_pictures', 'menu_item_picker', 'menu_item_placements', 'menu_categories', 'menu_category_items'}  # parts of the item page
 POST_ONLY_SUFFIXES = ('_toggle', '_delete', '_send', '_copy', '_import', '_status', '_feature')
 
 

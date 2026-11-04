@@ -34,7 +34,7 @@ PAGE_TIPS = {
     'event_edit': ('events', 'Untick “Limited menu” for events that keep full service; untick “Active” to hide an event without deleting it.'),
     'menus': ('menus-explained', 'Every menu, what it does on the site and whether it is on. Open one to change it, or use + Add Menu.'),
     'menu_add': ('menus-explained', 'Give the menu a title and type and save it. It then opens on its Categories tab, so you can add what it shows.'),
-    'menu_detail': ('menus-explained', 'Settings: changing the live role or a homepage slot affects the site straight away, so the page asks first. Categories: each change saves on its own, and items come with the category.'),
+    'menu_detail': ('menus-explained', 'Settings: changing the live role or a homepage slot affects the site straight away, so the page asks first. Categories: each change saves on its own, and items belong to the category, so they change on every menu showing it.'),
     'menu_item_list': ('menu-items', 'Find an item by name or filter, then tap its name (or Edit) to open it.'),
     'menu_item_add': ('menu-items', 'Only the name is required. Saving opens the new item on its On menus tab: add it to a category there so customers can see it.'),
     'menu_item': ('menu-items', 'Everything about one item. Managers change the Details and Sizes & add-ons tabs, then press Save once for both. On menus and Pictures save each change on their own.'),

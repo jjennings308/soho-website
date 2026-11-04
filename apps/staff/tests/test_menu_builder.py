@@ -9,7 +9,9 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from apps.core.models import ColorScheme
-from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemCategoryAssignment
+from apps.menu.models import (
+    Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemCategoryAssignment, MenuSubCategory,
+)
 from apps.staff.permissions import MANAGER_GROUP
 
 User = get_user_model()
@@ -351,3 +353,136 @@ class MenuCategoriesTests(MenuBuilderTestCase):
         with CaptureQueriesContext(connection) as many:
             self.client.get(self.page)
         self.assertEqual(len(many), len(few))
+
+
+class CategoryItemsTests(MenuBuilderTestCase):
+    def setUp(self):
+        super().setUp()
+        self.menu = Menu.objects.create(title='Food', slug='food', menu_type='food')
+        self.burgers = MenuCategory.objects.create(name='Burgers', slug='burgers')
+        self.assignment = MenuCategoryAssignment.objects.create(menu=self.menu, category=self.burgers)
+        self.items = [MenuItem.objects.create(name=n, slug=n.lower()) for n in ('Alpha', 'Bravo', 'Charlie')]
+        self.page = self.url(self.menu)
+        self.actions = reverse('staff:menu_categories', args=[self.menu.pk])
+        self.picker = reverse('staff:menu_category_items', args=[self.menu.pk])
+
+    def fetch(self, **data):
+        return self.client.post(self.actions, data, HTTP_X_REQUESTED_WITH='fetch')
+
+    def add(self, *items):
+        return self.fetch(action='items_add', assignment=self.assignment.pk, item_ids=[i.pk for i in items])
+
+    def order(self):
+        return list(self.burgers.item_assignments.order_by('order').values_list('menu_item__name', 'order'))
+
+    def placement(self, item):
+        return MenuItemCategoryAssignment.objects.get(menu_item=item, category=self.burgers)
+
+    def test_add_several_in_the_order_picked_at_the_end(self):
+        MenuItemCategoryAssignment.objects.create(menu_item=self.items[0], category=self.burgers, order=5)
+        response = self.add(self.items[2], self.items[1])
+        self.assertContains(response, 'Added 2 items to Burgers.')
+        self.assertEqual(self.order(), [('Alpha', 5), ('Charlie', 6), ('Bravo', 7)])
+
+    def test_already_placed_and_bad_ids_are_ignored(self):
+        self.add(self.items[0])
+        response = self.fetch(action='items_add', assignment=self.assignment.pk,
+                              item_ids=[self.items[0].pk, 'x', 999999])
+        self.assertContains(response, 'No new items added.')
+        self.assertEqual(len(self.order()), 1)
+
+    def test_move_renumbers_and_stops_at_the_ends(self):
+        self.add(*self.items)
+        self.fetch(action='item_up', placement=self.placement(self.items[2]).pk)
+        self.assertEqual(self.order(), [('Alpha', 1), ('Charlie', 2), ('Bravo', 3)])
+        self.fetch(action='item_down', placement=self.placement(self.items[1]).pk)
+        self.fetch(action='item_up', placement=self.placement(self.items[0]).pk)
+        self.assertEqual(self.order(), [('Alpha', 1), ('Charlie', 2), ('Bravo', 3)])
+
+    def test_first_move_clears_ties(self):
+        for item in self.items:
+            MenuItemCategoryAssignment.objects.create(menu_item=item, category=self.burgers, order=0)
+        self.fetch(action='item_down', placement=self.placement(self.items[0]).pk)
+        self.assertEqual(self.order(), [('Bravo', 1), ('Alpha', 2), ('Charlie', 3)])
+
+    def test_items_only_move_within_their_subcategory(self):
+        tap = MenuSubCategory.objects.create(category=self.burgers, name='Smash', slug='burgers-smash', order=1)
+        self.add(*self.items[:2])
+        first, second = self.placement(self.items[0]), self.placement(self.items[1])
+        second.subcategory = tap
+        second.save()
+        self.fetch(action='item_down', placement=second.pk)
+        self.fetch(action='item_up', placement=first.pk)
+        first.refresh_from_db()
+        second.refresh_from_db()
+        self.assertEqual((first.subcategory, second.subcategory), (None, tap))
+        html = self.client.get(self.page).content.decode()
+        self.assertNotIn('value="item_up"', html)
+        self.assertNotIn('value="item_down"', html)
+
+    def test_take_out_keeps_the_item(self):
+        self.add(self.items[0])
+        response = self.fetch(action='item_remove', placement=self.placement(self.items[0]).pk)
+        self.assertContains(response, 'Took Alpha out of Burgers.')
+        self.assertEqual(self.order(), [])
+        self.assertTrue(MenuItem.objects.filter(pk=self.items[0].pk).exists())
+
+    def test_take_out_names_the_other_menus_it_leaves(self):
+        self.add(self.items[0])
+        other = Menu.objects.create(title='Event Food', slug='event-food', menu_type='food')
+        MenuCategoryAssignment.objects.create(menu=other, category=self.burgers)
+        self.assertContains(self.client.get(self.page), 'Also leaves Event Food.')
+
+    def test_placement_in_a_category_not_on_this_menu_is_404(self):
+        elsewhere = MenuCategory.objects.create(name='Elsewhere', slug='elsewhere')
+        foreign = MenuItemCategoryAssignment.objects.create(menu_item=self.items[0], category=elsewhere)
+        for action in ('item_up', 'item_down', 'item_remove'):
+            self.assertEqual(self.fetch(action=action, placement=foreign.pk).status_code, 404)
+        self.assertEqual(self.fetch(action='item_remove', placement='abc').status_code, 404)
+        other = Menu.objects.create(title='Other', slug='other', menu_type='food')
+        assignment = MenuCategoryAssignment.objects.create(menu=other, category=elsewhere)
+        self.assertEqual(self.fetch(action='items_add', assignment=assignment.pk, item_ids=[1]).status_code, 404)
+
+    def test_picker_lists_the_library_marks_added_and_searches(self):
+        self.add(self.items[0])
+        html = self.client.get(self.picker, {'assignment': self.assignment.pk}).content.decode()
+        self.assertIn('Bravo', html)
+        self.assertRegex(html, rf'data-id="{self.items[0].pk}" disabled')
+        self.assertIn('Added', html)
+        html = self.client.get(self.picker, {'assignment': self.assignment.pk, 'q': 'char'}).content.decode()
+        self.assertIn('Charlie', html)
+        self.assertNotIn('Bravo', html)
+
+    def test_picker_pages_and_scoping(self):
+        from apps.staff.views import ITEM_PICKER_PAGE_SIZE
+        for n in range(ITEM_PICKER_PAGE_SIZE):
+            MenuItem.objects.create(name=f'Z {n:02}', slug=f'z-{n}')
+        first = self.client.get(self.picker, {'assignment': self.assignment.pk}).content.decode()
+        self.assertEqual(first.count('data-id='), ITEM_PICKER_PAGE_SIZE)
+        self.assertIn('data-next="2"', first)
+        second = self.client.get(self.picker, {'assignment': self.assignment.pk, 'page': 2}).content.decode()
+        self.assertEqual(second.count('data-id='), 3)
+        self.assertEqual(self.client.get(self.picker).status_code, 404)
+        other = Menu.objects.create(title='Other', slug='other', menu_type='food')
+        self.assertEqual(self.client.get(
+            reverse('staff:menu_category_items', args=[other.pk]), {'assignment': self.assignment.pk}).status_code, 404)
+
+    def test_read_only_staff_get_no_controls_and_403(self):
+        self.add(self.items[0])
+        placement = self.placement(self.items[0])
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
+        page = self.client.get(self.page)
+        self.assertContains(page, 'Alpha')
+        self.assertNotContains(page, '+ Add items')
+        self.assertNotContains(page, 'Take out')
+        self.assertEqual(self.client.get(self.picker, {'assignment': self.assignment.pk}).status_code, 403)
+        for action in ('items_add', 'item_up', 'item_down', 'item_remove'):
+            self.assertEqual(self.fetch(action=action, placement=placement.pk,
+                                        assignment=self.assignment.pk).status_code, 403)
+        self.assertEqual(len(self.order()), 1)
+
+    def test_added_item_shows_on_the_public_page_in_the_new_order(self):
+        self.add(self.items[0], self.items[1])
+        self.fetch(action='item_up', placement=self.placement(self.items[1]).pk)
+        html = self.client.get(reverse('menu:menu_detail', args=['food'])).content.decode()
+        self.assertLess(html.index('Bravo'), html.index('Alpha'))

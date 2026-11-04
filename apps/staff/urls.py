@@ -60,6 +60,7 @@ urlpatterns = [
     path('menu/menus/add/', views.MenuAddView.as_view(), name='menu_add'),
     path('menu/menus/<int:pk>/', views.MenuDetailView.as_view(), name='menu_detail'),
     path('menu/menus/<int:pk>/categories/', views.MenuCategoriesView.as_view(), name='menu_categories'),
+    path('menu/menus/<int:pk>/categories/items/', views.MenuCategoryItemPickerView.as_view(), name='menu_category_items'),
     path('menu/items/', views.MenuItemListView.as_view(), name='menu_item_list'),
     path('menu/items/add/', views.MenuItemAddView.as_view(), name='menu_item_add'),
     path('menu/items/<int:pk>/', views.MenuItemDetailView.as_view(), name='menu_item'),

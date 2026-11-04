@@ -2330,7 +2330,7 @@ order, bulk placement.
 - Touch `available_game_day`, recurrence fields, or the menu-mode logic.
 - Add inline colour styles beyond the portal's existing brand-variable pattern.
 
-## Menu builder in the staff portal — B1–B2 BUILT, B3 PLANNED (spec 2026-11-03, approved by James)
+## Menu builder in the staff portal — B1–B3 BUILT (spec 2026-11-03, approved by James)
 
 Requested by James 2026-11-03: build menus in the portal; adding a category to a menu brings its list of
 items. An approved exception to *Staff portal phasing*, like item editing. Build in the phases below, and
@@ -2411,6 +2411,16 @@ Access: list and page `STAFF` (read-only for Tier 2); every change and the add p
 - A new category's name must be unique (case-insensitive), since CSV lookups by name refuse duplicates. Its blank
   display name becomes the name. Inactive categories aren't offered. New menus open on `#categories`.
 - Browser-side code hasn't been run in a real browser here; `MenuCategoriesTests` covers the views.
+
+### B3 implementation notes (2026-11-03)
+
+- `MenuCategoriesView` gains `items_add`, `item_up`, `item_down`, `item_remove`; `MenuCategoryItemPickerView`
+  (`staff:menu_category_items`, `?assignment=&q=&page=`, 48 per page) and `_item_picker_grid.html`. The picker lists the
+  whole library, unavailable items included (flagged), and marks placed ones Added.
+- `_tidy_category_items()` renumbers the whole category 1..n before a move, which also clears old ties at position 0
+  (ties sort by name, so a first move can change the order of other tied items once). Moves stay within a subcategory.
+- A category's rows and placements can only be acted on through a menu showing that category.
+- Browser-side code hasn't been run in a real browser here; `CategoryItemsTests` covers the views.
 
 ### Not in scope
 

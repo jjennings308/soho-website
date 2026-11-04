@@ -8,7 +8,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
 from django.db import transaction
-from django.db.models import Count, Prefetch
+from django.db.models import Count, Max, Prefetch
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -25,7 +25,7 @@ from apps.members.newsletter import send_newsletter
 from apps.events import importers as event_importers
 from apps.menu import importers as menu_importers
 from apps.menu import whole_menu
-from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment, MenuItem
+from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemCategoryAssignment
 
 from .forms import (
     AddonFormSet, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuCategoryAddForm,
@@ -1100,15 +1100,32 @@ def _tidy_menu_categories(menu):
     return assignments
 
 
+def _category_placements(category):
+    """A category's placements in the order customers see them."""
+    return list(
+        MenuItemCategoryAssignment.objects.filter(category=category)
+        .select_related('menu_item', 'subcategory')
+        .order_by('subcategory__order', 'order', 'menu_item__name', 'pk')
+    )
+
+
+def _tidy_category_items(category):
+    """Number the category's placements 1..n in their current order."""
+    placements = _category_placements(category)
+    for n, placement in enumerate(placements, start=1):
+        if placement.order != n:
+            placement.order = n
+            placement.save(update_fields=['order'])
+    return placements
+
+
 def _menu_categories_context(menu, can_edit, add_form=None, new_form=None, notice='', new_form_open=False):
     """Context for staff/menu/_menu_categories.html: each category on the menu with its items."""
-    from apps.menu.models import MenuItemCategoryAssignment
-
     placements = (
         MenuItemCategoryAssignment.objects
         .select_related('menu_item', 'subcategory')
         .prefetch_related('menu_item__variations')
-        .order_by('subcategory__order', 'order', 'menu_item__name')
+        .order_by('subcategory__order', 'order', 'menu_item__name', 'pk')
     )
     assignments = (
         menu.menu_category_assignments
@@ -1119,6 +1136,13 @@ def _menu_categories_context(menu, can_edit, add_form=None, new_form=None, notic
         )
         .order_by('display_order', 'pk')
     )
+    assignments = list(assignments)
+    for a in assignments:
+        # Items move only within their subcategory: that's how customers see them grouped.
+        items = a.category.staff_placements
+        for i, placement in enumerate(items):
+            placement.can_up = i > 0 and items[i - 1].subcategory_id == placement.subcategory_id
+            placement.can_down = i + 1 < len(items) and items[i + 1].subcategory_id == placement.subcategory_id
     rows = [{
         'assignment': a,
         'category': a.category,
@@ -1138,9 +1162,10 @@ def _menu_categories_context(menu, can_edit, add_form=None, new_form=None, notic
 
 class MenuCategoriesView(StaffRequiredMixin, View):
     """
-    Categories on a menu. GET: the partial. POST action=add|new|up|down|remove saves
-    straight away; a fetch() request gets the partial back, a plain form post is
-    redirected to the menu page. Remove only takes the category off this menu.
+    Categories on a menu. GET: the partial. POST action=add|new|up|down|remove, or
+    items_add|item_up|item_down|item_remove for the items in a category, saves straight
+    away; a fetch() request gets the partial back, a plain form post is redirected to
+    the menu page. Removing only unlinks: categories and items are never deleted.
     """
     staff_access = MANAGER
 
@@ -1162,6 +1187,8 @@ class MenuCategoriesView(StaffRequiredMixin, View):
         menu = get_object_or_404(Menu, pk=pk)
         action = request.POST.get('action')
         with transaction.atomic():
+            if action in ('items_add', 'item_up', 'item_down', 'item_remove'):
+                return self._items(request, menu, action)
             assignments = _tidy_menu_categories(menu)
             if action == 'add':
                 return self._add(request, menu, assignments)
@@ -1186,6 +1213,46 @@ class MenuCategoriesView(StaffRequiredMixin, View):
                     a.save(update_fields=['display_order'])
         return self._respond(request, menu)
 
+    def _items(self, request, menu, action):
+        if action == 'items_add':
+            assignment = self._assignment(request, menu)
+            return self._respond(request, menu, self._add_items(assignment.category, request.POST.getlist('item_ids')))
+        placement_id = request.POST.get('placement', '')
+        placement = get_object_or_404(
+            MenuItemCategoryAssignment.objects.select_related('category', 'menu_item'),
+            pk=placement_id if placement_id.isdigit() else 0, category__menu_assignments__menu=menu)
+        if action == 'item_remove':
+            placement.delete()
+            return self._respond(request, menu, f'Took {placement.menu_item.name} out of {placement.category.name}.')
+        placements = _tidy_category_items(placement.category)
+        index = next(i for i, p in enumerate(placements) if p.pk == placement.pk)
+        other = index - 1 if action == 'item_up' else index + 1
+        if 0 <= other < len(placements) and placements[other].subcategory_id == placements[index].subcategory_id:
+            placements[index].order, placements[other].order = placements[other].order, placements[index].order
+            placements[index].save(update_fields=['order'])
+            placements[other].save(update_fields=['order'])
+        return self._respond(request, menu)
+
+    def _assignment(self, request, menu):
+        assignment_id = request.POST.get('assignment', '')
+        return get_object_or_404(
+            MenuCategoryAssignment.objects.select_related('category'),
+            pk=assignment_id if assignment_id.isdigit() else 0, menu=menu)
+
+    def _add_items(self, category, ids):
+        ids = list(dict.fromkeys(int(i) for i in ids if str(i).isdigit()))     # in the order picked
+        items = {i.pk: i for i in MenuItem.objects.filter(pk__in=ids).exclude(category_assignments__category=category)}
+        order = category.item_assignments.aggregate(last=Max('order'))['last'] or 0
+        added = 0
+        for pk in ids:
+            if pk in items:
+                order += 1
+                added += 1
+                MenuItemCategoryAssignment.objects.create(menu_item=items[pk], category=category, order=order)
+        if not added:
+            return 'No new items added.'
+        return f"Added {added} item{'' if added == 1 else 's'} to {category.name}."
+
     def _add(self, request, menu, assignments):
         form = MenuCategoryAddForm(request.POST, menu=menu, prefix='add')
         if not form.is_valid():
@@ -1204,6 +1271,36 @@ class MenuCategoriesView(StaffRequiredMixin, View):
         category.save()
         MenuCategoryAssignment.objects.create(menu=menu, category=category, display_order=len(assignments) + 1)
         return self._respond(request, menu, f'Created {category.name}. It has no items yet.')
+
+
+ITEM_PICKER_PAGE_SIZE = 48
+
+
+class MenuCategoryItemPickerView(StaffRequiredMixin, View):
+    """GET ?assignment=&q=&page= → a page of the item library for a category on this menu."""
+    staff_access = MANAGER
+
+    def get(self, request, pk):
+        assignment_id = request.GET.get('assignment', '')
+        assignment = get_object_or_404(
+            MenuCategoryAssignment, pk=assignment_id if assignment_id.isdigit() else 0, menu_id=pk)
+        items = MenuItem.objects.prefetch_related('variations').order_by('name', 'pk')
+        q = request.GET.get('q', '').strip()
+        if q:
+            items = items.filter(name__icontains=q)
+        try:
+            page = max(1, int(request.GET.get('page', 1)))
+        except ValueError:
+            page = 1
+        start = (page - 1) * ITEM_PICKER_PAGE_SIZE
+        found = list(items[start:start + ITEM_PICKER_PAGE_SIZE + 1])
+        placed = set(assignment.category.item_assignments.values_list('menu_item_id', flat=True))
+        for item in found:
+            item.added = item.pk in placed
+        return render(request, 'staff/menu/_item_picker_grid.html', {
+            'items': found[:ITEM_PICKER_PAGE_SIZE],
+            'next_page': page + 1 if len(found) > ITEM_PICKER_PAGE_SIZE else None,
+        })
 
 
 class MenuItemAddView(StaffRequiredMixin, View):

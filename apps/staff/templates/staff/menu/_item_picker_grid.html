@@ -1,0 +1,11 @@
+{# One page of the item picker (staff:menu_category_items). Rows are handled by menuPage().togglePick. #}
+{% for item in items %}
+  <button type="button" class="pk-row{% if item.added %} is-added{% endif %}" data-id="{{ item.pk }}" {% if item.added %}disabled{% endif %}>
+    <span class="pk-row-name">{{ item.name }}{% if not item.is_available %} <span class="ip-meta">(unavailable)</span>{% endif %}</span>
+    <span class="ip-meta">{{ item.display_price|default:"" }}</span>
+    {% if item.added %}<span class="pk-row-flag">Added</span>{% else %}<span class="pk-row-tick" aria-hidden="true">&#10003;</span>{% endif %}
+  </button>
+{% empty %}
+  {% if not next_page %}<p class="ip-meta">No items match. Try another search, or add the item first (Menu Items &rarr; + Add Item).</p>{% endif %}
+{% endfor %}
+{% if next_page %}<span class="pk-more" data-next="{{ next_page }}" hidden></span>{% endif %}
