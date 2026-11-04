@@ -1,5 +1,5 @@
 {% extends "staff/base.html" %}
-{# staff/menu/item.html — one menu item: Details (+ "Appears on") and Pictures. Read-only unless can_edit. #}
+{# staff/menu/item.html — one menu item: Details, Sizes & add-ons, On menus and Pictures. Read-only unless can_edit. #}
 {% block title %}{{ item.name }}{% endblock %}
 {% block page_title %}{{ item.name }}{% endblock %}
 
@@ -23,6 +23,7 @@
   <div class="ip-tabs" role="tablist">
     <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'details').toString()" @click="show('details')">Details</button>
     <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'sizes').toString()" @click="show('sizes')">Sizes &amp; add-ons</button>
+    <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'menus').toString()" @click="show('menus')">On menus (<span x-text="placementCount">{{ placement_rows|length }}</span>)</button>
     <button type="button" class="ip-tab" role="tab" :aria-selected="(tab === 'pictures').toString()" @click="show('pictures')">Pictures (<span x-text="picCount">{{ pictures|length }}</span>)</button>
   </div>
 
@@ -38,25 +39,6 @@
       {% include "staff/menu/_item_details_fields.html" %}
     </div>
 
-    <div class="sp-card" style="margin-top:1.25rem;">
-      <h3 class="ip-card-title">Appears on</h3>
-      {% if appears_on %}
-        <ul class="ip-appears">
-          {% for line in appears_on %}
-          <li>
-            {% if line.menu %}{{ line.menu.title }}{% else %}<em class="ip-meta">Not on any menu</em>{% endif %}
-            &rsaquo; {{ line.placement.category.name }}
-            {% if line.placement.subcategory %}&rsaquo; {{ line.placement.subcategory.name }}{% endif %}
-            {% if line.placement.override_price is not None %} — ${{ line.placement.override_price }}{% endif %}
-            {% if not line.placement.is_active %} <span class="sp-pill sp-pill--gray">Hidden here</span>{% endif %}
-          </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p class="ip-meta">This item isn't in any category yet, so customers don't see it.</p>
-      {% endif %}
-      <p class="ip-help" style="margin-top:0.6rem;">Where the item appears is changed with the menu spreadsheets (Tools &rarr; Import / Export).</p>
-    </div>
   </section>
 
   {# ── Sizes & add-ons ─────────────────────────────────────────────────── #}
@@ -99,6 +81,14 @@
     </div>
     {% endif %}
   </form>
+
+  {# ── On menus ─ outside the form above: each change here saves on its own. #}
+  <section id="menus" class="ip-section" :class="{ 'is-hidden': tab !== 'menus' }">
+    <h2 class="ip-section-title">On menus</h2>
+    <div class="sp-card" id="placements-wrap" {% if can_edit %}@submit.prevent="placementAction($event)" @input="placementsDirty = true" @change="placementsDirty = true"{% endif %}>
+      {% include "staff/menu/_item_placements.html" %}
+    </div>
+  </section>
 
   {# ── Pictures ────────────────────────────────────────────────────────── #}
   <section id="pictures" class="ip-section" :class="{ 'is-hidden': tab !== 'pictures' }">
@@ -145,11 +135,27 @@
 {% block extra_js %}
 <script>
   // Tabs (desktop), add/remove size and add-on rows, and an unsaved-changes warning.
+  // Add-to-a-category form: only offer the chosen category's subcategories.
+  function filterSubcategories(form) {
+    const category = form.querySelector('[name="new-category"]').value;
+    const select = form.querySelector('[data-subcategory-field] select');
+    let any = false;
+    select.querySelectorAll('option[data-category]').forEach(option => {
+      const match = option.dataset.category === category;
+      option.hidden = option.disabled = !match;
+      if (match) any = true;
+      else if (option.selected) select.value = '';
+    });
+    form.querySelector('[data-subcategory-field]').style.display = any ? '' : 'none';
+  }
+
   function itemPage(initialTab) {
     return {
-      tab: ['details', 'sizes', 'pictures'].includes(location.hash.slice(1)) ? location.hash.slice(1) : initialTab,
+      tab: ['details', 'sizes', 'menus', 'pictures'].includes(location.hash.slice(1)) ? location.hash.slice(1) : initialTab,
       saving: false,
       picCount: {{ pictures|length }},
+      placementCount: {{ placement_rows|length }},
+      placementsDirty: false,
       // Picture picker
       pickerOpen: false, pickerQ: '', pickerCat: '{{ picker_category|escapejs }}',
       pickerNext: null, pickerLoading: false, selected: [], adding: false,
@@ -184,11 +190,28 @@
         try {
           this.showPictures(await this.post(form.action, new FormData(form, event.submitter)));
         } catch (e) {
-          // Fall back to a normal post (page reload); form.submit() leaves out the clicked button.
-          const button = event.submitter;
-          if (button?.name) form.append(Object.assign(document.createElement('input'),
-            { type: 'hidden', name: button.name, value: button.value }));
-          form.submit();
+          this.plainSubmit(form, event.submitter);
+        }
+      },
+      // Fall back to a normal post (page reload); form.submit() leaves out the clicked button.
+      plainSubmit(form, button) {
+        if (button?.name) form.append(Object.assign(document.createElement('input'),
+          { type: 'hidden', name: button.name, value: button.value }));
+        this.saving = true;
+        this.placementsDirty = false;
+        form.submit();
+      },
+      // On menus: same pattern as the pictures. Rows with errors stay unsaved.
+      async placementAction(event) {
+        const form = event.target;
+        try {
+          const html = await this.post(form.action, new FormData(form, event.submitter));
+          const wrap = document.getElementById('placements-wrap');
+          wrap.innerHTML = html;
+          this.placementCount = Number(wrap.querySelector('#placements-body').dataset.count);
+          this.placementsDirty = wrap.querySelector('.sp-field-error') !== null;
+        } catch (e) {
+          this.plainSubmit(form, event.submitter);
         }
       },
       openPicker() {
@@ -245,7 +268,7 @@
         const initial = snapshot();
         const failedSave = {{ form.errors|yesno:'true,false' }} || {{ variations.total_error_count|default:0 }} + {{ addons.total_error_count|default:0 }} > 0;
         window.addEventListener('beforeunload', (event) => {
-          if (!this.saving && (failedSave || snapshot() !== initial)) {
+          if (this.placementsDirty || (!this.saving && (failedSave || snapshot() !== initial))) {
             event.preventDefault();
             event.returnValue = '';
           }

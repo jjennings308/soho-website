@@ -1,4 +1,5 @@
 from django import forms
+from django.db.models import Max, Q
 from django_ckeditor_5.widgets import CKEditor5Widget
 
 from apps.core.models import SitePopup, SiteSettings
@@ -6,7 +7,9 @@ from apps.core.models import ColorScheme
 from apps.events.models import EventDay
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter
-from apps.menu.models import MenuItem, MenuItemAddon, MenuItemVariation
+from apps.menu.models import (
+    MenuCategory, MenuItem, MenuItemAddon, MenuItemCategoryAssignment, MenuItemVariation, MenuSubCategory,
+)
 
 
 class EventForm(forms.ModelForm):
@@ -122,6 +125,75 @@ VariationFormSet = forms.inlineformset_factory(
     MenuItem, MenuItemVariation, form=VariationForm, extra=0, can_delete=True)
 AddonFormSet = forms.inlineformset_factory(
     MenuItem, MenuItemAddon, form=AddonForm, extra=0, can_delete=True)
+
+
+class PlacementForm(forms.ModelForm):
+    """One saved placement on the item page's On menus tab (the category is fixed)."""
+
+    class Meta:
+        model = MenuItemCategoryAssignment
+        fields = ['subcategory', 'order', 'override_price', 'note', 'is_active']
+        labels = {'order': 'Position', 'override_price': 'Special price', 'is_active': 'Shown'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['order'].required = False
+        self.fields['subcategory'].empty_label = 'None'
+        subcategories = MenuSubCategory.objects.filter(
+            Q(is_active=True) | Q(pk=self.instance.subcategory_id))
+        if self.instance.category_id:
+            subcategories = subcategories.filter(category_id=self.instance.category_id)
+        self.fields['subcategory'].queryset = subcategories.select_related('category').order_by('order', 'name')
+        for name, field in self.fields.items():
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.setdefault('class', 'sp-select')
+            elif not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault('class', 'sp-input')
+
+    def clean(self):
+        cleaned = super().clean()
+        category = cleaned.get('category') or (self.instance.category if self.instance.category_id else None)
+        subcategory = cleaned.get('subcategory')
+        if subcategory and category and subcategory.category_id != category.pk:
+            self.add_error('subcategory', f'That subcategory isn\'t part of {category.name}.')
+        # Blank position: keep it, or go to the end of the category.
+        if cleaned.get('order') is None and 'order' not in self.errors:
+            if self.instance.pk:
+                cleaned['order'] = self.instance.order
+            elif category:
+                last = category.item_assignments.aggregate(last=Max('order'))['last']
+                cleaned['order'] = (last or 0) + 1
+        return cleaned
+
+
+class _CategoryChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, category):
+        menus = sorted(a.menu.title for a in category.menu_assignments.all())
+        return f"{category.name} — {', '.join(menus) if menus else 'not on a menu'}"
+
+
+class PlacementAddForm(PlacementForm):
+    """Put the item in another category: only categories it isn't already in are offered."""
+
+    category = _CategoryChoiceField(
+        queryset=MenuCategory.objects.none(),
+        error_messages={'invalid_choice': "Choose a category this item isn't already in."},
+    )
+    field_order = ['category', 'subcategory', 'order', 'override_price', 'note', 'is_active']
+
+    class Meta(PlacementForm.Meta):
+        fields = ['category', 'subcategory', 'order', 'override_price', 'note', 'is_active']
+
+    def __init__(self, *args, item, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instance.menu_item = item
+        self.fields['category'].widget.attrs.setdefault('class', 'sp-select')
+        self.fields['category'].queryset = (
+            MenuCategory.objects.filter(is_active=True)
+            .exclude(item_assignments__menu_item=item)
+            .prefetch_related('menu_assignments__menu')
+            .order_by('name')
+        )
 
 
 class NewsletterForm(forms.ModelForm):

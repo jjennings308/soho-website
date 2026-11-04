@@ -1,0 +1,40 @@
+{# Fields of a PlacementForm. adding: the subcategory list covers all categories and is narrowed by filterSubcategories(). #}
+{% for err in form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.5rem;">{{ err }}</div>{% endfor %}
+<div class="ip-option-grid">
+  {% if adding %}
+  <div class="sp-field" data-subcategory-field>
+    <label class="sp-label" for="{{ form.subcategory.id_for_label }}">Subcategory</label>
+    <select name="{{ form.subcategory.html_name }}" id="{{ form.subcategory.id_for_label }}" class="sp-select">
+      <option value="">None</option>
+      {% for sub in form.fields.subcategory.queryset %}
+        <option value="{{ sub.pk }}" data-category="{{ sub.category_id }}"{% if form.subcategory.value|stringformat:"s" == sub.pk|stringformat:"s" %} selected{% endif %}>{{ sub.name }}</option>
+      {% endfor %}
+    </select>
+    {% for err in form.subcategory.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+  </div>
+  {% elif form.fields.subcategory.queryset.exists %}
+  <div class="sp-field">
+    <label class="sp-label" for="{{ form.subcategory.id_for_label }}">Subcategory</label>
+    {{ form.subcategory }}
+    {% for err in form.subcategory.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+  </div>
+  {% endif %}
+  <div class="sp-field">
+    <label class="sp-label" for="{{ form.order.id_for_label }}">Position</label>
+    {{ form.order }}
+    {% if adding %}<div class="ip-help">Lower comes first. Blank goes to the end.</div>{% endif %}
+    {% for err in form.order.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+  </div>
+  <div class="sp-field">
+    <label class="sp-label" for="{{ form.override_price.id_for_label }}">Special price</label>
+    {{ form.override_price }}
+    {% if adding %}<div class="ip-help">In this category only. Blank uses the normal price.</div>{% endif %}
+    {% for err in form.override_price.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+  </div>
+  <div class="sp-field ip-wide">
+    <label class="sp-label" for="{{ form.note.id_for_label }}">Note</label>
+    {{ form.note }}
+    {% for err in form.note.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+  </div>
+</div>
+<div class="ip-checks"><label class="ip-check">{{ form.is_active }} Shown</label></div>

@@ -1,0 +1,64 @@
+{# On menus tab of the item page; also the response to every placement action (swapped in by itemPage()). #}
+<div id="placements-body" data-count="{{ placement_rows|length }}">
+  {% if placement_notice %}<p class="ip-notice">{{ placement_notice }}</p>{% endif %}
+  <p class="ip-help" style="margin-bottom:0.9rem;">An item goes into a <strong>category</strong>; every menu showing that category then shows the item.</p>
+
+  {% for row in placement_rows %}
+  <div class="ip-option" x-data="{ confirming: false }">
+    <div class="ip-place-head">
+      <strong>{{ row.placement.category.name }}</strong>
+      {% if row.menus %}<span class="ip-meta"> — on {{ row.menus|join:", " }}</span>{% endif %}
+      {% if not row.placement.is_active %} <span class="sp-pill sp-pill--gray">Hidden here</span>{% endif %}
+    </div>
+    {% if not row.menus %}<p class="ip-warn">Customers won't see this: the category isn't on a menu.</p>
+    {% elif not row.placement.category.is_active %}<p class="ip-warn">Customers won't see this: the category is switched off.</p>{% endif %}
+
+    {% if can_edit %}
+    <form method="post" action="{% url 'staff:menu_item_placements' item.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="placement" value="{{ row.placement.pk }}">
+      {% include "staff/menu/_placement_fields.html" with form=row.form %}
+      <div class="ip-checks" x-show="!confirming">
+        <button type="submit" name="action" value="save" class="sp-btn sp-btn--outline sp-btn--sm">Save</button>
+        <button type="button" class="ip-link-btn" @click="confirming = true">Remove</button>
+      </div>
+      <div class="ip-checks" x-show="confirming" x-cloak>
+        Remove?
+        <button type="submit" name="action" value="remove" class="ip-mini ip-mini--danger" formnovalidate>Yes</button>
+        <button type="button" class="ip-mini" @click="confirming = false">No</button>
+      </div>
+    </form>
+    {% else %}
+    <p class="ip-meta" style="margin-bottom:0.75rem;">
+      {% if row.placement.subcategory %}{{ row.placement.subcategory.name }} · {% endif %}Position {{ row.placement.order }}{% if row.placement.override_price is not None %} · Special price ${{ row.placement.override_price }}{% endif %}{% if row.placement.note %} · {{ row.placement.note }}{% endif %}
+    </p>
+    {% endif %}
+  </div>
+  {% empty %}
+    <p class="ip-meta" style="margin-bottom:0.9rem;">This item isn't in any category yet, so customers don't see it.</p>
+  {% endfor %}
+
+  {% if can_edit %}
+    {% if add_form.fields.category.queryset %}
+    <details class="ip-place-add" {% if add_form.is_bound or not placement_rows %}open{% endif %}>
+      <summary class="sp-btn sp-btn--primary sp-btn--sm">+ Add to a category</summary>
+      <form method="post" action="{% url 'staff:menu_item_placements' item.pk %}" class="ip-option" style="margin-top:0.75rem;"
+            x-data x-init="filterSubcategories($el)" @change="filterSubcategories($el)">
+        {% csrf_token %}
+        {% for err in add_form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.5rem;">{{ err }}</div>{% endfor %}
+        <div class="sp-field">
+          <label class="sp-label" for="{{ add_form.category.id_for_label }}">Category</label>
+          {{ add_form.category }}
+          {% for err in add_form.category.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+        </div>
+        {% include "staff/menu/_placement_fields.html" with form=add_form adding=True %}
+        <div class="ip-checks">
+          <button type="submit" name="action" value="add" class="sp-btn sp-btn--primary sp-btn--sm">Add</button>
+        </div>
+      </form>
+    </details>
+    {% else %}
+    <p class="ip-meta">This item is already in every active category.</p>
+    {% endif %}
+  {% endif %}
+</div>

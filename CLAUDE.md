@@ -437,7 +437,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
 | `/staff/media/` | Media library — thumbnail grid; publish/hide toggle; upload; import from disk; edit (name, category, alt text); page-retention via `?next=` |
 | `/staff/menu/items/` | Menu item list with filters (name, availability, flags); name + Edit (managers) / View (Tier 2) per row open the item page, with `?next=` back to the filtered list; **+ Add Item** (managers) opens `/staff/menu/items/add/` |
-| `/staff/menu/items/<pk>/` | Item page — Details and Sizes & add-ons tabs (edit for managers, read-only for Tier 2; one Save), "Appears on" list, Pictures tab (add via thumbnail picker, make main, reorder, remove — saved immediately). See *Menu item editing in the staff portal* |
+| `/staff/menu/items/<pk>/` | Item page — Details and Sizes & add-ons tabs (edit for managers, read-only for Tier 2; one Save), On menus tab (place in categories — saved immediately), Pictures tab (add via thumbnail picker, make main, reorder, remove — saved immediately). See *Menu item editing in the staff portal* |
 | `/staff/menu/items/<pk>/images/` | Old images page — now a redirect to the item page's Pictures tab |
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
 | `/staff/popups/` | List, add, edit, delete site popups |
@@ -2030,7 +2030,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 
 **Candidate features for Phase 3 (not yet specced — do not build):**
 - Weekly specials editor (side-by-side item library + current specials)
-- Full menu management in portal (item editing and adding items are specced separately — see *Menu item editing in the staff portal*; placements and menus remain unspecced)
+- Full menu management in portal (item editing, adding items and placing items are specced separately — see *Menu item editing in the staff portal*; creating menus and categories remains unspecced)
 - ContentBlock / page content editor
 - Member photo moderation queue
 - Booking/event inquiry management (links to `apps.bookings`)
@@ -2063,9 +2063,8 @@ portal phasing* ("no menu editing in the portal before Phase 3"), decided by Jam
 
 - **Scope now:** edit existing items' details + sizes (variations) + add-ons + pictures.
 - **Adding items** — requested by James 2026-11-03, built (see *Adding an item*).
-- **Not now, keep the design open for later:** editing menu placements (which menus/categories, order,
-  special price), deleting items. Build the page so these can be added as more sections later (see
-  *Future*). Until then: placements come from the CSV import or Django admin.
+- **Placing items in categories** — approved by James 2026-11-03, built (see *Placements section*).
+- **Not now, keep the design open for later:** deleting items (see *Future*).
 - **One item page with sections:** Details · Sizes & add-ons · Pictures. Tabs on desktop, stacked on
   phone. Details and Sizes & add-ons share one **Save**. Pictures save on their own (no full-page
   submit), so adding photos never loses unsaved typing in the details form.
@@ -2259,11 +2258,10 @@ fail if a portal page has no tip.
   the partials `_item_details_fields.html` and `_item_styles.html` shared with the item page.
 - The slug comes from the name (`_unique_item_slug`: `-2`, `-3` … if taken). Saving redirects to the item
   page for sizes and pictures.
-- A new item has no placement, so customers don't see it until the CSV `placements` / Whole menu sheet (or
-  Django admin) places it; the success message and help say so. Placements stay unspecced in the portal.
+- A new item has no placement, so saving opens it on the On menus tab to place it; the message says so.
 - Tests: `MenuItemAddTests` in `apps/staff/tests/test_menu_item_edit.py`.
 
-### Placements section — PLANNED (spec 2026-11-03, awaiting James's approval)
+### Placements section (On menus tab) — BUILT (spec 2026-11-03, approved by James)
 
 Lets managers put an item on a menu from its page, so a new item can go live without a spreadsheet.
 Requested by James 2026-11-03. CSV `placements` and the Whole menu sheet stay as they are.
@@ -2301,6 +2299,11 @@ same list read-only and gets 403 on every POST.
 add (end position, blank and given); category already placed refused; subcategory from another category
 refused; bad price keeps the typed values; edit; remove keeps item and category; menus-reached text;
 no-menu warning; plain-post redirect; `MenuItem` flags and `available_game_day` untouched.
+
+**Built as:** `PlacementForm` / `PlacementAddForm` (`apps/staff/forms.py`), `_placements_context()` and
+`MenuItemPlacementsView`; partials `_item_placements.html`, `_placement_fields.html`. Tab id `menus`. Each row is
+its own `<form>` with a prefix (`p<pk>`, `new`). Typed but unsaved changes also trip the leave-page warning.
+Like E2/E3, the browser-side code hasn't been run in a real browser here; `PlacementTests` covers the views.
 
 **Not in this section:** creating categories or menus, reordering a whole category, the menus' own category
 order, bulk placement.

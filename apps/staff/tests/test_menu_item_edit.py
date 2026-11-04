@@ -9,7 +9,7 @@ from django.urls import reverse
 from apps.menu import importers as im
 from apps.menu.models import (
     Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemAddon, MenuItemCategoryAssignment,
-    MenuItemVariation,
+    MenuItemVariation, MenuSubCategory,
 )
 from apps.staff.permissions import MANAGER_GROUP
 
@@ -120,26 +120,6 @@ class MenuItemPageTests(TestCase):
         self.client.force_login(self.manager)
         response = self.client.get(self.url, {'next': 'https://evil.example/'})
         self.assertNotContains(response, 'evil.example')
-
-    # ── Appears on ───────────────────────────────────────────────────────────
-
-    def test_appears_on_lists_menu_category_and_special_price(self):
-        burgers = MenuCategory.objects.create(name='Burgers', slug='burgers')
-        happy = MenuCategory.objects.create(name='Happy Hour Food', slug='happy-hour-food')
-        food = Menu.objects.create(title='Food Menu', slug='food-menu', menu_type='food')
-        MenuCategoryAssignment.objects.create(menu=food, category=burgers)
-        MenuItemCategoryAssignment.objects.create(menu_item=self.item, category=burgers)
-        MenuItemCategoryAssignment.objects.create(menu_item=self.item, category=happy,
-                                                  override_price=Decimal('9.00'))
-        self.client.force_login(self.viewer)
-        response = self.client.get(self.url)
-        content = ' '.join(response.content.decode().split())
-        self.assertIn('Food Menu &rsaquo; Burgers', content)
-        self.assertIn('Not on any menu</em> &rsaquo; Happy Hour Food — $9.00', content)
-
-    def test_item_with_no_placements_says_so(self):
-        self.client.force_login(self.viewer)
-        self.assertContains(self.client.get(self.url), "isn't in any category yet")
 
 
 def rows(prefix, rows, initial=0):
@@ -385,7 +365,7 @@ class MenuItemAddTests(TestCase):
         item = MenuItem.objects.get()
         self.assertEqual((item.name, item.slug, item.price), ('Fish Tacos', 'fish-tacos', Decimal('13.00')))
         self.assertTrue(item.is_available)
-        self.assertRedirects(response, reverse('staff:menu_item', args=[item.pk]))
+        self.assertRedirects(response, reverse('staff:menu_item', args=[item.pk]) + '#menus')
         self.assertContains(response, 'Added &quot;Fish Tacos&quot;')
         self.assertContains(response, "isn't in any category yet")
 
@@ -413,3 +393,144 @@ class MenuItemAddTests(TestCase):
 
     def test_offsite_next_is_ignored(self):
         self.assertNotContains(self.client.get(self.url, {'next': 'https://evil.example/'}), 'evil.example')
+
+
+class PlacementTests(TestCase):
+    def setUp(self):
+        self.item = MenuItem.objects.create(name='Classic Burger', slug='classic-burger', price=Decimal('14.50'))
+        self.burgers = MenuCategory.objects.create(name='Burgers', slug='burgers')
+        self.beer = MenuCategory.objects.create(name='Beer', slug='beer')
+        self.tap = MenuSubCategory.objects.create(category=self.beer, name='On Tap', slug='beer-on-tap')
+        self.food = Menu.objects.create(title='Food Menu', slug='food-menu', menu_type='food')
+        MenuCategoryAssignment.objects.create(menu=self.food, category=self.burgers)
+        self.page = reverse('staff:menu_item', args=[self.item.pk])
+        self.url = reverse('staff:menu_item_placements', args=[self.item.pk])
+        manager = User.objects.create_user('mgr', password='x', is_staff=True)
+        manager.groups.add(Group.objects.get(name=MANAGER_GROUP))
+        self.client.force_login(manager)
+
+    def fetch(self, **data):
+        return self.client.post(self.url, data, HTTP_X_REQUESTED_WITH='fetch')
+
+    def add(self, category, **fields):
+        data = {'action': 'add', 'new-category': category.pk, 'new-is_active': 'on'}
+        data.update({f'new-{k}': v for k, v in fields.items()})
+        return self.fetch(**data)
+
+    def place(self, category=None, **fields):
+        return MenuItemCategoryAssignment.objects.create(menu_item=self.item, category=category or self.burgers, **fields)
+
+    def save_row(self, placement, **fields):
+        data = {'action': 'save', 'placement': placement.pk}
+        data.update({f'p{placement.pk}-{k}': v for k, v in fields.items()})
+        return self.fetch(**data)
+
+    def test_read_only_staff_see_the_list_and_cannot_change_it(self):
+        placement = self.place(override_price=Decimal('9.00'), note='Half price')
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
+        response = self.client.get(self.page)
+        self.assertContains(response, 'Burgers')
+        self.assertContains(response, 'Special price $9.00')
+        self.assertNotContains(response, '+ Add to a category')
+        self.assertNotContains(response, f'name="p{placement.pk}-note"')
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        for action in ('add', 'save', 'remove'):
+            self.assertEqual(self.fetch(action=action, placement=placement.pk).status_code, 403)
+        self.assertEqual(MenuItemCategoryAssignment.objects.count(), 1)
+
+    def test_add_with_blank_position_goes_to_the_end(self):
+        other = MenuItem.objects.create(name='Veggie', slug='veggie')
+        MenuItemCategoryAssignment.objects.create(menu_item=other, category=self.burgers, order=7)
+        response = self.add(self.burgers, order='')
+        self.assertTemplateUsed(response, 'staff/menu/_item_placements.html')
+        self.assertContains(response, 'Added to Burgers.')
+        placement = MenuItemCategoryAssignment.objects.get(menu_item=self.item)
+        self.assertEqual(placement.order, 8)
+        self.assertTrue(placement.is_active)
+        self.assertEqual(MenuItemCategoryAssignment.objects.get(menu_item=other).order, 7)
+
+    def test_add_to_an_empty_category_starts_at_one(self):
+        self.add(self.burgers)
+        self.assertEqual(MenuItemCategoryAssignment.objects.get().order, 1)
+
+    def test_add_with_all_fields(self):
+        self.add(self.beer, subcategory=self.tap.pk, order='3', override_price='5.00', note='Happy hour')
+        placement = MenuItemCategoryAssignment.objects.get()
+        self.assertEqual((placement.category, placement.subcategory, placement.order, placement.override_price,
+                          placement.note), (self.beer, self.tap, 3, Decimal('5.00'), 'Happy hour'))
+
+    def test_category_already_placed_is_refused_and_not_offered(self):
+        self.place()
+        response = self.add(self.burgers)
+        self.assertContains(response, "Choose a category this item isn&#x27;t already in.")
+        self.assertEqual(MenuItemCategoryAssignment.objects.count(), 1)
+        self.assertNotContains(self.client.get(self.page), f'<option value="{self.burgers.pk}"')
+
+    def test_subcategory_from_another_category_is_refused(self):
+        response = self.add(self.burgers, subcategory=self.tap.pk)
+        self.assertContains(response, 'part of Burgers')
+        self.assertFalse(MenuItemCategoryAssignment.objects.exists())
+
+    def test_bad_price_keeps_the_typed_values(self):
+        response = self.add(self.burgers, override_price='lots', note='Typed note')
+        self.assertContains(response, 'Enter a number')
+        self.assertContains(response, 'Typed note')
+        self.assertFalse(MenuItemCategoryAssignment.objects.exists())
+
+    def test_edit_a_row(self):
+        placement = self.place(order=4, note='Old')
+        response = self.save_row(placement, order='', override_price='9.50', note='New')
+        self.assertContains(response, 'Saved Burgers.')
+        placement.refresh_from_db()
+        self.assertEqual((placement.order, placement.override_price, placement.note, placement.is_active),
+                         (4, Decimal('9.50'), 'New', False))          # blank keeps; Shown left unticked
+
+    def test_saved_row_only_offers_its_own_subcategories(self):
+        burgers_row = self.place()
+        beer_row = self.place(self.beer)
+        html = self.client.get(self.page).content.decode()
+        self.assertNotIn(f'name="p{burgers_row.pk}-subcategory"', html)
+        self.assertIn(f'name="p{beer_row.pk}-subcategory"', html)
+        wrong = MenuSubCategory.objects.create(category=self.burgers, name='Smash', slug='burgers-smash')
+        response = self.save_row(beer_row, subcategory=wrong.pk, note='Typed', is_active='on')
+        self.assertContains(response, 'Select a valid choice')
+        beer_row.refresh_from_db()
+        self.assertEqual((beer_row.subcategory, beer_row.note), (None, ''))
+
+    def test_remove_keeps_the_item_and_the_category(self):
+        placement = self.place()
+        response = self.fetch(action='remove', placement=placement.pk)
+        self.assertContains(response, 'Removed from Burgers.')
+        self.assertFalse(MenuItemCategoryAssignment.objects.exists())
+        self.assertTrue(MenuItem.objects.filter(pk=self.item.pk).exists())
+        self.assertTrue(MenuCategory.objects.filter(pk=self.burgers.pk).exists())
+
+    def test_row_says_which_menus_it_reaches_or_warns(self):
+        self.place()
+        self.place(self.beer)
+        content = ' '.join(self.client.get(self.page).content.decode().split())
+        self.assertIn('on Food Menu', content)
+        self.assertIn("Customers won't see this: the category isn't on a menu.", content)
+
+    def test_category_choices_name_their_menus(self):
+        response = self.client.get(self.page)
+        self.assertContains(response, 'Burgers — Food Menu')
+        self.assertContains(response, 'Beer — not on a menu')
+
+    def test_placement_of_another_item_is_404_and_unknown_action_400(self):
+        other = MenuItem.objects.create(name='Fries', slug='fries')
+        foreign = MenuItemCategoryAssignment.objects.create(menu_item=other, category=self.burgers)
+        self.assertEqual(self.fetch(action='remove', placement=foreign.pk).status_code, 404)
+        self.assertEqual(self.fetch(action='remove', placement='abc').status_code, 404)
+        self.assertEqual(self.fetch(action='explode').status_code, 400)
+
+    def test_plain_post_redirects_to_the_tab(self):
+        response = self.client.post(self.url, {'action': 'add', 'new-category': self.burgers.pk})
+        self.assertRedirects(response, self.page + '#menus', fetch_redirect_response=False)
+
+    def test_placed_item_shows_on_the_public_menu(self):
+        self.food.role = 'default_food'
+        self.food.save()
+        self.assertNotContains(self.client.get(reverse('menu:full')), 'Classic Burger')
+        self.add(self.burgers)
+        self.assertContains(self.client.get(reverse('menu:full')), 'Classic Burger')

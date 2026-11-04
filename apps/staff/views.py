@@ -28,7 +28,7 @@ from apps.menu.models import Menu
 
 from .forms import (
     AddonFormSet, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuItemForm,
-    NewsletterForm, PopupForm, SiteSettingsForm, VariationFormSet,
+    NewsletterForm, PlacementAddForm, PlacementForm, PopupForm, SiteSettingsForm, VariationFormSet,
 )
 from .help import TOPICS
 from .permissions import MANAGER, STAFF, SUPERUSER, has_access, is_manager
@@ -926,10 +926,10 @@ class MenuItemListView(StaffRequiredMixin, View):
         })
 
 
-def _appears_on(item):
+def _placements_context(item, can_edit, row_forms=None, add_form=None, notice=''):
     """
-    Read-only "Appears on" lines for the item page: one per menu showing each of
-    the item's placements, e.g. Food Menu › Burgers — $14.50.
+    Context for staff/menu/_item_placements.html: one row per category the item
+    is in, with the menus that category reaches. row_forms: {pk: bound form}.
     """
     from apps.menu.models import MenuItemCategoryAssignment
 
@@ -940,13 +940,21 @@ def _appears_on(item):
         .prefetch_related('category__menu_assignments__menu')
         .order_by('category__name')
     )
-    lines = []
+    rows = []
     for placement in placements:
-        menus = [a.menu for a in placement.category.menu_assignments.all()]
-        for menu in sorted(menus, key=lambda m: m.title.lower()) or [None]:
-            lines.append({'menu': menu, 'placement': placement})
-    lines.sort(key=lambda l: (l['menu'] is None, l['menu'].title.lower() if l['menu'] else ''))
-    return lines
+        form = None
+        if can_edit:
+            form = (row_forms or {}).get(placement.pk) or PlacementForm(
+                instance=placement, prefix=f'p{placement.pk}')
+        rows.append({
+            'placement': placement,
+            'form': form,
+            'menus': sorted(a.menu.title for a in placement.category.menu_assignments.all()),
+        })
+    if can_edit and add_form is None:
+        add_form = PlacementAddForm(item=item, prefix='new')
+    return {'item': item, 'can_edit': can_edit, 'placement_rows': rows, 'add_form': add_form,
+            'placement_notice': notice}
 
 
 def _item_url(item, back_url):
@@ -992,7 +1000,7 @@ class MenuItemDetailView(StaffRequiredMixin, View):
             'back_url': back_url,
             'can_edit': can_edit,
             'initial_tab': 'sizes' if options_invalid else 'details',
-            'appears_on': _appears_on(item),
+            **_placements_context(item, can_edit),
             'pictures': _item_pictures(item),
             'picture_categories': MediaCategory.objects.all() if can_edit else [],
             'picker_category': getattr(_picker_default_category(item), 'slug', '') if can_edit else '',
@@ -1048,10 +1056,62 @@ class MenuItemAddView(StaffRequiredMixin, View):
         item.save()
         messages.success(
             request,
-            f'Added "{item.name}". Customers won\'t see it until it is placed in a category on a menu '
-            '(Tools → Import / Export).',
+            f'Added "{item.name}". Customers won\'t see it until you add it to a category below.',
         )
-        return redirect(_item_url(item, back_url))
+        return redirect(_item_url(item, back_url) + '#menus')
+
+
+class MenuItemPlacementsView(StaffRequiredMixin, View):
+    """
+    On menus tab. GET: the partial. POST action=add|save|remove saves straight
+    away; a fetch() request gets the re-rendered partial back, a plain form post
+    is redirected to the item page. Remove deletes the placement only.
+    """
+    staff_access = MANAGER
+
+    def _item(self, pk):
+        from apps.menu.models import MenuItem
+        return get_object_or_404(MenuItem, pk=pk)
+
+    def _partial(self, request, item, **kwargs):
+        return render(request, 'staff/menu/_item_placements.html', _placements_context(item, True, **kwargs))
+
+    def _respond(self, request, item, notice='', invalid=False, **kwargs):
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return self._partial(request, item, notice=notice, **kwargs)
+        if invalid:
+            messages.error(request, 'Nothing was saved — please check that entry and try again.')
+        elif notice:
+            messages.success(request, notice)
+        return redirect(reverse('staff:menu_item', args=[item.pk]) + '#menus')
+
+    def get(self, request, pk):
+        return self._partial(request, self._item(pk))
+
+    def post(self, request, pk):
+        from apps.menu.models import MenuItemCategoryAssignment
+        item = self._item(pk)
+        action = request.POST.get('action')
+        if action == 'add':
+            form = PlacementAddForm(request.POST, item=item, prefix='new')
+            if not form.is_valid():
+                return self._respond(request, item, invalid=True, add_form=form)
+            placement = form.save()
+            return self._respond(request, item, f'Added to {placement.category.name}.')
+        if action not in ('save', 'remove'):
+            return HttpResponse('Unknown action', status=400)
+        placement_id = request.POST.get('placement', '')
+        placement = get_object_or_404(
+            MenuItemCategoryAssignment, pk=placement_id if placement_id.isdigit() else 0, menu_item=item)
+        if action == 'remove':
+            name = placement.category.name
+            placement.delete()
+            return self._respond(request, item, f'Removed from {name}.')
+        form = PlacementForm(request.POST, instance=placement, prefix=f'p{placement.pk}')
+        if not form.is_valid():
+            return self._respond(request, item, invalid=True, row_forms={placement.pk: form})
+        form.save()
+        return self._respond(request, item, f'Saved {placement.category.name}.')
 
 
 class MenuItemImagesView(StaffRequiredMixin, View):
