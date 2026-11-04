@@ -2030,7 +2030,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 
 **Candidate features for Phase 3 (not yet specced — do not build):**
 - Weekly specials editor (side-by-side item library + current specials)
-- Full menu management in portal (item editing, adding items and placing items are specced separately — see *Menu item editing in the staff portal*; creating menus and categories remains unspecced)
+- Full menu management in portal (item editing, adding items and placing items — see *Menu item editing in the staff portal*; menus and categories — see *Menu builder in the staff portal*)
 - ContentBlock / page content editor
 - Member photo moderation queue
 - Booking/event inquiry management (links to `apps.bookings`)
@@ -2329,6 +2329,89 @@ order, bulk placement.
 - Show edit controls or accept edit POSTs from Tier 2 staff.
 - Touch `available_game_day`, recurrence fields, or the menu-mode logic.
 - Add inline colour styles beyond the portal's existing brand-variable pattern.
+
+## Menu builder in the staff portal — B1 BUILT, B2–B3 PLANNED (spec 2026-11-03, approved by James)
+
+Requested by James 2026-11-03: build menus in the portal; adding a category to a menu brings its list of
+items. An approved exception to *Staff portal phasing*, like item editing. Build in the phases below, and
+run the release checks and ask before each commit.
+
+### How it fits the data
+
+- A menu lists categories (`MenuCategoryAssignment`); items belong to categories
+  (`MenuItemCategoryAssignment`). So adding a category already brings every item in it, and items added to
+  that category later appear too. The builder shows that list; it doesn't copy anything.
+- **Items stay shared, never copied or picked per menu** (James, 2026-11-03).
+- **Categories are shared.** 16 of the 22 categories are on 2+ menus. Changing a category's items changes every
+  menu showing it, so the page must name those menus. Category *order* is per menu and affects only this one.
+
+### Pages (`apps/staff/`, nav link **Menus** in Operations, above Menu Items)
+
+| URL | Name | Notes |
+|-----|------|-------|
+| `/staff/menu/menus/` | `staff:menus` | List: title, type, role, active, homepage slot, category count. **+ Add Menu** for managers |
+| `/staff/menu/menus/add/` | `staff:menu_add` | Settings form; saving opens the menu page |
+| `/staff/menu/menus/<pk>/` | `staff:menu_detail` | Settings and Categories tabs (stacked on phones) |
+| `/staff/menu/menus/<pk>/categories/` | `staff:menu_categories` | Partial + actions, fetch pattern as Pictures |
+
+Access: list and page `STAFF` (read-only for Tier 2); every change and the add page `MANAGER`.
+
+### Settings tab
+
+- title, display_name, description, menu_type, is_active, active_from, active_until, days_of_week (tick boxes).
+  Slug from the title, never changed (CSV ID).
+- `valid_from` / `valid_until` only for weekly specials. `color_scheme` and `homepage_slot` only for promos
+  (*Menu color rules*: only promos may use custom colors).
+- `is_default` (legacy) not shown. The legacy `soho-menu` has `menu_type='combined'`, not in the choices: keep
+  it valid while unchanged, don't offer it for new menus.
+- **Live-site guard:** managers may set the role (James). Taking a role or homepage slot from another menu, or
+  leaving a role empty, warns by name and needs a confirm tick (`confirm_live`) before saving; only one menu may
+  hold a homepage slot (`MenuForm.save` empties the old holder's; CSV and admin aren't changed).
+- **What settings really do**, stated in the form's help texts: `get_active_menus` ignores `is_active`, dates and
+  days, so a role menu always shows. Homepage slots honour `is_active` only. Promotions and a menu's own page honour
+  `is_active` and dates. A menu's `days_of_week` is applied nowhere (happy-hour has Mon–Thu stored). Not changed by B1.
+
+### Categories tab
+
+- Categories in display order, each collapsible with its **items listed**: name (links to the item page), price,
+  special price, Shown; a count; and "Also on: Drinks Menu, Event Drinks".
+- **+ Add a category:** dropdown of categories not on this menu, grouped Food / Drinks, with item counts;
+  blank = the end of the list. The new section opens showing its items.
+- ↑ / ↓ reorder categories on this menu only (renumbers `display_order` 1..n).
+- **Remove from this menu** (inline Yes / No) deletes the `MenuCategoryAssignment` only. Category and items stay.
+- **+ New category** (name, display name, food/drinks), then added to this menu. Display name defaults to the
+  name, because blank hides the heading.
+- **Items in a category:** **+ Add items** opens a searchable multi-select of the library (like the picture
+  picker); items already there show Added. Item ↑ / ↓ renumber that category's positions 1..n, within a
+  subcategory. **Take out of category** deletes the placement only. All say "Changes every menu showing this
+  category" when it is on more than one.
+- Item details stay on the item page; **+ Add Item** there is unchanged.
+
+### Phases
+
+- **B1** — Menus list, add, Settings tab, nav link, help. Tests: tiers, slug, type-specific fields, legacy
+  `combined`, role and slot guards, promo-only colors.
+- **B2** — Categories tab: list with items, add, new category, reorder, remove.
+- **B3** — Items in a category: add via the picker, reorder, take out.
+
+### B1 implementation notes (2026-11-03)
+
+- `MenuForm` (`apps/staff/forms.py`, groups in `MENU_GROUPS`), `MenuListView`, `MenuAddView`, `MenuDetailView`,
+  templates `staff/menu/menu_list.html`, `menu_form.html`. Slug via `_unique_slug`. Sections for other types are
+  hidden by Alpine and also cleared in `clean()`. New menus must choose a type. A legacy type drops the
+  `menu_type` field from the form. B1 has no tabs: the page lists categories read-only until B2.
+- Tests: `apps/staff/tests/test_menu_builder.py`.
+
+### Not in scope
+
+Deleting menus or categories (switch them off instead), copying a menu or category, editing a category's
+other settings (background image, disclaimer, description), arranging subcategories.
+
+### What Claude Code must not do here
+
+- Copy items into a menu: placement stays on the category.
+- Delete an item, category or menu from these pages.
+- Give non-promo menus custom colors, or touch `available_game_day`.
 
 ## Menu CSV import / export (`apps/menu/importers.py`) — M1–M3 BUILT
 

@@ -227,6 +227,16 @@
     <li><strong>Promotions</strong> can have a <strong>color scheme</strong> and a <strong>homepage slot</strong> (left or right of the main banner). Food, drinks and specials menus always use the site's normal colors.</li>
     <li><strong>Weekly specials</strong> have <strong>valid from / until</strong> dates and appear only between them — the "This week's specials" link shows up by itself and disappears when the dates pass.</li>
   </ul>
+  <p class="help-note">Not every setting applies everywhere. <strong>Active</strong> and <strong>active from / until</strong> control promotions and a menu's own page, but a menu holding a role still shows while it holds that role, and a homepage slot follows <strong>Active</strong> only. A menu's <strong>days of the week</strong> are stored but not applied on the website yet.</p>
+  {% if staff_is_manager %}
+  <h3>Add or change a menu</h3>
+  <ol>
+    <li>Operations &rarr; <strong>Menus</strong> &rarr; <strong>+ Add Menu</strong>, or open a menu to change it.</li>
+    <li>Fill in the title and type. Color scheme and homepage slot appear for promotions; valid from / until for weekly specials.</li>
+    <li><strong>Save</strong>. If that would change the live site (taking a role or homepage slot from another menu, or leaving a role empty), the page says exactly what will happen and asks you to tick a box and save again.</li>
+  </ol>
+  <p>Menus aren't deleted here: switch one off with <strong>Active</strong> instead.</p>
+  {% endif %}
 
   <h3>6. Which menu customers see</h3>
   <ul>

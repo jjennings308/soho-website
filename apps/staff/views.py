@@ -8,6 +8,7 @@ from django.contrib.auth.views import LoginView, LogoutView
 from django.core.exceptions import PermissionDenied
 from django.core.management import call_command
 from django.db import transaction
+from django.db.models import Count
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -24,10 +25,10 @@ from apps.members.newsletter import send_newsletter
 from apps.events import importers as event_importers
 from apps.menu import importers as menu_importers
 from apps.menu import whole_menu
-from apps.menu.models import Menu
+from apps.menu.models import Menu, MenuItem
 
 from .forms import (
-    AddonFormSet, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuItemForm,
+    AddonFormSet, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuForm, MenuItemForm,
     NewsletterForm, PlacementAddForm, PlacementForm, PopupForm, SiteSettingsForm, VariationFormSet,
 )
 from .help import TOPICS
@@ -965,12 +966,11 @@ def _item_url(item, back_url):
     return url
 
 
-def _unique_item_slug(name):
-    """Slug from the name; -2, -3 … if taken (two items may share a name)."""
-    from apps.menu.models import MenuItem
-    base = slugify(name)[:190] or 'item'
+def _unique_slug(model, name, fallback):
+    """Slug from the name; -2, -3 … if taken (two records may share a name)."""
+    base = slugify(name)[:190] or fallback
     slug, n = base, 1
-    while MenuItem.objects.filter(slug=slug).exists():
+    while model.objects.filter(slug=slug).exists():
         n += 1
         slug = f'{base}-{n}'
     return slug
@@ -1033,6 +1033,60 @@ class MenuItemDetailView(StaffRequiredMixin, View):
         return self._render(request, item, form, back_url, variations, addons)
 
 
+class MenuListView(StaffRequiredMixin, View):
+    staff_access = STAFF
+
+    def get(self, request):
+        menus = Menu.objects.annotate(category_count=Count('menu_category_assignments')).order_by('menu_type', 'title')
+        return render(request, 'staff/menu/menu_list.html', {'menus': menus})
+
+
+class MenuAddView(StaffRequiredMixin, View):
+    """New menu: the Settings form. Saving opens its page."""
+    staff_access = MANAGER
+
+    def get(self, request):
+        return render(request, 'staff/menu/menu_form.html', {'form': MenuForm(), 'title': 'Add Menu', 'can_edit': True})
+
+    def post(self, request):
+        form = MenuForm(request.POST)
+        if not form.is_valid():
+            return render(request, 'staff/menu/menu_form.html', {'form': form, 'title': 'Add Menu', 'can_edit': True})
+        menu = form.save(commit=False)
+        menu.slug = _unique_slug(Menu, menu.title, 'menu')
+        menu.save()
+        form.save_m2m()
+        form.save()                     # empties the homepage slot's previous holder
+        messages.success(request, f'Added "{menu.title}".')
+        return redirect('staff:menu_detail', pk=menu.pk)
+
+
+class MenuDetailView(StaffRequiredMixin, View):
+    """One menu. GET is open to every staff tier (read-only for Tier 2); POST needs a manager."""
+    staff_access = STAFF
+
+    def _render(self, request, menu, form):
+        assignments = menu.menu_category_assignments.select_related('category').annotate(
+            item_count=Count('category__item_assignments')).order_by('display_order')
+        return render(request, 'staff/menu/menu_form.html', {
+            'form': form, 'menu': menu, 'title': menu.title,
+            'can_edit': is_manager(request.user), 'assignments': assignments,
+        })
+
+    def get(self, request, pk):
+        menu = get_object_or_404(Menu, pk=pk)
+        return self._render(request, menu, MenuForm(instance=menu, read_only=not is_manager(request.user)))
+
+    def post(self, request, pk):
+        menu = get_object_or_404(Menu, pk=pk)
+        form = MenuForm(request.POST, instance=menu)
+        if not form.is_valid():
+            return self._render(request, Menu.objects.get(pk=pk), form)
+        form.save()
+        messages.success(request, 'Saved.')
+        return redirect('staff:menu_detail', pk=menu.pk)
+
+
 class MenuItemAddView(StaffRequiredMixin, View):
     """New item: the Details form. Saving opens its item page for sizes and pictures."""
     staff_access = MANAGER
@@ -1052,7 +1106,7 @@ class MenuItemAddView(StaffRequiredMixin, View):
         if not form.is_valid():
             return self._render(request, form, back_url)
         item = form.save(commit=False)
-        item.slug = _unique_item_slug(item.name)
+        item.slug = _unique_slug(MenuItem, item.name, 'item')
         item.save()
         messages.success(
             request,

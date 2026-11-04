@@ -8,7 +8,7 @@ from apps.events.models import EventDay
 from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter
 from apps.menu.models import (
-    MenuCategory, MenuItem, MenuItemAddon, MenuItemCategoryAssignment, MenuItemVariation, MenuSubCategory,
+    Menu, MenuCategory, MenuItem, MenuItemAddon, MenuItemCategoryAssignment, MenuItemVariation, MenuSubCategory,
 )
 
 
@@ -194,6 +194,131 @@ class PlacementAddForm(PlacementForm):
             .prefetch_related('menu_assignments__menu')
             .order_by('name')
         )
+
+
+# (heading, field names, menu types it applies to or None for all) of the menu Settings form.
+MENU_GROUPS = [
+    ('Basics', ['title', 'display_name', 'description', 'menu_type'], None),
+    ('Where it shows', ['role', 'is_active', 'active_from', 'active_until', 'days_of_week'], None),
+    ('Weekly specials', ['valid_from', 'valid_until'], 'weekly_specials'),
+    ('Promotion', ['color_scheme', 'homepage_slot'], 'promo'),
+]
+
+
+class MenuForm(forms.ModelForm):
+    """
+    Settings of a menu. Slug and the legacy is_default are left out. Taking a live
+    role or homepage slot, or leaving a role empty, must be confirmed (confirm_live).
+    The help texts say what each setting really does on the public site.
+    """
+    days_of_week = forms.TypedMultipleChoiceField(
+        choices=Menu.DAYS_OF_WEEK, coerce=int, required=False,
+        widget=forms.CheckboxSelectMultiple, label='Days of the week',
+        help_text='Stored only: not applied on the website yet.',
+    )
+    confirm_live = forms.BooleanField(required=False, label='Yes, change the live site')
+
+    class Meta:
+        model = Menu
+        fields = [name for _, names, _types in MENU_GROUPS for name in names]
+        labels = {
+            'display_name': 'Display name', 'menu_type': 'Type', 'role': 'Live menu role',
+            'is_active': 'Active', 'active_from': 'Active from', 'active_until': 'Active until',
+            'valid_from': 'Valid from', 'valid_until': 'Valid until',
+            'color_scheme': 'Color scheme', 'homepage_slot': 'Homepage slot',
+        }
+        help_texts = {
+            'title': 'For staff.',
+            'display_name': 'What customers see. Blank uses the title.',
+            'role': 'Sets which menu customers get on the menu pages. Only one menu can hold each role.',
+            'is_active': "Off hides a promotion, its homepage slot and the menu's own page. "
+                         'A menu holding a live role still shows: change its role first.',
+            'active_from': "Applies to promotions and the menu's own page, not to a live role or homepage slot.",
+            'active_until': "Applies to promotions and the menu's own page, not to a live role or homepage slot.",
+            'valid_from': 'The menu shows as this week\'s specials from this day.',
+            'valid_until': 'Last day it shows.',
+            'color_scheme': 'Blank uses the default scheme.',
+            'homepage_slot': 'Only one menu can be in each slot. Shows while the menu is Active.',
+        }
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 2}),
+            'active_from': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+            'active_until': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+            'valid_from': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+            'valid_until': forms.DateInput(attrs={'type': 'date'}, format='%Y-%m-%d'),
+        }
+
+    def __init__(self, *args, read_only=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.needs_confirm = False
+        if self.instance.menu_type not in dict(Menu.MENU_TYPE_CHOICES):
+            del self.fields['menu_type']        # legacy type (soho-menu): keep it as it is
+        elif not self.instance.pk:
+            self.fields['menu_type'].choices = [('', 'Choose a type…')] + Menu.MENU_TYPE_CHOICES
+            self.initial['menu_type'] = ''
+        self.fields['color_scheme'].empty_label = 'Default scheme'
+        for name, field in self.fields.items():
+            widget = field.widget
+            if isinstance(widget, (forms.CheckboxInput, forms.CheckboxSelectMultiple)):
+                pass
+            elif isinstance(widget, forms.Select):
+                widget.attrs.setdefault('class', 'sp-select')
+            elif isinstance(widget, forms.Textarea):
+                widget.attrs.setdefault('class', 'sp-textarea')
+            else:
+                widget.attrs.setdefault('class', 'sp-input')
+            if read_only:
+                field.disabled = True
+
+    def clean(self):
+        cleaned = super().clean()
+        menu_type = cleaned.get('menu_type', self.instance.menu_type)
+        # Hidden sections don't apply to other types (only promos may have custom colors).
+        if menu_type != 'promo':
+            cleaned['color_scheme'], cleaned['homepage_slot'] = None, 'none'
+        if menu_type != 'weekly_specials':
+            cleaned['valid_from'], cleaned['valid_until'] = None, None
+        warnings = self._live_changes(cleaned)
+        if warnings and not cleaned.get('confirm_live'):
+            self.needs_confirm = True
+            for warning in warnings:
+                self.add_error(None, warning)
+        return cleaned
+
+    def _live_changes(self, cleaned):
+        menus = Menu.objects.exclude(pk=self.instance.pk)
+        roles = dict(Menu.ROLE_CHOICES)
+        role, old_role = cleaned.get('role'), self.instance.role if self.instance.pk else 'none'
+        slot, old_slot = cleaned.get('homepage_slot'), self.instance.homepage_slot if self.instance.pk else 'none'
+        warnings = []
+        if role and role != old_role:
+            holder = menus.filter(role=role).first() if role != 'none' else None
+            if holder:
+                warnings.append(f'"{holder.title}" is the {roles[role]} now. Saving replaces it, and customers '
+                                'see this menu straight away.')
+            if old_role != 'none':
+                warnings.append(f'This menu is the {roles[old_role]} now. Nothing will replace it, so customers '
+                                'see "coming soon" there.')
+        if slot and slot not in ('none', old_slot):
+            holder = menus.filter(homepage_slot=slot).first()
+            if holder:
+                warnings.append(f'"{holder.title}" is in that homepage slot now. Saving takes it out.')
+        return warnings
+
+    def save(self, commit=True):
+        menu = super().save(commit=commit)
+        if commit and menu.homepage_slot != 'none':
+            Menu.objects.filter(homepage_slot=menu.homepage_slot).exclude(pk=menu.pk).update(homepage_slot='none')
+        return menu
+
+    @property
+    def selected_type(self):
+        return self['menu_type'].value() or '' if 'menu_type' in self.fields else self.instance.menu_type
+
+    def groups(self):
+        """[(heading, menu type or None, [bound fields])] for the template."""
+        return [(title, only_for, [self[name] for name in names if name in self.fields])
+                for title, names, only_for in MENU_GROUPS]
 
 
 class NewsletterForm(forms.ModelForm):

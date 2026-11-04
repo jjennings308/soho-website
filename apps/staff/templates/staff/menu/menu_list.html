@@ -1,0 +1,40 @@
+{% extends "staff/base.html" %}
+{# staff/menu/menu_list.html — every menu; opens the menu page. #}
+{% block title %}Menus{% endblock %}
+{% block page_title %}Menus{% endblock %}
+{% block topbar_actions %}
+  {% if staff_is_manager %}
+  <a href="{% url 'staff:menu_add' %}" class="sp-btn sp-btn--primary">+ Add Menu</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="sp-card" style="overflow-x:auto;">
+  {% if menus %}
+  <table class="sp-table">
+    <thead>
+      <tr><th>Menu</th><th>Type</th><th>Live role</th><th>Homepage</th><th style="text-align:center;">Categories</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for menu in menus %}
+      <tr>
+        <td><a href="{% url 'staff:menu_detail' menu.pk %}" style="color:inherit;font-weight:500;">{{ menu.title }}</a>
+          {% if menu.display_name %}<div style="font-size:0.75rem;color:var(--color-mid-gray);">{{ menu.display_name }}</div>{% endif %}
+        </td>
+        <td>{{ menu.get_menu_type_display }}</td>
+        <td>{% if menu.role != 'none' %}<span class="sp-pill sp-pill--gold">{{ menu.get_role_display }}</span>{% else %}&mdash;{% endif %}</td>
+        <td>{% if menu.homepage_slot != 'none' %}{{ menu.get_homepage_slot_display }}{% else %}&mdash;{% endif %}</td>
+        <td style="text-align:center;">{{ menu.category_count }}</td>
+        <td>{% if menu.is_active %}<span class="sp-pill sp-pill--green">Active</span>{% else %}<span class="sp-pill sp-pill--gray">Off</span>{% endif %}</td>
+        <td style="text-align:right;">
+          <a href="{% url 'staff:menu_detail' menu.pk %}" class="sp-btn sp-btn--outline sp-btn--sm">{% if staff_is_manager %}Edit{% else %}View{% endif %}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--color-mid-gray);padding:1rem 0;">No menus yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

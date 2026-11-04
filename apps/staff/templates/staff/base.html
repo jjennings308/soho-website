@@ -64,6 +64,9 @@
             <a href="{% url 'staff:events' %}" class="{% if 'event' in request.resolver_match.url_name %}active{% endif %}">
               &#9670; Events
             </a>
+            <a href="{% url 'staff:menus' %}" class="{% if request.resolver_match.url_name == 'menus' or request.resolver_match.url_name == 'menu_add' or request.resolver_match.url_name == 'menu_detail' %}active{% endif %}">
+              &#9670; Menus
+            </a>
             <a href="{% url 'staff:menu_item_list' %}" class="{% if 'menu_item' in request.resolver_match.url_name %}active{% endif %}">
               &#9670; Menu Items
             </a>

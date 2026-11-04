@@ -56,6 +56,9 @@ urlpatterns = [
     path('reviews/<int:pk>/delete/', ReviewDeleteView.as_view(), name='review_delete'),
 
     # Menu Items
+    path('menu/menus/', views.MenuListView.as_view(), name='menus'),
+    path('menu/menus/add/', views.MenuAddView.as_view(), name='menu_add'),
+    path('menu/menus/<int:pk>/', views.MenuDetailView.as_view(), name='menu_detail'),
     path('menu/items/', views.MenuItemListView.as_view(), name='menu_item_list'),
     path('menu/items/add/', views.MenuItemAddView.as_view(), name='menu_item_add'),
     path('menu/items/<int:pk>/', views.MenuItemDetailView.as_view(), name='menu_item'),
