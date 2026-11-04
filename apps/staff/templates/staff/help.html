@@ -103,6 +103,12 @@
   <p>Every dish and drink on any menu. Search by name, or filter by availability and flags (featured, new, chef's special, seasonal). Tap an item's name to open its page: its details and allergens, its pictures, and an <strong>Appears on</strong> list of the menus and categories it's in.</p>
   <p>Items reach a menu through categories — see <a href="#menus-explained" class="help-back">How menus work</a> for the whole picture and what every setting does.</p>
   {% if staff_is_manager %}
+  <h3>Add a new item</h3>
+  <ol>
+    <li>Menu Items &rarr; <strong>+ Add Item</strong>. Fill in the name and whatever else you know, then <strong>Save item</strong>.</li>
+    <li>The item's page opens — add <a href="#sizes-addons" class="help-back">sizes and add-ons</a> and pictures there.</li>
+    <li><strong>Put it on a menu.</strong> A new item isn't in any category yet, so customers can't see it. Add it with the <em>placements</em> or <em>Whole menu</em> file in <a href="#menu-import" class="help-back">Import / export</a>. Its <strong>Appears on</strong> list shows when it's placed.</li>
+  </ol>
   <h3>Change an item</h3>
   <ol>
     <li>Menu Items &rarr; find the item &rarr; <strong>Edit</strong> (or tap its name).</li>
@@ -122,7 +128,7 @@
   <p>Picture changes are saved straight away — no need to press Save.</p>
   {% endif %}
   {% if staff_is_manager %}
-  <p class="help-note">New items and which categories an item is in are changed with the spreadsheets in <a href="#menu-import" class="help-back">Import / export</a> for now. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
+  <p class="help-note">Which categories an item is in is changed with the spreadsheets in <a href="#menu-import" class="help-back">Import / export</a> for now. Deleting items and changing which days a promo menu runs are done by a site administrator.</p>
   {% else %}
   <p class="help-note">You can open any item to answer a guest's question — allergens, dietary labels, prices. Items are changed by a manager.</p>
   {% endif %}

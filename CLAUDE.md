@@ -436,7 +436,7 @@ Purpose-built dashboard for customer's staff. Intentionally simpler than Django 
 | `/staff/menu-mode/` | Toggle menu mode: Automatic / Force Full / Force Game Day. POSTs to `SiteSettings` |
 | `/staff/events/` | List upcoming + last 20 past events; add, edit, activate/deactivate, delete |
 | `/staff/media/` | Media library — thumbnail grid; publish/hide toggle; upload; import from disk; edit (name, category, alt text); page-retention via `?next=` |
-| `/staff/menu/items/` | Menu item list with filters (name, availability, flags); name + Edit (managers) / View (Tier 2) per row open the item page, with `?next=` back to the filtered list |
+| `/staff/menu/items/` | Menu item list with filters (name, availability, flags); name + Edit (managers) / View (Tier 2) per row open the item page, with `?next=` back to the filtered list; **+ Add Item** (managers) opens `/staff/menu/items/add/` |
 | `/staff/menu/items/<pk>/` | Item page — Details and Sizes & add-ons tabs (edit for managers, read-only for Tier 2; one Save), "Appears on" list, Pictures tab (add via thumbnail picker, make main, reorder, remove — saved immediately). See *Menu item editing in the staff portal* |
 | `/staff/menu/items/<pk>/images/` | Old images page — now a redirect to the item page's Pictures tab |
 | `/staff/newsletter/` | List drafts and sent newsletters; compose new draft; review and send |
@@ -2030,7 +2030,7 @@ Do not build Phase 3 features until the process and flow have been designed here
 
 **Candidate features for Phase 3 (not yet specced — do not build):**
 - Weekly specials editor (side-by-side item library + current specials)
-- Full menu management in portal (item editing is now specced separately — see *Menu item editing in the staff portal*; adding items, placements and menus remain unspecced)
+- Full menu management in portal (item editing and adding items are specced separately — see *Menu item editing in the staff portal*; placements and menus remain unspecced)
 - ContentBlock / page content editor
 - Member photo moderation queue
 - Booking/event inquiry management (links to `apps.bookings`)
@@ -2062,10 +2062,10 @@ portal phasing* ("no menu editing in the portal before Phase 3"), decided by Jam
 ### Decision log (James, 2026-11-01)
 
 - **Scope now:** edit existing items' details + sizes (variations) + add-ons + pictures.
-- **Not now, keep the design open for later:** adding new items, editing menu placements
-  (which menus/categories, order, special price), deleting items. Build the page so these can be
-  added as more sections later (see *Future*). Until then: new items and placements come from the
-  CSV import or Django admin.
+- **Adding items** — requested by James 2026-11-03, built (see *Adding an item*).
+- **Not now, keep the design open for later:** editing menu placements (which menus/categories, order,
+  special price), deleting items. Build the page so these can be added as more sections later (see
+  *Future*). Until then: placements come from the CSV import or Django admin.
 - **One item page with sections:** Details · Sizes & add-ons · Pictures. Tabs on desktop, stacked on
   phone. Details and Sizes & add-ons share one **Save**. Pictures save on their own (no full-page
   submit), so adding photos never loses unsaved typing in the details form.
@@ -2252,9 +2252,19 @@ fail if a portal page has no tip.
 - Like E2, the browser-side code (picker, swaps) hasn't been run in a real browser here; the views are
   covered by `PicturesTests`.
 
+### Adding an item (2026-11-03)
+
+- `/staff/menu/items/add/` (`staff:menu_item_add`, `MenuItemAddView`, `MANAGER`), linked by **+ Add Item** on
+  the list (managers only, with `?next=`). Template `staff/menu/item_add.html`: the Details fields only, via
+  the partials `_item_details_fields.html` and `_item_styles.html` shared with the item page.
+- The slug comes from the name (`_unique_item_slug`: `-2`, `-3` … if taken). Saving redirects to the item
+  page for sizes and pictures.
+- A new item has no placement, so customers don't see it until the CSV `placements` / Whole menu sheet (or
+  Django admin) places it; the success message and help say so. Placements stay unspecced in the portal.
+- Tests: `MenuItemAddTests` in `apps/staff/tests/test_menu_item_edit.py`.
+
 ### Future (not specced — do not build without a spec update)
 
-- Add a new item from the portal (same page, empty).
 - Placements section: add/remove the item from menus/categories, order, special price, note.
 - Delete / archive an item.
 - Upload photos from the item page.

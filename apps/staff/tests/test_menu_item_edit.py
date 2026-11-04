@@ -358,3 +358,58 @@ class PicturesTests(TestCase):
         response = self.client.get(reverse('staff:menu_item_images', args=[self.item.pk]))
         self.assertRedirects(response, reverse('staff:menu_item', args=[self.item.pk]) + '#pictures',
                              fetch_redirect_response=False)
+
+
+class MenuItemAddTests(TestCase):
+    def setUp(self):
+        self.url = reverse('staff:menu_item_add')
+        manager = User.objects.create_user('mgr', password='x', is_staff=True)
+        manager.groups.add(Group.objects.get(name=MANAGER_GROUP))
+        self.manager = manager
+        self.client.force_login(manager)
+
+    def data(self, **changes):
+        return details(MenuItem(name='Fish Tacos', price=Decimal('13.00'), is_available=True), **changes)
+
+    def test_button_shows_for_managers_only(self):
+        list_url = reverse('staff:menu_item_list')
+        self.assertContains(self.client.get(list_url), '+ Add Item')
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
+        self.assertNotContains(self.client.get(list_url), '+ Add Item')
+        self.assertEqual(self.client.get(self.url).status_code, 403)
+        self.assertEqual(self.client.post(self.url, self.data()).status_code, 403)
+        self.assertFalse(MenuItem.objects.exists())
+
+    def test_add_creates_the_item_and_opens_its_page(self):
+        response = self.client.post(self.url, self.data(), follow=True)
+        item = MenuItem.objects.get()
+        self.assertEqual((item.name, item.slug, item.price), ('Fish Tacos', 'fish-tacos', Decimal('13.00')))
+        self.assertTrue(item.is_available)
+        self.assertRedirects(response, reverse('staff:menu_item', args=[item.pk]))
+        self.assertContains(response, 'Added &quot;Fish Tacos&quot;')
+        self.assertContains(response, "isn't in any category yet")
+
+    def test_same_name_gets_its_own_slug(self):
+        self.client.post(self.url, self.data())
+        self.client.post(self.url, self.data())
+        self.assertEqual(sorted(MenuItem.objects.values_list('slug', flat=True)), ['fish-tacos', 'fish-tacos-2'])
+
+    def test_name_with_no_letters_still_gets_a_slug(self):
+        self.client.post(self.url, self.data(name='!!!'))
+        self.assertEqual(MenuItem.objects.get().slug, 'item')
+
+    def test_invalid_form_keeps_typed_values_and_saves_nothing(self):
+        response = self.client.post(self.url, self.data(name='', short_description='Typed text'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'This field is required')
+        self.assertContains(response, 'Typed text')
+        self.assertFalse(MenuItem.objects.exists())
+
+    def test_next_returns_to_the_filtered_list(self):
+        list_url = reverse('staff:menu_item_list') + '?q=taco'
+        self.assertContains(self.client.get(self.url, {'next': list_url}), f'href="{list_url}"')
+        response = self.client.post(self.url, self.data(next=list_url))
+        self.assertContains(self.client.get(response.url), f'href="{list_url}"')
+
+    def test_offsite_next_is_ignored(self):
+        self.assertNotContains(self.client.get(self.url, {'next': 'https://evil.example/'}), 'evil.example')

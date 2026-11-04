@@ -1,0 +1,52 @@
+{% extends "staff/base.html" %}
+{# staff/menu/item_add.html — new menu item: Details only; saving opens its item page for sizes and pictures. #}
+{% block title %}Add Menu Item{% endblock %}
+{% block page_title %}Add Menu Item{% endblock %}
+
+{% block extra_head %}
+{{ form.media }}
+{% include "staff/menu/_item_styles.html" %}
+{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ back_url }}" class="sp-btn sp-btn--outline">&larr; Back to items</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:56rem;">
+  <p class="ip-meta" style="margin-bottom:1rem;">
+    Only the name is required. After saving you can add sizes, add-ons and pictures.
+  </p>
+  <form method="post" id="item-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ back_url }}">
+    <div class="sp-card">
+      {% include "staff/menu/_item_details_fields.html" with can_edit=True %}
+    </div>
+    <div class="ip-actions ip-save">
+      <button type="submit" class="sp-btn sp-btn--primary">Save item</button>
+      <a href="{{ back_url }}" class="sp-btn sp-btn--outline">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Warn before leaving with typed-in details (same check as the item page).
+  (function () {
+    const form = document.getElementById('item-form');
+    const snapshot = () => new URLSearchParams(new FormData(form)).toString();
+    const initial = snapshot();
+    const failedSave = {{ form.errors|yesno:'true,false' }};
+    let saving = false;
+    form.addEventListener('submit', () => { saving = true; });
+    window.addEventListener('beforeunload', (event) => {
+      if (!saving && (failedSave || snapshot() !== initial)) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    });
+  })();
+</script>
+{% endblock %}

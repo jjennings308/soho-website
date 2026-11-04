@@ -13,6 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme, urlencode
+from django.utils.text import slugify
 from django.views import View
 
 from apps.core.models import ColorScheme, EventInquiry, Review, SitePopup, SiteSettings
@@ -948,6 +949,25 @@ def _appears_on(item):
     return lines
 
 
+def _item_url(item, back_url):
+    """The item page, carrying ?next= only when it isn't the plain list URL."""
+    url = reverse('staff:menu_item', args=[item.pk])
+    if back_url != reverse('staff:menu_item_list'):
+        url += '?' + urlencode({'next': back_url})
+    return url
+
+
+def _unique_item_slug(name):
+    """Slug from the name; -2, -3 … if taken (two items may share a name)."""
+    from apps.menu.models import MenuItem
+    base = slugify(name)[:190] or 'item'
+    slug, n = base, 1
+    while MenuItem.objects.filter(slug=slug).exists():
+        n += 1
+        slug = f'{base}-{n}'
+    return slug
+
+
 class MenuItemDetailView(StaffRequiredMixin, View):
     """
     The item page. GET is open to every staff tier (read-only for Tier 2);
@@ -1001,11 +1021,37 @@ class MenuItemDetailView(StaffRequiredMixin, View):
                 addons.save()
                 item.sync_option_flags()
             messages.success(request, 'Saved.')
-            url = reverse('staff:menu_item', args=[item.pk])
-            if back_url != reverse('staff:menu_item_list'):
-                url += '?' + urlencode({'next': back_url})
-            return redirect(url)
+            return redirect(_item_url(item, back_url))
         return self._render(request, item, form, back_url, variations, addons)
+
+
+class MenuItemAddView(StaffRequiredMixin, View):
+    """New item: the Details form. Saving opens its item page for sizes and pictures."""
+    staff_access = MANAGER
+
+    def _render(self, request, form, back_url):
+        return render(request, 'staff/menu/item_add.html', {'form': form, 'back_url': back_url})
+
+    def _back_url(self, request, data):
+        return _safe_next(request, data.get('next'), default=reverse('staff:menu_item_list'))
+
+    def get(self, request):
+        return self._render(request, MenuItemForm(), self._back_url(request, request.GET))
+
+    def post(self, request):
+        back_url = self._back_url(request, request.POST)
+        form = MenuItemForm(request.POST)
+        if not form.is_valid():
+            return self._render(request, form, back_url)
+        item = form.save(commit=False)
+        item.slug = _unique_item_slug(item.name)
+        item.save()
+        messages.success(
+            request,
+            f'Added "{item.name}". Customers won\'t see it until it is placed in a category on a menu '
+            '(Tools → Import / Export).',
+        )
+        return redirect(_item_url(item, back_url))
 
 
 class MenuItemImagesView(StaffRequiredMixin, View):

@@ -5,93 +5,7 @@
 
 {% block extra_head %}
 {% if can_edit %}{{ form.media }}{% endif %}
-<style>
-  .ip-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--color-bg-tertiary); margin-bottom: 1.25rem; }
-  .ip-tab { background: none; border: 0; border-bottom: 2px solid transparent; padding: 0.55rem 0.9rem;
-            font-size: 0.875rem; cursor: pointer; color: var(--color-mid-gray); margin-bottom: -1px; }
-  .ip-tab[aria-selected="true"] { border-bottom-color: var(--color-gold-primary); color: var(--color-text-primary); font-weight: 600; }
-  .ip-section { scroll-margin-top: 1rem; }
-  .ip-section + .ip-section { margin-top: 1.5rem; }
-  .ip-section-title { display: none; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
-  /* Tabs on desktop; every section stacked on phones. */
-  @media (min-width: 769px) {
-    .ip-section.is-hidden, .ip-save.is-hidden { display: none; }
-    .ip-section + .ip-section { margin-top: 0; }
-  }
-  @media (max-width: 768px) {
-    .ip-tabs { display: none; }
-    .ip-section-title { display: block; }
-  }
-  .ip-group { margin-bottom: 1.5rem; }
-  .ip-card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-                   color: var(--color-mid-gray); margin-bottom: 0.5rem; }
-  .ip-option { border: 1px solid var(--color-bg-tertiary); border-radius: 4px; padding: 0.85rem 0.85rem 0.1rem; margin-bottom: 0.75rem; }
-  .ip-option.is-removed { opacity: 0.5; }
-  .ip-option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0 0.75rem; }
-  .ip-option-grid .ip-wide { grid-column: 1 / -1; }
-  .ip-link-btn { background: none; border: 0; padding: 0; cursor: pointer; font-size: 0.85rem;
-                 color: var(--color-accent-red-deep); text-decoration: underline; }
-  .ip-group h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
-                 color: var(--color-mid-gray); margin-bottom: 0.75rem; }
-  .ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); gap: 0 1rem; }
-  .ip-grid .ip-wide { grid-column: 1 / -1; }
-  .ip-checks { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-bottom: 1.1rem; }
-  .ip-check { display: flex; align-items: center; gap: 0.45rem; font-size: 0.875rem; cursor: pointer; }
-  .ip-check input { accent-color: var(--color-gold-primary); width: 1rem; height: 1rem; }
-  .ip-help { font-size: 0.75rem; color: var(--color-mid-gray); margin-top: 0.25rem; line-height: 1.45; }
-  .ip-readonly-html { font-size: 0.875rem; line-height: 1.6; padding: 0.6rem 0.75rem; border: 1px solid var(--color-bg-tertiary);
-                      border-radius: 4px; background: var(--color-bg-secondary); }
-  .ip-meta { font-size: 0.8rem; color: var(--color-mid-gray); }
-  .ip-meta code { font-size: 0.8rem; }
-  .ip-appears li { font-size: 0.875rem; padding: 0.4rem 0; border-bottom: 1px solid var(--color-bg-tertiary); }
-  .ip-appears li:last-child { border-bottom: 0; }
-  .ip-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: 0.75rem; }
-  [x-cloak] { display: none !important; }
-  .ip-pic-frame { position: relative; }
-  .ip-pic img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; display: block; }
-  .ip-badge { position: absolute; top: 0.35rem; left: 0.35rem; background: var(--color-gold-primary); color: var(--color-white);
-              font-size: 0.7rem; font-weight: 600; padding: 0.1rem 0.45rem; border-radius: 10px; }
-  .ip-pic-actions { font-size: 0.75rem; margin-top: 0.35rem; }
-  .ip-pic-actions > div { display: flex; flex-wrap: wrap; gap: 0.3rem; align-items: center; }
-  .ip-mini { background: none; border: 1px solid var(--color-bg-tertiary); border-radius: 4px; padding: 0.2rem 0.5rem;
-             font-size: 0.75rem; cursor: pointer; color: var(--color-text-primary); min-height: 1.9rem; }
-  .ip-mini--danger { color: var(--color-accent-red-deep); }
-  .ip-notice { font-size: 0.85rem; color: var(--color-gold-deep); margin-bottom: 0.75rem; }
-  .pk-overlay { position: fixed; inset: 0; z-index: 80; background: rgba(0,0,0,0.45); display: flex;
-                align-items: center; justify-content: center; padding: 1.5rem; }
-  .pk-modal { background: var(--color-bg-primary); border-radius: 6px; width: min(60rem, 100%); max-height: 100%;
-              display: flex; flex-direction: column; box-shadow: var(--shadow-md); }
-  .pk-head, .pk-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.85rem 1rem; }
-  .pk-head { border-bottom: 1px solid var(--color-bg-tertiary); }
-  .pk-head h2 { font-size: 1rem; font-weight: 600; }
-  .pk-foot { border-top: 1px solid var(--color-bg-tertiary); }
-  .pk-filters { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1rem 0; }
-  .pk-filters > * { flex: 1 1 12rem; margin: 0; }
-  .pk-body { overflow-y: auto; padding: 0.75rem 1rem; flex: 1; }
-  .pk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr)); gap: 0.6rem; }
-  .pk-card { position: relative; background: none; border: 2px solid transparent; border-radius: 6px; padding: 0;
-             cursor: pointer; text-align: left; }
-  .pk-card img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; display: block; }
-  .pk-name { display: block; font-size: 0.72rem; padding: 0.2rem 0.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pk-tick { display: none; position: absolute; top: 0.35rem; right: 0.35rem; width: 1.5rem; height: 1.5rem; border-radius: 50%;
-             background: var(--color-gold-primary); color: var(--color-white); font-size: 0.85rem; line-height: 1.5rem; text-align: center; }
-  .pk-card.is-selected { border-color: var(--color-gold-primary); }
-  .pk-card.is-selected .pk-tick { display: block; }
-  .pk-card.is-added { cursor: default; opacity: 0.55; }
-  .pk-flag { position: absolute; top: 0.35rem; right: 0.35rem; background: var(--color-bg-tertiary); font-size: 0.7rem;
-             padding: 0.1rem 0.45rem; border-radius: 10px; }
-  .pk-empty { grid-column: 1 / -1; }
-  @media (max-width: 768px) {
-    .pk-overlay { padding: 0; }
-    .pk-modal { width: 100%; height: 100%; border-radius: 0; }
-  }
-  .ip-pic span { display: block; font-size: 0.75rem; margin-top: 0.3rem; color: var(--color-text-tertiary); }
-  .ip-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-top: 1rem; }
-  @media (max-width: 768px) {
-    .ip-actions { position: sticky; bottom: 0; background: var(--color-bg-primary); padding: 0.75rem 0;
-                  border-top: 1px solid var(--color-bg-tertiary); }
-  }
-</style>
+{% include "staff/menu/_item_styles.html" %}
 {% endblock %}
 
 {% block topbar_actions %}
@@ -121,35 +35,7 @@
   <section id="details" class="ip-section" :class="{ 'is-hidden': tab !== 'details' }">
     <h2 class="ip-section-title">Details</h2>
     <div class="sp-card">
-      {% for err in form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ err }}</div>{% endfor %}
-
-      {% for title, fields in form.groups %}
-      <div class="ip-group">
-        <h3>{{ title }}</h3>
-        <div class="ip-checks">
-          {% for field in fields %}{% if field.widget_type == 'checkbox' %}
-            <label class="ip-check">{{ field }} {{ field.label }}</label>
-          {% endif %}{% endfor %}
-        </div>
-        <div class="ip-grid">
-          {% for field in fields %}{% if field.widget_type != 'checkbox' %}
-            <div class="sp-field{% if field.widget_type == 'textarea' or field.widget_type == 'ckeditor5' or field.name == 'name' or field.name == 'short_description' %} ip-wide{% endif %}">
-              <label class="sp-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
-              {% if field.name == 'description' and not can_edit %}
-                <div class="ip-readonly-html">{{ item.description|safe|default:"—" }}</div>
-              {% else %}
-                {{ field }}
-              {% endif %}
-              {% if field.help_text and can_edit %}<div class="ip-help">{{ field.help_text }}</div>{% endif %}
-              {% for err in field.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
-            </div>
-          {% endif %}{% endfor %}
-        </div>
-        {% for field in fields %}{% if field.widget_type == 'checkbox' %}{% for err in field.errors %}
-          <div class="sp-field-error">{{ field.label }}: {{ err }}</div>
-        {% endfor %}{% endif %}{% endfor %}
-      </div>
-      {% endfor %}
+      {% include "staff/menu/_item_details_fields.html" %}
     </div>
 
     <div class="sp-card" style="margin-top:1.25rem;">

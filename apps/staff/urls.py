@@ -57,6 +57,7 @@ urlpatterns = [
 
     # Menu Items
     path('menu/items/', views.MenuItemListView.as_view(), name='menu_item_list'),
+    path('menu/items/add/', views.MenuItemAddView.as_view(), name='menu_item_add'),
     path('menu/items/<int:pk>/', views.MenuItemDetailView.as_view(), name='menu_item'),
     path('menu/items/<int:pk>/pictures/', views.MenuItemPicturesView.as_view(), name='menu_item_pictures'),
     path('menu/items/<int:pk>/pictures/picker/', views.MenuItemPickerView.as_view(), name='menu_item_picker'),

@@ -33,6 +33,7 @@ PAGE_TIPS = {
     'event_add': ('events', 'Set a game time so the limited menu starts a couple of hours before kickoff; leave it blank for all day.'),
     'event_edit': ('events', 'Untick “Limited menu” for events that keep full service; untick “Active” to hide an event without deleting it.'),
     'menu_item_list': ('menu-items', 'Find an item by name or filter, then tap its name (or Edit) to open it.'),
+    'menu_item_add': ('menu-items', 'Only the name is required. Saving opens the new item, where you can add sizes and pictures. It reaches customers once it is placed in a category on a menu.'),
     'menu_item': ('menu-items', 'Everything about one item. Managers change the Details and Sizes & add-ons tabs, then press Save once for both. Pictures change straight away, without Save.'),
     'inquiries': ('inquiries', 'New private-event requests arrive here and by email. Mark them Contacted once you have reached out, Closed when done. Likely spam is filed under Spam.'),
     'media_library': ('media', 'New photos start hidden. Click Show on a photo to publish it to the public gallery.'),

@@ -1,0 +1,30 @@
+{# Details fields of MenuItemForm: item page and add-item page. #}
+      {% for err in form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ err }}</div>{% endfor %}
+
+      {% for title, fields in form.groups %}
+      <div class="ip-group">
+        <h3>{{ title }}</h3>
+        <div class="ip-checks">
+          {% for field in fields %}{% if field.widget_type == 'checkbox' %}
+            <label class="ip-check">{{ field }} {{ field.label }}</label>
+          {% endif %}{% endfor %}
+        </div>
+        <div class="ip-grid">
+          {% for field in fields %}{% if field.widget_type != 'checkbox' %}
+            <div class="sp-field{% if field.widget_type == 'textarea' or field.widget_type == 'ckeditor5' or field.name == 'name' or field.name == 'short_description' %} ip-wide{% endif %}">
+              <label class="sp-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {% if field.name == 'description' and not can_edit %}
+                <div class="ip-readonly-html">{{ item.description|safe|default:"—" }}</div>
+              {% else %}
+                {{ field }}
+              {% endif %}
+              {% if field.help_text and can_edit %}<div class="ip-help">{{ field.help_text }}</div>{% endif %}
+              {% for err in field.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+            </div>
+          {% endif %}{% endfor %}
+        </div>
+        {% for field in fields %}{% if field.widget_type == 'checkbox' %}{% for err in field.errors %}
+          <div class="sp-field-error">{{ field.label }}: {{ err }}</div>
+        {% endfor %}{% endif %}{% endfor %}
+      </div>
+      {% endfor %}
