@@ -188,48 +188,6 @@ def get_primary_media(obj):
 
 
 @register.simple_tag
-def get_active_menus(menu_type=None, homepage_only=False, limit=None):
-    """
-    Returns currently active Menu records with their category assignments
-    and item assignments prefetched.
-
-    Args:
-        menu_type:     Filter by menu_type ('food', 'drinks', 'promo').
-                       Omit to return all active menus.
-        homepage_only: If True, only return menus with show_on_homepage=True.
-        limit:         Maximum number of menus to return.
-
-    Usage:
-        {% get_active_menus menu_type='promo' homepage_only=True as promos %}
-        {% get_active_menus as all_menus %}
-    """
-    from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
-
-    qs = Menu.objects.filter(is_active=True)
-
-    if menu_type:
-        qs = qs.filter(menu_type=menu_type)
-    if homepage_only:
-        qs = qs.filter(show_on_homepage=True)
-
-    qs = qs.prefetch_related(
-        Prefetch(
-            'menu_category_assignments',
-            queryset=MenuCategoryAssignment.objects.select_related(
-                'category'
-            ).order_by('display_order'),
-        ),
-    )
-
-    active = [m for m in qs if m.is_showing_now]
-
-    if limit:
-        active = active[:limit]
-
-    return active
-
-
-@register.simple_tag
 def get_category_assignments(category):
     """
     Returns active MenuItemCategoryAssignment records for a category,

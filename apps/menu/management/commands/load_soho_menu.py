@@ -260,7 +260,6 @@ class Command(BaseCommand):
                     'description': description,
                     'is_default':  True,
                     'is_active':   True,
-                    'show_on_homepage': False,
                 }
             )
             if created:
@@ -328,7 +327,7 @@ class Command(BaseCommand):
                 'description':      'Featured desserts.',
                 'is_default':       False,
                 'is_active':        True,
-                'show_on_homepage': True,
+                'homepage_slot':    'slot_1',
             }
         )
         if created:

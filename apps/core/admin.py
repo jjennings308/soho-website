@@ -75,14 +75,7 @@ class BannerAdmin(admin.ModelAdmin):
         }),
         ('Content', {
             'fields': ('content_group',),
-            'description': (
-                'Assign a ContentGroup to supply title, body, and button slots. '
-                'When set, the ContentGroup takes precedence over the legacy Title/Body fields below.'
-            )
-        }),
-        ('Legacy Content (used until ContentGroup is assigned)', {
-            'fields': ('title', 'content'),
-            'classes': ('collapse',),
+            'description': 'Assign a ContentGroup to supply title, body, and button slots.'
         }),
         ('Appearance', {
             'fields': ('bg_color', 'text_color', 'image_alt', 'image_opacity', 'image_only'),
