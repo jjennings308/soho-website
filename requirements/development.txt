@@ -5,3 +5,6 @@ django-extensions==4.1
 pydotplus==2.0.2
 pygraphviz==1.14
 pyparsing==3.3.2
+
+# Linting / formatting (config in pyproject.toml)
+ruff

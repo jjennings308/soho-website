@@ -1,0 +1,14 @@
+[tool.ruff]
+line-length = 119
+target-version = "py313"
+src = ["."]
+extend-exclude = ["migrations", ".venv", "node_modules", "staticfiles"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["apps", "config"]
+
+[tool.ruff.format]
+quote-style = "single"
