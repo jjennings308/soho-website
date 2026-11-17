@@ -9,7 +9,9 @@ from .models import (
     MenuItemCategoryAssignment,
     Menu, MenuCategoryAssignment,
     PromoSettings,
+    OptionGroup, OptionChoice, CategoryOptionGroup,
 )
+from django.db.models import Count
 
 
 def _color_swatch(hex_value):
@@ -89,6 +91,16 @@ class CategoryItemAssignmentInline(admin.TabularInline):
             'menu_item', 'subcategory'
         )
 
+class CategoryOptionGroupInline(admin.TabularInline):
+    """Option groups (sauces, dressings, add-ons) shown at the end of this category."""
+    model = CategoryOptionGroup
+    extra = 0
+    fields = ['group', 'order', 'is_active']
+    autocomplete_fields = ['group']
+    verbose_name = 'Option group'
+    verbose_name_plural = 'Option groups (shown at the end of this category)'
+
+
 @admin.register(MenuCategory)
 class MenuCategoryAdmin(admin.ModelAdmin):
     list_display  = ['name', 'display_name', 'category_type', 'order', 'is_active', 'bg_image_preview', 'assigned_menu_count', 'item_count']
@@ -97,11 +109,11 @@ class MenuCategoryAdmin(admin.ModelAdmin):
     search_fields = ['name', 'display_name']
     prepopulated_fields = {'slug': ('name',)}
     readonly_fields = ['bg_image_thumbnail']
-    inlines = [CategoryItemAssignmentInline]
+    inlines = [CategoryOptionGroupInline, CategoryItemAssignmentInline]
 
     fieldsets = (
         (None, {
-            'fields': ('name', 'display_name', 'slug', 'category_type', 'description', 'order', 'is_active', 'show_disclaimer'),
+            'fields': ('name', 'display_name', 'slug', 'category_type', 'subtitle', 'description', 'order', 'is_active', 'show_disclaimer'),
         }),
         ('Background Image', {
             'fields': ('bg_image_thumbnail', 'background_image'),
@@ -142,6 +154,51 @@ class MenuCategoryAdmin(admin.ModelAdmin):
     def item_count(self, obj):
         count = obj.item_assignments.filter(is_active=True).count()
         return count if count else '—'
+
+
+# =============================================================================
+# OPTION GROUPS
+# =============================================================================
+
+class OptionChoiceInline(admin.TabularInline):
+    model = OptionChoice
+    extra = 1
+    fields = ['name', 'upcharge', 'cooked_to_order', 'order', 'is_active']
+    ordering = ['order', 'id']
+
+
+class OptionGroupCategoryInline(admin.TabularInline):
+    model = CategoryOptionGroup
+    extra = 0
+    fields = ['category', 'order', 'is_active']
+    autocomplete_fields = ['category']
+    verbose_name = 'Category'
+    verbose_name_plural = 'Shown in categories'
+
+
+@admin.register(OptionGroup)
+class OptionGroupAdmin(admin.ModelAdmin):
+    list_display  = ['name', 'is_add_on', 'is_active', 'choice_count', 'category_list']
+    list_editable = ['is_active']
+    list_filter   = ['is_add_on', 'is_active']
+    search_fields = ['name', 'slug']
+    prepopulated_fields = {'slug': ('name',)}
+    fields = ['name', 'slug', 'note', 'is_add_on', 'is_active']
+    inlines = [OptionChoiceInline, OptionGroupCategoryInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            _choice_count=Count('choices', distinct=True),
+        ).prefetch_related('categories')
+
+    @admin.display(description='Choices', ordering='_choice_count')
+    def choice_count(self, obj):
+        return obj._choice_count or '—'
+
+    @admin.display(description='Categories')
+    def category_list(self, obj):
+        names = [c.name for c in obj.categories.all()]
+        return ', '.join(names) if names else '—'
 
 
 # =============================================================================

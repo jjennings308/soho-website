@@ -105,3 +105,64 @@ class AddonsDisplayTests(TestCase):
         # The model's 0.01 minimum normally prevents this; guard anyway.
         MenuItemAddon.objects.create(menu_item=self.item, name='Salsa', price=Decimal('0'))
         self.assertEqual(self.item.addons_display, 'Salsa')
+
+
+class OptionGroupAdminTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth import get_user_model
+        self.admin = get_user_model().objects.create_superuser('root', 'root@example.com', 'pw')
+        self.client.force_login(self.admin)
+        self.salads = MenuCategory.objects.create(name='Soups and Salads', slug='soups-and-salads')
+
+    def _inline(self, prefix, rows, initial=0):
+        data = {
+            f'{prefix}-TOTAL_FORMS': str(len(rows)),
+            f'{prefix}-INITIAL_FORMS': str(initial),
+            f'{prefix}-MIN_NUM_FORMS': '0',
+            f'{prefix}-MAX_NUM_FORMS': '1000',
+        }
+        for i, row in enumerate(rows):
+            for key, value in row.items():
+                data[f'{prefix}-{i}-{key}'] = value
+        return data
+
+    def test_pages_load(self):
+        from django.urls import reverse
+        g = OptionGroup.objects.create(name='Dressings')
+        OptionChoice.objects.create(group=g, name='Ranch')
+        CategoryOptionGroup.objects.create(category=self.salads, group=g)
+        for url in (
+            reverse('admin:menu_optiongroup_changelist'),
+            reverse('admin:menu_optiongroup_add'),
+            reverse('admin:menu_optiongroup_change', args=[g.pk]),
+            reverse('admin:menu_menucategory_change', args=[self.salads.pk]),
+        ):
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+
+    def test_create_add_on_group_with_choices_and_attach(self):
+        from django.urls import reverse
+        data = {'name': 'Add to Any Salad', 'slug': 'add-to-any-salad', 'note': '',
+                'is_add_on': 'on', 'is_active': 'on'}
+        data.update(self._inline('choices', [
+            {'name': 'Grilled or Crispy Chicken', 'upcharge': '7', 'order': '1', 'is_active': 'on'},
+            {'name': 'Steak', 'upcharge': '8', 'cooked_to_order': 'on', 'order': '2', 'is_active': 'on'},
+        ]))
+        data.update(self._inline('category_links', [
+            {'category': str(self.salads.pk), 'order': '2', 'is_active': 'on'},
+        ]))
+        resp = self.client.post(reverse('admin:menu_optiongroup_add'), data)
+        self.assertEqual(resp.status_code, 302, resp.content[:2000])
+        g = OptionGroup.objects.get(slug='add-to-any-salad')
+        self.assertTrue(g.is_add_on)
+        self.assertEqual([(c.name, c.display_upcharge, c.cooked_to_order) for c in g.choices.all()],
+                         [('Grilled or Crispy Chicken', '+7', False), ('Steak', '+8', True)])
+        self.assertEqual(list(self.salads.option_groups.all()), [g])
+
+    def test_negative_upcharge_refused_in_admin(self):
+        from django.urls import reverse
+        data = {'name': 'Add to Any Salad', 'slug': 'add-to-any-salad', 'is_add_on': 'on', 'is_active': 'on'}
+        data.update(self._inline('choices', [{'name': 'Steak', 'upcharge': '-1', 'order': '1'}]))
+        data.update(self._inline('category_links', []))
+        resp = self.client.post(reverse('admin:menu_optiongroup_add'), data)
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(OptionGroup.objects.exists())

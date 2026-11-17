@@ -2433,7 +2433,7 @@ other settings (background image, disclaimer, description), arranging subcategor
 - Delete an item, category or menu from these pages.
 - Give non-promo menus custom colors, or touch `available_game_day`.
 
-## Menu option groups — Phase 1 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
+## Menu option groups — Phases 1–2 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
 
 Category-level choice lists from the printed menu (Signature Sauces & Dry Rubs, Dressings, Add to Any Salad)
 and a category subtitle. Built one phase at a time; each phase updates this section.
@@ -2463,6 +2463,13 @@ and a category subtitle. Built one phase at a time; each phase updates this sect
 - `CategoryOptionGroup`: `category` (`option_group_links`), `group` (`category_links`), `order`, `is_active`;
   unique per category + group.
 - Tests: `apps/menu/tests/test_option_groups.py`.
+
+### Admin (Phase 2, `apps/menu/admin.py`)
+
+- `OptionGroupAdmin`: choices inline (`OptionChoiceInline`) and a "Shown in categories" inline; list shows
+  add-on flag, active, choice count and categories; slug prepopulated; searchable (used by autocomplete).
+- `MenuCategoryAdmin`: `subtitle` before `description`; `CategoryOptionGroupInline` (autocomplete group,
+  order, active) above the items inline.
 
 ## Menu CSV import / export (`apps/menu/importers.py`) — M1–M3 BUILT
 
