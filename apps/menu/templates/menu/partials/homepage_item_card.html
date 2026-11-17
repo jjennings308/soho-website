@@ -31,12 +31,6 @@
   {% endif %}
 
   <div class="flex-1 min-w-0">
-    {% if assignment.subcategory %}
-      <p class="text-xs font-semibold tracking-wide mb-1"
-         style="color: var(--color-promo-accent);">
-        {{ assignment.subcategory.display_name|default:assignment.subcategory.name }}
-      </p>
-    {% endif %}
     <div class="flex justify-between items-start gap-2 mb-1">
       <h4 class="font-semibold text-base leading-tight"
           style="color: var(--color-promo-text);">

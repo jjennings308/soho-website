@@ -1,7 +1,6 @@
 from collections import Counter
 from decimal import Decimal
 
-from django.template.loader import render_to_string
 from django.test import TestCase
 from django.urls import reverse
 
@@ -68,21 +67,9 @@ class HomePromoGridTests(TestCase):
             {self.drafts.name: 5, self.well_spirits.name: 4},
         )
 
-    def test_item_card_shows_the_subcategory_above_the_item_name(self):
-        assignment = self.draft_items[0]
-        html = render_to_string(
-            'menu/partials/homepage_item_card.html',
-            {'assignment': assignment, 'show_images': False},
-        )
-
-        self.assertLess(
-            html.index('Half-Price Drafts'),
-            html.index(assignment.menu_item.name),
-        )
-
-    def test_homepage_renders_both_subcategories_as_item_cards(self):
+    def test_homepage_groups_subcategories_like_the_menu(self):
         html = self.client.get(reverse('core:home')).content.decode()
 
+        self.assertEqual(html.count('promo-subcat-card'), 2)
         self.assertIn('Half-Price Drafts', html)
         self.assertIn('Half-Price Well Spirits', html)
-        self.assertNotIn('promo-subcat-card', html)

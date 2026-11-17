@@ -48,13 +48,7 @@
         {% endif %}
       {% endif %}
 
-      {# ── Subcategory + item name ── #}
-      {% if assignment.subcategory %}
-        <p class="text-xs font-semibold tracking-wide"
-           style="color: var(--color-promo-accent);">
-          {{ assignment.subcategory.display_name|default:assignment.subcategory.name }}
-        </p>
-      {% endif %}
+      {# ── Item name ── #}
       <h3 class="text-lg font-bold leading-tight"
           style="color: var(--color-steeler-black);">
         {{ item.name }}

@@ -55,6 +55,16 @@ def _pick_across_subcategories(assignments, limit):
     return picked
 
 
+def _promo_grid_sort_key(assignment):
+    subcategory = assignment.subcategory
+    return (
+        subcategory is not None,
+        subcategory.order if subcategory else 0,
+        subcategory.name if subcategory else '',
+        assignment.order,
+    )
+
+
 def _build_promo_grid(menu):
     """
     Returns a list of category dicts for the homepage 3x3 promo grid.
@@ -97,6 +107,7 @@ def _build_promo_grid(menu):
         )
 
         items = _pick_across_subcategories(item_assignments, remaining)
+        items.sort(key=_promo_grid_sort_key)
         if items:
             result.append({
                 'category': cat_assignment.category,
