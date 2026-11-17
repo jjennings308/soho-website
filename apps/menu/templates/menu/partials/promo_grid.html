@@ -1,4 +1,3 @@
-{% load menu_tags menu_filters %}
 {% if promo and grid %}
   {% with colors=promo.resolve_colors %}
   <section {% if section_id %}id="{{ section_id }}"{% endif %} class="py-12 px-4"
@@ -27,24 +26,13 @@
         </h3>
         {% endif %}
 
-        {% with plain=group.assignments|without_subcategory subcat_items=group.assignments|with_subcategory %}
-          {% if plain %}
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {% for assignment in plain %}
-              {% include "menu/partials/homepage_item_card.html" with assignment=assignment show_images=promo.homepage_grid_images %}
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          {% if subcat_items %}
-          {% regroup subcat_items by subcategory.name as subcategories %}
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 {% if plain %}mt-4{% endif %}">
-            {% for subcat in subcategories %}
-              {% include "menu/partials/promo_subcat_card.html" %}
-            {% endfor %}
-          </div>
-          {% endif %}
-        {% endwith %}
+        {% if group.assignments %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {% for assignment in group.assignments %}
+            {% include "menu/partials/homepage_item_card.html" with assignment=assignment show_images=promo.homepage_grid_images %}
+          {% endfor %}
+        </div>
+        {% endif %}
       {% endfor %}
 
       <div class="mt-8">

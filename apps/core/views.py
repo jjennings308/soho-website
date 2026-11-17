@@ -32,11 +32,34 @@ def get_content_group(slug):
         return None
     return group
 
+
+def _pick_across_subcategories(assignments, limit):
+    """
+    Pick up to `limit` assignments, rotating through subcategories so a long
+    first subcategory cannot crowd the others out of the homepage grid.
+    Assignments without a subcategory form their own group.
+    """
+    groups = {}
+    for assignment in assignments:
+        groups.setdefault(assignment.subcategory_id, []).append(assignment)
+
+    picked = []
+    while len(picked) < limit:
+        added = False
+        for group in groups.values():
+            if group and len(picked) < limit:
+                picked.append(group.pop(0))
+                added = True
+        if not added:
+            break
+    return picked
+
+
 def _build_promo_grid(menu):
     """
     Returns a list of category dicts for the homepage 3x3 promo grid.
     Each dict has 'category' and 'assignments' (up to 9 items total,
-    grouped by category in display order).
+    grouped by category in display order, balanced across subcategories).
 
     Structure:
         [
@@ -70,10 +93,10 @@ def _build_promo_grid(menu):
                 is_active=True,
             )
             .select_related('menu_item', 'subcategory')
-            .order_by('subcategory__order', 'order')[:remaining]
+            .order_by('subcategory__order', 'order')
         )
 
-        items = list(item_assignments)
+        items = _pick_across_subcategories(item_assignments, remaining)
         if items:
             result.append({
                 'category': cat_assignment.category,
