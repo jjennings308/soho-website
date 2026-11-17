@@ -2433,6 +2433,37 @@ other settings (background image, disclaimer, description), arranging subcategor
 - Delete an item, category or menu from these pages.
 - Give non-promo menus custom colors, or touch `available_game_day`.
 
+## Menu option groups — Phase 1 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
+
+Category-level choice lists from the printed menu (Signature Sauces & Dry Rubs, Dressings, Add to Any Salad)
+and a category subtitle. Built one phase at a time; each phase updates this section.
+
+### Rules (from the plan's decisions)
+
+- **Option groups are not menu items.** They never appear in item grids, promo cards or homepage slots.
+- **Item add-ons are `MenuItemAddon`** (D1): no free-text add-ons field. One line per item comes from
+  `MenuItem.addons_display` ("Bacon +2 · Guacamole +2", available add-ons only, reuses a prefetched `addons`).
+  A cooked-to-order `*` on an item add-on goes in its name (D12).
+- **One price formatter** (D6): `menu_filters.currency`. `format_upcharge()` (`apps/menu/models.py`) gives
+  "+7" / "+7.5" and `""` for None or 0, so a bare "+" never shows; used by `OptionChoice.display_upcharge` and
+  `MenuItemAddon.display_upcharge`. `_currency` in `menu_tags.py` now calls the filter.
+- **Subtitle vs description** (D2, D14): `MenuCategory.subtitle` is the small-caps tagline by the heading;
+  `description` is the body paragraph. A blank `display_name` hides the heading and the subtitle only; the
+  description still shows (19 of 22 categories have a blank `display_name` today).
+- **Imports never delete** (D4): groups, choices and category links all have `is_active`.
+- Groups may have no choices (D11); a category with only groups must still render (D15, Phase 4).
+
+### Models (`apps/menu/models.py`, migration `menu/0022`)
+
+- `OptionGroup`: `name`, `slug` (unique, filled from the name when blank with `-2`… on collision, never changed
+  on rename: the CSV match key), `note`, `is_add_on` (show upcharges), `is_active`, `categories` (M2M through
+  `CategoryOptionGroup`; reverse `MenuCategory.option_groups`).
+- `OptionChoice`: `group` (`choices`), `name` (unique per group), `upcharge` (nullable, ≥ 0 on the model),
+  `cooked_to_order` (renders `*`; needs the category's `show_disclaimer` for the footnote), `order`, `is_active`.
+- `CategoryOptionGroup`: `category` (`option_group_links`), `group` (`category_links`), `order`, `is_active`;
+  unique per category + group.
+- Tests: `apps/menu/tests/test_option_groups.py`.
+
 ## Menu CSV import / export (`apps/menu/importers.py`) — M1–M3 BUILT
 
 Spec written 2026-10-21. Modelled on the CSV import in James's ShareBucketList site

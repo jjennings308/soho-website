@@ -3,9 +3,20 @@ from django.db import models
 from django.db.models import F, Q
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from django.utils.text import slugify
 from decimal import Decimal
 from django_ckeditor_5.fields import CKEditor5Field
 from apps.core.models import ColorScheme, TimeStampedModel, ScheduledModel, RecurrenceMixin
+
+
+def format_upcharge(value):
+    """'+7' / '+7.5' via the currency filter; '' when value is None or 0.
+    The one formatter for add-on and option-choice upcharges."""
+    from apps.menu.templatetags.menu_filters import currency
+    if value is None:
+        return ''
+    amount = currency(value)
+    return f'+{amount}' if amount else ''
 
 
 class MenuItemUpload:
@@ -77,6 +88,14 @@ class MenuCategory(TimeStampedModel):
             "Optional background image for this category section on the menu page. "
             "When set, the image fills the section with a dark overlay for text "
             "legibility. Leave blank for the standard alternating background."
+        )
+    )
+    subtitle = models.CharField(
+        max_length=150,
+        blank=True,
+        help_text=(
+            "Short tagline shown in small caps by the category heading, "
+            "e.g. 'Includes your choice of side'. Hidden when the heading is hidden."
         )
     )
     order = models.PositiveIntegerField(
@@ -324,6 +343,16 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
             self.save(update_fields=['has_variations', 'has_addons', 'updated_at'])
 
     @property
+    def addons_display(self):
+        """Available add-ons on one line: 'Bacon +2 · Guacamole +2'. '' when none.
+        Filters in Python so a prefetched addons queryset is reused."""
+        parts = []
+        for a in self.addons.all():
+            if a.is_available:
+                parts.append(f'{a.name} {a.display_upcharge}'.strip())
+        return ' · '.join(parts)
+
+    @property
     def current_price(self):
         if self.price_display != 'price':
             return None
@@ -498,6 +527,111 @@ class MenuItemAddon(TimeStampedModel):
 
     def __str__(self):
         return f"{self.menu_item.name} — {self.name} (${self.price})"
+
+    @property
+    def display_upcharge(self):
+        return format_upcharge(self.price)
+
+
+# =============================================================================
+# OPTION GROUPS  (category-level choice lists: sauces, dressings, salad add-ons)
+# =============================================================================
+
+class OptionGroup(TimeStampedModel):
+    """
+    A named list of choices shown at the end of a category section, e.g.
+    'Signature Sauces & Dry Rubs' or 'Add to Any Salad'. Shared: one group can
+    be attached to several categories via CategoryOptionGroup. Not menu items —
+    groups never appear in item grids or promo cards.
+    """
+    name = models.CharField(max_length=80)
+    slug = models.SlugField(
+        max_length=80, unique=True, blank=True,
+        help_text="Stable ID used by the CSV import/export. Filled from the name when blank.",
+    )
+    note = models.CharField(
+        max_length=200, blank=True,
+        help_text="Optional helper or price line shown under the group name.",
+    )
+    is_add_on = models.BooleanField(
+        default=False,
+        help_text="Tick when the choices cost extra; their upcharges are then shown.",
+    )
+    is_active = models.BooleanField(default=True)
+    categories = models.ManyToManyField(
+        MenuCategory,
+        through='CategoryOptionGroup',
+        related_name='option_groups',
+        blank=True,
+    )
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = 'Option Group'
+        verbose_name_plural = 'Option Groups'
+
+    def __str__(self):
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name)[:75] or 'group'
+            slug, n = base, 2
+            while OptionGroup.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug, n = f'{base}-{n}', n + 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+
+class OptionChoice(TimeStampedModel):
+    """One choice in an OptionGroup, e.g. 'Buffalo' or 'Steak* +8'."""
+    group = models.ForeignKey(OptionGroup, on_delete=models.CASCADE, related_name='choices')
+    name = models.CharField(max_length=80)
+    upcharge = models.DecimalField(
+        max_digits=6, decimal_places=2, null=True, blank=True,
+        validators=[MinValueValidator(Decimal('0'))],
+        help_text="Extra cost, shown only when the group is an add-on group. Leave blank for none.",
+    )
+    cooked_to_order = models.BooleanField(
+        default=False,
+        help_text="Shows * (consumer advisory). Turn on the category's disclaimer so the footnote shows.",
+    )
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+        unique_together = [('group', 'name')]
+        verbose_name = 'Option Choice'
+        verbose_name_plural = 'Option Choices'
+
+    def __str__(self):
+        return f"{self.group.name} — {self.name}"
+
+    @property
+    def display_upcharge(self):
+        return format_upcharge(self.upcharge)
+
+
+class CategoryOptionGroup(TimeStampedModel):
+    """Attaches an OptionGroup to a MenuCategory, with its position in that category."""
+    category = models.ForeignKey(
+        MenuCategory, on_delete=models.CASCADE, related_name='option_group_links',
+    )
+    group = models.ForeignKey(
+        OptionGroup, on_delete=models.CASCADE, related_name='category_links',
+    )
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['order', 'id']
+        unique_together = [('category', 'group')]
+        verbose_name = 'Category Option Group'
+        verbose_name_plural = 'Category Option Groups'
+
+    def __str__(self):
+        return f"{self.category.name} → {self.group.name}"
 
 
 class PromoSettings(models.Model):

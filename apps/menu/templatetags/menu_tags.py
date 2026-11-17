@@ -34,16 +34,9 @@ def _get_item_primary_image(item):
     return images[0] if images else None
 
 def _currency(value):
-    """Mirrors the currency filter for use inside Python tag logic."""
-    try:
-        amount = float(value)
-        if amount == 0:
-            return ""
-        if amount == int(amount):
-            return f"{int(amount):,}"
-        return f"{amount:,.2f}".rstrip('0')
-    except (ValueError, TypeError):
-        return str(value)
+    """The currency filter as a string, for use inside Python tag logic."""
+    from apps.menu.templatetags.menu_filters import currency
+    return str(currency(value))
 
 
 def _assignment_to_json_data(assignment):
