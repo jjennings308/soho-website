@@ -19,13 +19,17 @@ User = get_user_model()
 
 def settings(menu=None, **changes):
     """POST data for the Settings form: a menu's current values plus changes."""
-    data = {'title': 'Brunch', 'menu_type': 'food', 'role': 'none', 'is_active': 'on', 'homepage_slot': 'none'}
+    data = {'title': 'Brunch', 'menu_type': 'food', 'role': 'none', 'is_active': 'on',
+            'homepage_slot': 'none', 'homepage_card_image': 'image', 'homepage_grid_images': 'on'}
     if menu:
-        data = {'title': menu.title, 'menu_type': menu.menu_type, 'role': menu.role, 'homepage_slot': menu.homepage_slot}
+        data = {'title': menu.title, 'menu_type': menu.menu_type, 'role': menu.role,
+                'homepage_slot': menu.homepage_slot, 'homepage_card_image': menu.homepage_card_image}
         if menu.is_active:
             data['is_active'] = 'on'
+        if menu.homepage_grid_images:
+            data['homepage_grid_images'] = 'on'
     for key, value in changes.items():
-        if value is None:
+        if value is None or value is False:
             data.pop(key, None)
         else:
             data[key] = value
@@ -110,16 +114,21 @@ class EditTests(MenuBuilderTestCase):
     def test_fields_for_other_types_are_cleared(self):
         scheme = ColorScheme.objects.create(name='Gold')
         response = self.client.post(self.add_url, settings(
-            color_scheme=scheme.pk, homepage_slot='slot_1', valid_from='2027-01-01', valid_until='2027-01-07'))
+            color_scheme=scheme.pk, homepage_slot='slot_1', homepage_card_image='text',
+            homepage_grid_images=False, valid_from='2027-01-01', valid_until='2027-01-07'))
         menu = Menu.objects.get()
         self.assertRedirects(response, self.url(menu) + '#categories', fetch_redirect_response=False)
         self.assertEqual((menu.color_scheme, menu.homepage_slot, menu.valid_from, menu.valid_until),
                          (None, 'none', None, None))
+        self.assertEqual((menu.homepage_card_image, menu.homepage_grid_images), ('image', True))
 
     def test_promo_keeps_colors_and_specials_keep_dates(self):
         scheme = ColorScheme.objects.create(name='Gold')
-        self.client.post(self.add_url, settings(title='P', menu_type='promo', color_scheme=scheme.pk))
-        self.assertEqual(Menu.objects.get(title='P').color_scheme, scheme)
+        self.client.post(self.add_url, settings(title='P', menu_type='promo', color_scheme=scheme.pk,
+                                                homepage_card_image='placeholder', homepage_grid_images=False))
+        promo = Menu.objects.get(title='P')
+        self.assertEqual(promo.color_scheme, scheme)
+        self.assertEqual((promo.homepage_card_image, promo.homepage_grid_images), ('placeholder', False))
         self.client.post(self.add_url, settings(title='S', menu_type='weekly_specials',
                                                 valid_from='2027-01-01', valid_until='2027-01-07'))
         self.assertEqual(Menu.objects.get(title='S').valid_from, date(2027, 1, 1))

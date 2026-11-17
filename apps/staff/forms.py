@@ -201,7 +201,7 @@ MENU_GROUPS = [
     ('Basics', ['title', 'display_name', 'description', 'menu_type'], None),
     ('Where it shows', ['role', 'is_active', 'active_from', 'active_until', 'days_of_week'], None),
     ('Weekly specials', ['valid_from', 'valid_until'], 'weekly_specials'),
-    ('Promotion', ['color_scheme', 'homepage_slot'], 'promo'),
+    ('Promotion', ['color_scheme', 'homepage_slot', 'homepage_card_image', 'homepage_grid_images'], 'promo'),
 ]
 
 
@@ -227,6 +227,8 @@ class MenuForm(forms.ModelForm):
             'is_active': 'Active', 'active_from': 'Active from', 'active_until': 'Active until',
             'valid_from': 'Valid from', 'valid_until': 'Valid until',
             'color_scheme': 'Color scheme', 'homepage_slot': 'Homepage slot',
+            'homepage_card_image': 'Homepage card image',
+            'homepage_grid_images': 'Homepage grid photos',
         }
         help_texts = {
             'title': 'For staff.',
@@ -240,6 +242,8 @@ class MenuForm(forms.ModelForm):
             'valid_until': 'Last day it shows.',
             'color_scheme': 'Blank uses the default scheme.',
             'homepage_slot': 'Only one menu can be in each slot. Shows while the menu is Active.',
+            'homepage_card_image': 'The card beside the hero. Text only hides the photo and emoji.',
+            'homepage_grid_images': 'Small photos in the homepage grid. Off makes the grid text-only.',
         }
         widgets = {
             'description': forms.Textarea(attrs={'rows': 2}),
@@ -277,6 +281,7 @@ class MenuForm(forms.ModelForm):
         # Hidden sections don't apply to other types (only promos may have custom colors).
         if menu_type != 'promo':
             cleaned['color_scheme'], cleaned['homepage_slot'] = None, 'none'
+            cleaned['homepage_card_image'], cleaned['homepage_grid_images'] = 'image', True
         if menu_type != 'weekly_specials':
             cleaned['valid_from'], cleaned['valid_until'] = None, None
         warnings = self._live_changes(cleaned)

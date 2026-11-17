@@ -395,6 +395,7 @@ KINDS = {k.name: k for k in [
     Kind('menus', Menu, [
         C('title'), C('display_name'), C('slug'), C('description'), C('menu_type'), C('role'),
         C('is_default'), C('color_scheme', ref='color_scheme', ref_field='name'), C('homepage_slot'),
+        C('homepage_card_image'), C('homepage_grid_images'),
         C('valid_from'), C('valid_until'), C('is_active'), C('active_from'), C('active_until'),
     ], key=('slug',), export_order=('menu_type', 'title'),
         find=_slug_key('title'),
@@ -443,7 +444,8 @@ KIND_EXAMPLES = {
     'addons': {'item': 'classic-burger', 'name': 'Bacon', 'price': '2.00', 'order': '1',
                'is_default': 'no', 'is_available': 'yes'},
     'menus': {'title': 'Food Menu', 'slug': 'food-menu', 'menu_type': 'food', 'role': 'default_food',
-              'is_default': 'no', 'homepage_slot': 'none', 'is_active': 'yes'},
+              'is_default': 'no', 'homepage_slot': 'none', 'homepage_card_image': 'image',
+              'homepage_grid_images': 'yes', 'is_active': 'yes'},
     'menu_categories': {'menu': 'food-menu', 'category': 'burgers', 'display_order': '1'},
     'placements': {'item': 'classic-burger', 'category': 'burgers', 'order': '1', 'is_active': 'yes'},
 }

@@ -31,19 +31,21 @@
   {% if assignment %}
     {% with item=assignment.menu_item %}
 
-      {# ── Item image ── #}
-      {% get_primary_media item as primary_image %}
-      {% if primary_image %}
-        <img
-          src="{{ primary_image.file.url }}"
-          alt="{{ primary_image.alt_text|default:item.name }}"
-          class="w-32 h-32 object-cover rounded-full shadow-md"
-        >
-      {% else %}
-        <div class="w-32 h-32 rounded-full shadow-md flex items-center justify-center
-                    bg-black/20 text-3xl">
-          🍽
-        </div>
+      {# ── Item image (or emoji, or nothing) ── #}
+      {% if menu.homepage_card_image != 'text' %}
+        {% get_primary_media item as primary_image %}
+        {% if primary_image and menu.homepage_card_image == 'image' %}
+          <img
+            src="{{ primary_image.file.url }}"
+            alt="{{ primary_image.alt_text|default:item.name }}"
+            class="w-32 h-32 object-cover rounded-full shadow-md"
+          >
+        {% else %}
+          <div class="w-32 h-32 rounded-full shadow-md flex items-center justify-center
+                      bg-black/20 text-3xl" aria-hidden="true">
+            🍽
+          </div>
+        {% endif %}
       {% endif %}
 
       {# ── Item name ── #}

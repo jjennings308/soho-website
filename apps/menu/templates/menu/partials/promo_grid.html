@@ -31,7 +31,7 @@
           {% if plain %}
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {% for assignment in plain %}
-              {% include "menu/partials/homepage_item_card.html" with assignment=assignment %}
+              {% include "menu/partials/homepage_item_card.html" with assignment=assignment show_images=promo.homepage_grid_images %}
             {% endfor %}
           </div>
           {% endif %}

@@ -5,26 +5,29 @@
 {# Display only — no modal trigger.                             #}
 {#                                                              #}
 {# Expects:                                                     #}
-{#   assignment — MenuItemCategoryAssignment instance           #}
+{#   assignment  — MenuItemCategoryAssignment instance          #}
+{#   show_images — whether to show the item thumbnail           #}
 {# ============================================================ #}
 
 {% load menu_filters menu_tags %}
 
 {% with item=assignment.menu_item %}
-{% get_primary_media item as primary_image %}
 
 <div class="rounded-lg shadow flex gap-3 p-4"
      style="background-color: var(--color-promo-bg); filter: brightness(1.1);">
 
-  {% if primary_image %}
-    <div class="shrink-0 w-16 h-16 rounded overflow-hidden">
-      <img
-        src="{{ primary_image.file.url }}"
-        alt="{{ primary_image.alt_text|default:item.name }}"
-        class="w-full h-full object-cover"
-        loading="lazy"
-      >
-    </div>
+  {% if show_images %}
+    {% get_primary_media item as primary_image %}
+    {% if primary_image %}
+      <div class="shrink-0 w-16 h-16 rounded overflow-hidden">
+        <img
+          src="{{ primary_image.file.url }}"
+          alt="{{ primary_image.alt_text|default:item.name }}"
+          class="w-full h-full object-cover"
+          loading="lazy"
+        >
+      </div>
+    {% endif %}
   {% endif %}
 
   <div class="flex-1 min-w-0">

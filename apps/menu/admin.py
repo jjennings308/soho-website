@@ -471,11 +471,12 @@ class MenuAdmin(admin.ModelAdmin):
             'description': 'Leave active_from and active_until blank for a permanently active menu.',
         }),
         ('Display', {
-            'fields': ('homepage_slot',),
+            'fields': ('homepage_slot', 'homepage_card_image', 'homepage_grid_images'),
             'description': (
                 'Assign this menu to a homepage slot. '
                 'Slot 1 appears left of the hero banner, Slot 2 appears right. '
-                'Only one menu should occupy each slot at a time.'
+                'Only one menu should occupy each slot at a time. '
+                'The image options control the item photo in the hero card and the grid thumbnails.'
             ),
         }),
     )

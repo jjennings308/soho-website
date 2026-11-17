@@ -175,6 +175,19 @@ class CellFormatTests(MenuFixture):
         for cell in ('4pm', '4:00 PM', '4:00PM'):
             self.assertEqual(im.KINDS['items'].by_name['available_from'].canonical(cell), '16:00', cell)
 
+    def test_homepage_image_settings(self):
+        im.apply('menus', make_csv({
+            'slug': 'food-menu', 'homepage_card_image': 'Text only', 'homepage_grid_images': 'no',
+        }))
+        self.food.refresh_from_db()
+        self.assertEqual((self.food.homepage_card_image, self.food.homepage_grid_images), ('text', False))
+        im.apply('menus', make_csv({
+            'slug': 'food-menu', 'homepage_card_image': 'placeholder', 'homepage_grid_images': 'yes',
+        }))
+        self.food.refresh_from_db()
+        self.assertEqual((self.food.homepage_card_image, self.food.homepage_grid_images),
+                         ('placeholder', True))
+
     def test_menu_datetimes_are_eastern(self):
         im.apply('menus', make_csv({'slug': 'food-menu', 'active_from': '2026-11-01 17:00', 'valid_from': '2026-11-01'}))
         self.food.refresh_from_db()

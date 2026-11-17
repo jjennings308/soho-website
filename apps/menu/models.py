@@ -623,6 +623,30 @@ class Menu(RecurrenceMixin, ScheduledModel):
         )
     )
 
+    HOMEPAGE_CARD_IMAGE_CHOICES = [
+        ('image',       'Item photo (emoji if missing)'),
+        ('placeholder', 'Emoji placeholder'),
+        ('text',        'Text only'),
+    ]
+
+    homepage_card_image = models.CharField(
+        max_length=12,
+        choices=HOMEPAGE_CARD_IMAGE_CHOICES,
+        default='image',
+        help_text=(
+            "What the card beside the hero shows: the item photo "
+            "(an emoji if the item has none), an emoji only, or text only."
+        )
+    )
+
+    homepage_grid_images = models.BooleanField(
+        default=True,
+        help_text=(
+            "Show small item photos in this slot's 3x3 homepage grid. "
+            "Turn off to make the grid text-only."
+        )
+    )
+
     # ── Role ──────────────────────────────────────────────────────────────────
     ROLE_CHOICES = [
         ('none',          'No special role'),

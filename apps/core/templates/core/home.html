@@ -38,17 +38,17 @@
 </div>
 
 {# ══════════════════════════════════════════════════════════════════════════ #}
+{# WEEKLY SPECIALS WIDGET                                                    #}
+{# ══════════════════════════════════════════════════════════════════════════ #}
+{% include "menu/partials/specials_homepage_widget.html" with menu=current_specials %}
+
+{# ══════════════════════════════════════════════════════════════════════════ #}
 {# CATERING & EVENTS — 50/50                                                 #}
 {# ══════════════════════════════════════════════════════════════════════════ #}
 <div x-data="{ inquiryOpen: false }">
   {% include "core/components/50_50.html" with left=catering_left right=catering_right %}
   {% include "core/components/event_inquiry_modal.html" %}
 </div>
-
-{# ══════════════════════════════════════════════════════════════════════════ #}
-{# WEEKLY SPECIALS WIDGET                                                    #}
-{# ══════════════════════════════════════════════════════════════════════════ #}
-{% include "menu/partials/specials_homepage_widget.html" with menu=current_specials %}
 
 {# ══════════════════════════════════════════════════════════════════════════ #}
 {# PROMO SLOT 1 — 3×3 GRID                                                  #}
