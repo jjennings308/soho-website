@@ -1,0 +1,105 @@
+{% extends "staff/base.html" %}
+{# staff/menu/option_group_form.html — an option group and its choices (read-only unless can_edit). #}
+{% block title %}{{ group.name }}{% endblock %}
+{% block page_title %}{{ group.name }}{% endblock %}
+
+{% block extra_head %}
+{% include "staff/menu/_item_styles.html" %}
+<style>
+  .og-shared { border-left: 3px solid var(--color-gold-primary); padding: 0.6rem 0.75rem; margin-bottom: 1rem; font-size: 0.875rem; }
+</style>
+{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ back_url }}" class="sp-btn sp-btn--outline">&larr; Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:56rem;" x-data="groupPage()">
+  <p class="ip-meta" style="margin-bottom:0.5rem;">
+    Spreadsheet ID (slug): <code>{{ group.slug }}</code> — stays the same if you rename the group.
+    {% if not can_edit %}<br>You can view this group; a manager can change it.{% endif %}
+  </p>
+  {% if used_in|length > 1 %}
+  <div class="og-shared">
+    Also used in: {% for category in used_in %}<a href="{% url 'staff:category' category.pk %}#option-groups" style="color:inherit;text-decoration:underline;">{{ category.name }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}.
+    Changes here show in all of them.
+  </div>
+  {% elif used_in %}
+  <p class="ip-meta" style="margin-bottom:1rem;">Shown in <a href="{% url 'staff:category' used_in.0.pk %}#option-groups" style="color:inherit;text-decoration:underline;">{{ used_in.0.name }}</a>.</p>
+  {% else %}
+  <p class="ip-meta" style="margin-bottom:1rem;">Not in any category, so customers don't see it. Add it from a category's Option groups section.</p>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ back_url }}">
+    <div class="sp-card" style="margin-bottom:1.25rem;">
+      {% for err in form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ err }}</div>{% endfor %}
+      <div class="ip-grid">
+        {% for field in form %}
+          {% if field.widget_type == 'checkbox' %}
+            <div class="sp-field ip-wide">
+              <label class="ip-check">{{ field }} {{ field.label }}</label>
+              {% if field.help_text and can_edit %}<div class="ip-help">{{ field.help_text }}</div>{% endif %}
+            </div>
+          {% else %}
+            <div class="sp-field ip-wide">
+              <label class="sp-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.help_text and can_edit %}<div class="ip-help">{{ field.help_text }}</div>{% endif %}
+              {% for err in field.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if can_edit %}
+      {% include "staff/menu/_options.html" with formset=choices prefix="choices" title="Choices" add_label="Add a choice" empty_text="No choices yet. A group can also be just its name and note, e.g. Sides — prices vary." %}
+      <p class="ip-help" style="margin:-0.5rem 0 1rem;">Upcharges show only when “Choices cost extra” is ticked. Cooked to order adds a * — turn on the disclaimer in the category's settings so the footnote shows.</p>
+      <div class="ip-actions ip-save">
+        <button type="submit" class="sp-btn sp-btn--primary">Save</button>
+        <a href="{{ back_url }}" class="sp-btn sp-btn--outline">Back</a>
+      </div>
+    {% else %}
+      <div class="sp-card">
+        <h3 class="ip-card-title">Choices</h3>
+        {% if saved_choices %}
+        <table class="sp-table">
+          <thead><tr><th>Choice</th><th>Upcharge</th><th></th></tr></thead>
+          <tbody>
+            {% for choice in saved_choices %}
+            <tr>
+              <td>{{ choice.name }}{% if choice.cooked_to_order %}*{% endif %}</td>
+              <td>{{ choice.display_upcharge|default:"—" }}</td>
+              <td style="text-align:right;">{% if not choice.is_active %}<span class="sp-pill sp-pill--gray">Hidden</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}<p class="ip-meta">No choices.</p>{% endif %}
+      </div>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // "Add a choice": copy the empty row and bump TOTAL_FORMS (same as the item page's sizes and add-ons).
+  function groupPage() {
+    return {
+      addRow(prefix) {
+        const total = document.getElementById('id_' + prefix + '-TOTAL_FORMS');
+        const html = document.getElementById(prefix + '-empty').innerHTML.replace(/__prefix__/g, total.value);
+        const list = document.getElementById(prefix + '-rows');
+        list.insertAdjacentHTML('beforeend', html);
+        total.value = Number(total.value) + 1;
+        list.lastElementChild.querySelector('input:not([type=hidden])').focus();
+        document.getElementById(prefix + '-none')?.remove();
+      },
+    };
+  }
+</script>
+{% endblock %}

@@ -25,10 +25,14 @@ from apps.members.newsletter import send_newsletter
 from apps.events import importers as event_importers
 from apps.menu import importers as menu_importers
 from apps.menu import whole_menu
-from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemCategoryAssignment
+from apps.menu.models import (
+    CategoryOptionGroup, Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemCategoryAssignment,
+    OptionChoice, OptionGroup,
+)
 
 from .forms import (
-    AddonFormSet, CategoryForm, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuCategoryAddForm,
+    AddonFormSet, CategoryForm, ColorSchemeForm, EventForm, OptionChoiceFormSet, OptionGroupForm,
+    OptionGroupNewForm, MediaItemEditForm, MediaItemUploadForm, MenuCategoryAddForm,
     MenuCategoryNewForm, MenuForm, MenuItemForm,
     NewsletterForm, PlacementAddForm, PlacementForm, PopupForm, SiteSettingsForm, VariationFormSet,
 )
@@ -1108,10 +1112,12 @@ class CategoryDetailView(StaffRequiredMixin, View):
 
     def _render(self, request, category, form, back_url):
         menus = Menu.objects.filter(menu_category_assignments__category=category).order_by('title')
+        can_edit = is_manager(request.user)
         return render(request, 'staff/menu/category_form.html', {
             'category': category, 'form': form, 'menus': menus, 'back_url': back_url,
-            'can_edit': is_manager(request.user),
+            'can_edit': can_edit,
             'item_count': category.item_assignments.count(),
+            **_category_groups_context(category, can_edit),
         })
 
     def _back_url(self, request, data):
@@ -1131,6 +1137,163 @@ class CategoryDetailView(StaffRequiredMixin, View):
         form.save()
         messages.success(request, 'Saved.')
         url = reverse('staff:category', args=[category.pk])
+        if back_url != reverse('staff:categories'):
+            url += '?' + urlencode({'next': back_url})
+        return redirect(url)
+
+
+def _group_links(category):
+    """The category's attached (active) option-group links, in order."""
+    return list(category.option_group_links.filter(is_active=True).select_related('group').order_by('order', 'pk'))
+
+
+def _tidy_group_links(category):
+    """Number the attached groups 1..n in their current order (detached links keep theirs)."""
+    links = _group_links(category)
+    for position, link in enumerate(links, start=1):
+        if link.order != position:
+            link.order = position
+            link.save(update_fields=['order', 'updated_at'])
+    return links
+
+
+def _category_groups_context(category, can_edit, notice='', new_form=None, attach_error=''):
+    """Option groups section of a category's page (also the response to every action)."""
+    links = _group_links(category)
+    group_ids = [link.group_id for link in links]
+    choices = {}
+    for choice in OptionChoice.objects.filter(group_id__in=group_ids, is_active=True).order_by('order', 'id'):
+        choices.setdefault(choice.group_id, []).append(choice)
+    also_in = {}
+    others = (CategoryOptionGroup.objects.filter(group_id__in=group_ids, is_active=True)
+              .exclude(category=category).select_related('category').order_by('category__name'))
+    for link in others:
+        also_in.setdefault(link.group_id, []).append(link.category.name)
+    rows = [{'link': link, 'group': link.group, 'choices': choices.get(link.group_id, []),
+             'also_in': also_in.get(link.group_id, [])} for link in links]
+    attachable = (OptionGroup.objects.exclude(pk__in=group_ids).order_by('name') if can_edit else [])
+    return {
+        'group_rows': rows, 'attachable_groups': attachable, 'groups_notice': notice,
+        'group_new_form': new_form or (OptionGroupNewForm(prefix='newgroup') if can_edit else None),
+        'attach_error': attach_error,
+        'category_url': reverse('staff:category', args=[category.pk]),
+    }
+
+
+class CategoryOptionGroupsView(StaffRequiredMixin, View):
+    """
+    Option groups section of a category's page. POST action=attach|new|up|down|detach
+    saves straight away; fetch() gets the re-rendered partial back, a plain post is
+    redirected to the category page. Detach switches the link off (CSV imports never
+    delete, so the portal doesn't either); attaching the same group again switches it back on.
+    """
+    staff_access = MANAGER
+
+    def _respond(self, request, category, notice='', invalid=False, **kwargs):
+        if request.headers.get('X-Requested-With') == 'fetch':
+            return render(request, 'staff/menu/_category_option_groups.html', {
+                'category': category, 'can_edit': True,
+                **_category_groups_context(category, True, notice=notice, **kwargs),
+            })
+        if invalid:
+            messages.error(request, 'Nothing was saved — please check that entry and try again.')
+        elif notice:
+            messages.success(request, notice)
+        return redirect(reverse('staff:category', args=[category.pk]) + '#option-groups')
+
+    def _attach(self, category, group):
+        """Add the group at the end; a detached link is switched back on rather than duplicated."""
+        link = CategoryOptionGroup.objects.filter(category=category, group=group).first()
+        if link and link.is_active:
+            return
+        position = len(_tidy_group_links(category)) + 1
+        if link:
+            link.is_active, link.order = True, position
+            link.save(update_fields=['is_active', 'order', 'updated_at'])
+        else:
+            CategoryOptionGroup.objects.create(category=category, group=group, order=position)
+
+    def get(self, request, pk):
+        category = get_object_or_404(MenuCategory, pk=pk)
+        return render(request, 'staff/menu/_category_option_groups.html', {
+            'category': category, 'can_edit': True, **_category_groups_context(category, True)})
+
+    def post(self, request, pk):
+        category = get_object_or_404(MenuCategory, pk=pk)
+        action = request.POST.get('action')
+        if action == 'attach':
+            group_id = request.POST.get('group', '')
+            group = OptionGroup.objects.filter(pk=group_id if group_id.isdigit() else 0).first()
+            if group is None:
+                return self._respond(request, category, invalid=True, attach_error='Choose a group to add.')
+            with transaction.atomic():
+                self._attach(category, group)
+            return self._respond(request, category, f'Added {group.name}.')
+        if action == 'new':
+            form = OptionGroupNewForm(request.POST, prefix='newgroup')
+            if not form.is_valid():
+                return self._respond(request, category, invalid=True, new_form=form)
+            with transaction.atomic():
+                group = form.save()
+                self._attach(category, group)
+            return self._respond(request, category, f'Created {group.name}. Open it to add its choices.')
+        if action not in ('up', 'down', 'detach'):
+            return HttpResponse('Unknown action', status=400)
+        link_id = request.POST.get('link', '')
+        link = get_object_or_404(CategoryOptionGroup, pk=link_id if link_id.isdigit() else 0,
+                                 category=category, is_active=True)
+        with transaction.atomic():
+            if action == 'detach':
+                link.is_active = False
+                link.save(update_fields=['is_active', 'updated_at'])
+                _tidy_group_links(category)
+                return self._respond(request, category, f'Took {link.group.name} off this category.')
+            links = _tidy_group_links(category)
+            index = next(i for i, other in enumerate(links) if other.pk == link.pk)
+            swap = index - 1 if action == 'up' else index + 1
+            if 0 <= swap < len(links):
+                other = links[swap]
+                link.order, other.order = other.order, link.order
+                link.save(update_fields=['order', 'updated_at'])
+                other.save(update_fields=['order', 'updated_at'])
+        return self._respond(request, category)
+
+
+class OptionGroupDetailView(StaffRequiredMixin, View):
+    """An option group and its choices. GET is open to every staff tier (read-only for Tier 2); POST needs a manager."""
+    staff_access = STAFF
+
+    def _back_url(self, request, data):
+        return _safe_next(request, data.get('next'), default=reverse('staff:categories'))
+
+    def _render(self, request, group, form, choices, back_url):
+        categories = (MenuCategory.objects.filter(option_group_links__group=group, option_group_links__is_active=True)
+                      .order_by('name'))
+        return render(request, 'staff/menu/option_group_form.html', {
+            'group': group, 'form': form, 'choices': choices, 'back_url': back_url,
+            'can_edit': is_manager(request.user), 'used_in': categories,
+            'saved_choices': group.choices.order_by('order', 'id'),
+        })
+
+    def get(self, request, pk):
+        group = get_object_or_404(OptionGroup, pk=pk)
+        read_only = not is_manager(request.user)
+        form = OptionGroupForm(instance=group, read_only=read_only)
+        choices = None if read_only else OptionChoiceFormSet(instance=group, prefix='choices')
+        return self._render(request, group, form, choices, self._back_url(request, request.GET))
+
+    def post(self, request, pk):
+        group = get_object_or_404(OptionGroup, pk=pk)
+        back_url = self._back_url(request, request.POST)
+        form = OptionGroupForm(request.POST, instance=group)
+        choices = OptionChoiceFormSet(request.POST, instance=group, prefix='choices')
+        if not (form.is_valid() and choices.is_valid()):
+            return self._render(request, OptionGroup.objects.get(pk=pk), form, choices, back_url)
+        with transaction.atomic():
+            form.save()
+            choices.save()
+        messages.success(request, 'Saved.')
+        url = reverse('staff:option_group', args=[group.pk])
         if back_url != reverse('staff:categories'):
             url += '?' + urlencode({'next': back_url})
         return redirect(url)

@@ -9,6 +9,7 @@ from apps.media.models import MediaCategory, MediaItem
 from apps.members.models import Newsletter
 from apps.menu.models import (
     Menu, MenuCategory, MenuItem, MenuItemAddon, MenuItemCategoryAssignment, MenuItemVariation, MenuSubCategory,
+    OptionChoice, OptionGroup,
 )
 
 
@@ -452,6 +453,68 @@ class CategoryForm(forms.ModelForm):
 
     def groups(self):
         return [(title, [self[name] for name in names]) for title, names in CATEGORY_GROUPS]
+
+
+def _unique_group_name(form, name):
+    """Spreadsheets find a group by name too, so two groups can't share one (ignoring case)."""
+    if OptionGroup.objects.filter(name__iexact=name).exclude(pk=form.instance.pk).exists():
+        raise forms.ValidationError('Another option group already has this name.')
+    return name
+
+
+class OptionGroupNewForm(forms.ModelForm):
+    """Create an option group on a category's page; it is attached straight away."""
+
+    class Meta:
+        model = OptionGroup
+        fields = ['name', 'is_add_on']
+        labels = {'name': 'New group name', 'is_add_on': 'Choices cost extra (show prices)'}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['name'].widget.attrs.update({'class': 'sp-input', 'placeholder': 'e.g. Dressings'})
+
+    def clean_name(self):
+        return _unique_group_name(self, self.cleaned_data['name'])
+
+
+class OptionGroupForm(forms.ModelForm):
+    """An option group's own settings on its editor page. Slug is left out (CSV ID)."""
+
+    class Meta:
+        model = OptionGroup
+        fields = ['name', 'note', 'is_add_on', 'is_active']
+        labels = {'note': 'Note', 'is_add_on': 'Choices cost extra (show prices)', 'is_active': 'Shown'}
+        help_texts = {
+            'name': 'The small heading customers see, e.g. Signature Sauces & Dry Rubs.',
+            'note': "Optional line under the name, e.g. 'Choose one' or 'Prices vary'.",
+            'is_add_on': 'Shows each choice\'s upcharge, e.g. Steak +8. Leave off for free choices such as dressings.',
+            'is_active': 'Off hides this group in every category it is in.',
+        }
+
+    def __init__(self, *args, read_only=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            if not isinstance(field.widget, forms.CheckboxInput):
+                field.widget.attrs.setdefault('class', 'sp-input')
+            if read_only:
+                field.disabled = True
+
+    def clean_name(self):
+        return _unique_group_name(self, self.cleaned_data['name'])
+
+
+class OptionChoiceForm(_OptionForm):
+    class Meta:
+        model = OptionChoice
+        fields = ['name', 'upcharge', 'order', 'cooked_to_order', 'is_active']
+        labels = {'upcharge': 'Upcharge', 'order': 'Position', 'cooked_to_order': 'Cooked to order (*)',
+                  'is_active': 'Shown'}
+
+
+# Choices on the group editor: no blank rows — "Add a choice" adds one in the browser. A group may have none.
+OptionChoiceFormSet = forms.inlineformset_factory(
+    OptionGroup, OptionChoice, form=OptionChoiceForm, extra=0, can_delete=True)
 
 
 class NewsletterForm(forms.ModelForm):

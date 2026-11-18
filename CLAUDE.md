@@ -2354,7 +2354,9 @@ run the release checks and ask before each commit.
 | `/staff/menu/menus/<pk>/` | `staff:menu_detail` | Settings and Categories tabs (stacked on phones) |
 | `/staff/menu/menus/<pk>/categories/` | `staff:menu_categories` | Partial + actions, fetch pattern as Pictures |
 | `/staff/menu/categories/` | `staff:categories` | Every category (see *Category settings*); nav link **Categories** under Menus |
-| `/staff/menu/categories/<pk>/` | `staff:category` | A category's settings form |
+| `/staff/menu/categories/<pk>/` | `staff:category` | A category's settings form and its option groups |
+| `/staff/menu/categories/<pk>/option-groups/` | `staff:category_option_groups` | Option groups section: partial + actions |
+| `/staff/menu/option-groups/<pk>/` | `staff:option_group` | An option group and its choices |
 
 Access: list and page `STAFF` (read-only for Tier 2); every change and the add page `MANAGER`.
 
@@ -2437,7 +2439,7 @@ Access: list and page `STAFF` (read-only for Tier 2); every change and the add p
   it needs a confirm tick (`confirm_hide`), like the menu live-site guard.
 - **"+ New category" in B2 is unchanged** (short form); staff use Category settings for the rest (James).
 - **Access:** `STAFF` views (read-only for Tier 2); saving needs `MANAGER`. Help tips for both pages.
-- Phase 6 adds option groups to this page.
+- Phase 6 added an **Option groups** section to this page — see *Menu option groups*.
 - **Built as** (2026-11-18): `CategoryForm` (`apps/staff/forms.py`, groups in `CATEGORY_GROUPS`; `read_only=True`
   disables every field for Tier 2; background images limited to staff images with a file), `CategoryListView` /
   `CategoryDetailView`, templates `staff/menu/category_list.html`, `category_form.html`. The menu page's
@@ -2454,7 +2456,7 @@ Deleting menus or categories (switch them off instead), copying a menu or catego
 - Delete an item, category or menu from these pages.
 - Give non-promo menus custom colors, or touch `available_game_day`.
 
-## Menu option groups — Phases 1–5 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
+## Menu option groups — Phases 1–6 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
 
 Category-level choice lists from the printed menu (Signature Sauces & Dry Rubs, Dressings, Add to Any Salad)
 and a category subtitle. Built one phase at a time; each phase updates this section.
@@ -2509,6 +2511,26 @@ and a category subtitle. Built one phase at a time; each phase updates this sect
 
 Staff portal pages `staff:categories` / `staff:category` (subtitle and every other category field) — see
 *Category settings* in the menu builder section.
+
+### Staff portal option groups (Phase 6)
+
+- **Category page section** (`#option-groups`, partial `staff/menu/_category_option_groups.html`,
+  `CategoryOptionGroupsView`, `MANAGER`): POST `action=attach|new|up|down|detach`; fetch gets the partial back
+  (`categoryPage().groupAction`), a plain post redirects to `#option-groups`. Lists attached groups with their
+  choices and "Also used in"; **Add an existing group** (every group not attached, switched-off ones labelled);
+  **+ Create group** (name, choices cost extra) creates and attaches it. Tier 2 sees the list read-only.
+- **Detach switches the link off** (`is_active=False`), unlike B2's "Remove from this menu" which deletes: CSV
+  imports never delete, so links stay consistent. Attaching the same group again **reactivates the old row**
+  (never a second one). `_tidy_group_links()` numbers attached links 1..n; new and re-attached groups go last.
+- **Group editor** `OptionGroupDetailView` (`STAFF`; POST needs `MANAGER`), template
+  `staff/menu/option_group_form.html`: `OptionGroupForm` (name, note, choices cost extra, shown; slug read-only)
+  plus `OptionChoiceFormSet` (name, upcharge, position, cooked to order, shown; DELETE on saved rows), reusing the
+  item page's `_options.html` / `_option_row.html` and an `addRow` in `groupPage()`. Saved together in one
+  transaction; a group with no choices is allowed (D11). Group names are unique ignoring case (CSV looks them up
+  by name). Shared groups show "Also used in: …". `?next=` back to the category.
+- Help: `option_group` tip, `category` tip, and an *Option groups* subsection in *How menus work*.
+- Tests: `apps/staff/tests/test_option_group_editing.py` (includes the plan's done-when end to end). Like the
+  other portal sections, the browser-side code (swap, add-row) hasn't been run in a real browser here.
 
 ### Public menu (Phase 4)
 
