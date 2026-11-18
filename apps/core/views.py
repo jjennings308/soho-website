@@ -33,26 +33,42 @@ def get_content_group(slug):
     return group
 
 
-def _pick_across_subcategories(assignments, limit):
+PROMO_GRID_LIMIT = 9
+PROMO_SUBCATEGORY_LIMIT = 3
+PROMO_SUBCATEGORY_ITEM_LIMIT = 3
+
+
+def _pick_promo_items(assignments, limit, subcategory_slots):
     """
-    Pick up to `limit` assignments, rotating through subcategories so a long
-    first subcategory cannot crowd the others out of the homepage grid.
-    Assignments without a subcategory form their own group.
+    Pick up to `limit` assignments for the homepage grid. Subcategory items
+    are grouped, with at most `subcategory_slots` subcategories and at most
+    three items each. Remaining slots go to plain items.
     """
-    groups = {}
+    plain = []
+    subcategories = {}
     for assignment in assignments:
-        groups.setdefault(assignment.subcategory_id, []).append(assignment)
+        if assignment.subcategory_id is None:
+            plain.append(assignment)
+        else:
+            subcategories.setdefault(assignment.subcategory_id, []).append(assignment)
 
     picked = []
-    while len(picked) < limit:
-        added = False
-        for group in groups.values():
-            if group and len(picked) < limit:
-                picked.append(group.pop(0))
-                added = True
-        if not added:
+    used = 0
+    for group in subcategories.values():
+        if used >= subcategory_slots or len(picked) >= limit:
             break
-    return picked
+        for assignment in group[:PROMO_SUBCATEGORY_ITEM_LIMIT]:
+            if len(picked) >= limit:
+                break
+            picked.append(assignment)
+        used += 1
+
+    for assignment in plain:
+        if len(picked) >= limit:
+            break
+        picked.append(assignment)
+
+    return picked, used
 
 
 def _promo_grid_sort_key(assignment):
@@ -69,7 +85,8 @@ def _build_promo_grid(menu):
     """
     Returns a list of category dicts for the homepage 3x3 promo grid.
     Each dict has 'category' and 'assignments' (up to 9 items total,
-    grouped by category in display order, balanced across subcategories).
+    grouped by category in display order). Subcategories are capped at
+    three, with up to three items each.
 
     Structure:
         [
@@ -89,12 +106,13 @@ def _build_promo_grid(menu):
 
     result = []
     total = 0
+    subcategories_used = 0
 
     for cat_assignment in category_assignments:
-        if total >= 9:
+        if total >= PROMO_GRID_LIMIT:
             break
 
-        remaining = 9 - total
+        remaining = PROMO_GRID_LIMIT - total
         item_assignments = (
             MenuItemCategoryAssignment.objects
             .filter(
@@ -106,7 +124,8 @@ def _build_promo_grid(menu):
             .order_by('subcategory__order', 'order')
         )
 
-        items = _pick_across_subcategories(item_assignments, remaining)
+        subcategory_slots = PROMO_SUBCATEGORY_LIMIT - subcategories_used
+        items, used = _pick_promo_items(item_assignments, remaining, subcategory_slots)
         items.sort(key=_promo_grid_sort_key)
         if items:
             result.append({
@@ -114,6 +133,7 @@ def _build_promo_grid(menu):
                 'assignments': items,
             })
             total += len(items)
+            subcategories_used += used
 
     return result
 

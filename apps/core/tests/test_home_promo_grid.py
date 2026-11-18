@@ -1,6 +1,7 @@
 from collections import Counter
 from decimal import Decimal
 
+from django.template.loader import render_to_string
 from django.test import TestCase
 from django.urls import reverse
 
@@ -53,7 +54,31 @@ class HomePromoGridTests(TestCase):
             subcategory=subcategory, order=number,
         )
 
-    def test_grid_gives_every_subcategory_a_share_of_the_nine_slots(self):
+    def test_grid_shows_up_to_three_items_per_subcategory(self):
+        grid = _build_promo_grid(self.menu)
+        assignments = [
+            assignment
+            for group in grid
+            for assignment in group['assignments']
+        ]
+
+        self.assertEqual(len(assignments), 6)
+        self.assertEqual(
+            Counter(assignment.subcategory.name for assignment in assignments),
+            {self.drafts.name: 3, self.well_spirits.name: 3},
+        )
+
+    def test_grid_uses_at_most_three_subcategories(self):
+        extra_1 = MenuSubCategory.objects.create(
+            category=self.category, name='Extra One', slug='extra-one', order=2,
+        )
+        extra_2 = MenuSubCategory.objects.create(
+            category=self.category, name='Extra Two', slug='extra-two', order=3,
+        )
+        for subcategory in (extra_1, extra_2):
+            for number in range(3):
+                self.make_item(f'Extra{subcategory.order}', number, subcategory)
+
         grid = _build_promo_grid(self.menu)
         assignments = [
             assignment
@@ -62,9 +87,19 @@ class HomePromoGridTests(TestCase):
         ]
 
         self.assertEqual(len(assignments), 9)
-        self.assertEqual(
-            Counter(assignment.subcategory.name for assignment in assignments),
-            {self.drafts.name: 5, self.well_spirits.name: 4},
+        self.assertEqual(len({assignment.subcategory_id for assignment in assignments}), 3)
+        self.assertNotIn(extra_2.pk, {assignment.subcategory_id for assignment in assignments})
+
+    def test_featured_card_shows_subcategory_above_item_name(self):
+        assignment = self.draft_items[0]
+        html = render_to_string(
+            'menu/partials/homepage_promo_card.html',
+            {'menu': self.menu, 'assignment': assignment, 'anchor': 'promo1'},
+        )
+
+        self.assertLess(
+            html.index('Half-Price Drafts'),
+            html.index(assignment.menu_item.name),
         )
 
     def test_homepage_groups_subcategories_like_the_menu(self):
