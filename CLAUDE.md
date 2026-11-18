@@ -2433,7 +2433,7 @@ other settings (background image, disclaimer, description), arranging subcategor
 - Delete an item, category or menu from these pages.
 - Give non-promo menus custom colors, or touch `available_game_day`.
 
-## Menu option groups — Phases 1–2 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
+## Menu option groups — Phases 1–3 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
 
 Category-level choice lists from the printed menu (Signature Sauces & Dry Rubs, Dressings, Add to Any Salad)
 and a category subtitle. Built one phase at a time; each phase updates this section.
@@ -2470,6 +2470,19 @@ and a category subtitle. Built one phase at a time; each phase updates this sect
   add-on flag, active, choice count and categories; slug prepopulated; searchable (used by autocomplete).
 - `MenuCategoryAdmin`: `subtitle` before `description`; `CategoryOptionGroupInline` (autocomplete group,
   order, active) above the items inline.
+
+### CSV (Phase 3, `apps/menu/importers.py`)
+
+- `categories` kind gains an optional `subtitle` column (not on the whole-menu sheet, D13).
+- Three kinds **appended after `placements`** so existing export file numbers stay put (`9-option_groups.csv`,
+  `10-option_choices.csv`, `11-category_option_groups.csv`); they only depend on categories:
+  - `option_groups`: name, slug, note, is_add_on, is_active — match on slug (else slugified name).
+  - `option_choices`: group (slug or name, resolver `option_group`), name, upcharge, cooked_to_order, order,
+    is_active — match on group + name.
+  - `category_option_groups`: category, group, order, is_active — match on category + group.
+- Never deletes: rows missing from a file are kept; switch off with `is_active = no`. Not on the whole-menu sheet.
+- Portal import page and staff help list them automatically (`KIND_DESCRIPTIONS` / `KIND_EXAMPLES`); the help
+  topic has a paragraph on the three files.
 
 ## Menu CSV import / export (`apps/menu/importers.py`) — M1–M3 BUILT
 

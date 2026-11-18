@@ -43,6 +43,7 @@ from apps.core.models import ColorScheme
 from .models import (
     Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemAddon,
     MenuItemCategoryAssignment, MenuItemVariation, MenuSubCategory,
+    CategoryOptionGroup, OptionChoice, OptionGroup,
 )
 
 CLEAR = '-'
@@ -293,6 +294,7 @@ RESOLVERS = {
     'menu': lambda value, row: _one(Menu.objects.filter(slug=value), value, 'menu (by slug)'),
     'color_scheme': lambda value, row: _one(ColorScheme.objects.filter(name__iexact=value), value, 'color scheme'),
     'subcategory': _subcategory,
+    'option_group': _by_slug_or_name(OptionGroup, 'name', 'option group'),
 }
 
 
@@ -355,7 +357,7 @@ def _sync_option_flags(row):
 C = Column
 KINDS = {k.name: k for k in [
     Kind('categories', MenuCategory, [
-        C('name'), C('display_name'), C('slug'), C('category_type'), C('description'),
+        C('name'), C('display_name'), C('slug'), C('category_type'), C('subtitle'), C('description'),
         C('order'), C('is_active'), C('show_disclaimer'),
     ], key=('slug',), export_order=('order', 'name'),
         find=_slug_key('name'),
@@ -413,6 +415,25 @@ KINDS = {k.name: k for k in [
     ], key=('item', 'category'),
         export_order=('category__order', 'category__name', 'subcategory__order', 'order', 'menu_item__name'),
         find=_ref_key('item', 'category')),
+
+    # Option groups (CLAUDE.md "Menu option groups"). Last in the order so the
+    # export file numbers of the kinds above don't change; they only need categories.
+    Kind('option_groups', OptionGroup, [
+        C('name'), C('slug'), C('note'), C('is_add_on'), C('is_active'),
+    ], key=('slug',), export_order=('name', 'slug'),
+        find=_slug_key('name'),
+        default_slug=lambda row: slugify(row.values.get('name', ''))),
+
+    Kind('option_choices', OptionChoice, [
+        C('group', ref='option_group'), C('name'), C('upcharge'), C('cooked_to_order'),
+        C('order'), C('is_active'),
+    ], key=('group', 'name'), export_order=('group__name', 'order', 'id'),
+        find=_ref_key('group', name_col='name')),
+
+    Kind('category_option_groups', CategoryOptionGroup, [
+        C('category', ref='category'), C('group', ref='option_group'), C('order'), C('is_active'),
+    ], key=('category', 'group'), export_order=('category__order', 'category__name', 'order', 'group__name'),
+        find=_ref_key('category', 'group')),
 ]}
 KIND_ORDER = list(KINDS)
 
@@ -426,12 +447,16 @@ KIND_DESCRIPTIONS = {
     'menus': 'The menus themselves: food, drinks, promotions, weekly specials.',
     'menu_categories': 'Which categories each menu shows, and in what order.',
     'placements': 'Which items appear in each category, with optional special price.',
+    'option_groups': 'Choice lists shown under a category, such as Dressings or Add to Any Salad.',
+    'option_choices': 'The choices in each option group, with an optional upcharge.',
+    'category_option_groups': 'Which option groups each category shows, and in what order.',
 }
 
 # Example row for each kind's downloadable template (header + this row).
 KIND_EXAMPLES = {
     'categories': {'name': 'Burgers', 'display_name': 'Burgers', 'slug': 'burgers',
-                   'category_type': 'food', 'order': '10', 'is_active': 'yes', 'show_disclaimer': 'no'},
+                   'category_type': 'food', 'subtitle': 'Includes your choice of side',
+                   'order': '10', 'is_active': 'yes', 'show_disclaimer': 'no'},
     'subcategories': {'category': 'beer', 'name': 'On Tap', 'slug': 'beer-on-tap', 'order': '1',
                       'is_active': 'yes'},
     'items': {'name': 'Classic Burger', 'slug': 'classic-burger',
@@ -448,6 +473,12 @@ KIND_EXAMPLES = {
               'homepage_grid_images': 'yes', 'is_active': 'yes'},
     'menu_categories': {'menu': 'food-menu', 'category': 'burgers', 'display_order': '1'},
     'placements': {'item': 'classic-burger', 'category': 'burgers', 'order': '1', 'is_active': 'yes'},
+    'option_groups': {'name': 'Add to Any Salad', 'slug': 'add-to-any-salad', 'is_add_on': 'yes',
+                      'is_active': 'yes'},
+    'option_choices': {'group': 'add-to-any-salad', 'name': 'Steak', 'upcharge': '8.00',
+                       'cooked_to_order': 'yes', 'order': '2', 'is_active': 'yes'},
+    'category_option_groups': {'category': 'soups-and-salads', 'group': 'add-to-any-salad',
+                               'order': '1', 'is_active': 'yes'},
 }
 
 
@@ -655,7 +686,7 @@ def _label(kind, row):
     def ref(name):
         obj = refs.get(name) or (kind.by_name[name]._related(inst) if inst else None)
         return getattr(obj, 'slug', None) or getattr(obj, 'name', '') if obj else row.raw.get(name, '?')
-    if kind.name in ('categories', 'items'):
+    if kind.name in ('categories', 'items', 'option_groups'):
         return v.get('name') or (inst.name if inst else v.get('slug', ''))
     if kind.name == 'menus':
         return v.get('title') or (inst.title if inst else v.get('slug', ''))
@@ -665,6 +696,10 @@ def _label(kind, row):
         return f"{ref('item')} / {v.get('name', '')}"
     if kind.name == 'menu_categories':
         return f"{ref('menu')} / {ref('category')}"
+    if kind.name == 'option_choices':
+        return f"{ref('group')} / {v.get('name', '')}"
+    if kind.name == 'category_option_groups':
+        return f"{ref('category')} / {ref('group')}"
     return f"{ref('item')} in {ref('category')}"
 
 

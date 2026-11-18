@@ -11,6 +11,7 @@ from apps.menu import importers as im
 from apps.menu.models import (
     Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemAddon,
     MenuItemCategoryAssignment, MenuItemVariation, MenuSubCategory,
+    CategoryOptionGroup, OptionChoice, OptionGroup,
 )
 
 
@@ -44,6 +45,11 @@ class MenuFixture(TestCase):
         MenuItemCategoryAssignment.objects.create(menu_item=self.burger, category=self.burgers, order=1)
         MenuItemCategoryAssignment.objects.create(menu_item=self.lager, category=self.beer,
                                                   subcategory=self.on_tap)
+        self.sauces = OptionGroup.objects.create(name='Signature Sauces', slug='sauces')
+        OptionChoice.objects.create(group=self.sauces, name='Buffalo', order=1)
+        OptionChoice.objects.create(group=self.sauces, name='Ghost Pepper', upcharge=Decimal('1.00'),
+                                    order=2, cooked_to_order=True)
+        CategoryOptionGroup.objects.create(category=self.burgers, group=self.sauces, order=1)
 
 
 class RoundTripTests(MenuFixture):
@@ -346,3 +352,89 @@ class MenuRoleTests(MenuFixture):
         self.assertTrue(result.ok)
         self.assertEqual(dict(Menu.objects.values_list('slug', 'role')),
                          {'food-menu': 'event_food', 'event-food': 'default_food'})
+
+
+class OptionGroupImportTests(MenuFixture):
+    def test_create_group_choices_and_link_in_order(self):
+        im.apply('option_groups', make_csv(
+            {'name': 'Add to Any Salad', 'is_add_on': 'yes', 'note': 'Add a protein'}))
+        group = OptionGroup.objects.get(slug='add-to-any-salad')
+        self.assertTrue(group.is_add_on)
+        im.apply('option_choices', make_csv(
+            {'group': 'add-to-any-salad', 'name': 'Steak', 'upcharge': '8', 'cooked_to_order': 'yes', 'order': '2'},
+            {'group': 'Add to Any Salad', 'name': 'Chicken', 'upcharge': '7', 'order': '1'},
+        ))
+        self.assertEqual([(c.name, c.display_upcharge, c.cooked_to_order) for c in group.choices.all()],
+                         [('Chicken', '+7', False), ('Steak', '+8', True)])
+        im.apply('category_option_groups', make_csv({'category': 'burgers', 'group': 'add-to-any-salad', 'order': '2'}))
+        self.assertEqual([g.slug for g in self.burgers.option_groups.order_by('category_links__order')],
+                         ['sauces', 'add-to-any-salad'])
+
+    def test_reimport_updates_in_place(self):
+        im.apply('option_groups', make_csv({'slug': 'sauces', 'name': 'Signature Sauces & Dry Rubs'}))
+        im.apply('option_choices', make_csv({'group': 'sauces', 'name': 'Buffalo', 'order': '5'}))
+        self.assertEqual(OptionGroup.objects.count(), 1)
+        self.assertEqual(OptionGroup.objects.get().name, 'Signature Sauces & Dry Rubs')
+        self.assertEqual(self.sauces.choices.count(), 2)
+        self.assertEqual(self.sauces.choices.get(name='Buffalo').order, 5)
+
+    def test_missing_rows_are_kept_and_is_active_deactivates(self):
+        im.apply('option_choices', make_csv({'group': 'sauces', 'name': 'Buffalo', 'is_active': 'no'}))
+        self.assertEqual(self.sauces.choices.count(), 2)            # Ghost Pepper not in file: kept
+        self.assertFalse(self.sauces.choices.get(name='Buffalo').is_active)
+        im.apply('category_option_groups', make_csv({'category': 'burgers', 'group': 'sauces', 'is_active': 'no'}))
+        self.assertFalse(CategoryOptionGroup.objects.get().is_active)
+
+    def test_unknown_group_is_a_row_error(self):
+        result = im.parse('option_choices', make_csv({'group': 'nope', 'name': 'Ranch'}))
+        self.assertFalse(result.ok)
+        self.assertIn('no option group "nope"', result.rows[0].errors[0])
+
+    def test_negative_upcharge_refused(self):
+        result = im.parse('option_choices', make_csv({'group': 'sauces', 'name': 'Ranch', 'upcharge': '-1'}))
+        self.assertFalse(result.ok)
+        self.assertIn('upcharge', result.rows[0].errors[0])
+
+    def test_same_link_twice_in_file_refused(self):
+        result = im.parse('category_option_groups', make_csv(
+            {'category': 'burgers', 'group': 'sauces'}, {'category': 'Burgers', 'group': 'Signature Sauces'}))
+        self.assertFalse(result.ok)
+
+    def test_round_trip_into_empty_tables(self):
+        files = {k: im.export_csv(k) for k in ('option_groups', 'option_choices', 'category_option_groups')}
+        before = (list(OptionGroup.objects.values_list('name', 'slug', 'note', 'is_add_on', 'is_active')),
+                  list(OptionChoice.objects.values_list('group__slug', 'name', 'upcharge', 'cooked_to_order',
+                                                        'order', 'is_active')),
+                  list(CategoryOptionGroup.objects.values_list('category__slug', 'group__slug', 'order',
+                                                               'is_active')))
+        OptionGroup.objects.all().delete()
+        for kind, text in files.items():
+            im.apply(kind, text)
+        after = (list(OptionGroup.objects.values_list('name', 'slug', 'note', 'is_add_on', 'is_active')),
+                 list(OptionChoice.objects.values_list('group__slug', 'name', 'upcharge', 'cooked_to_order',
+                                                       'order', 'is_active')),
+                 list(CategoryOptionGroup.objects.values_list('category__slug', 'group__slug', 'order',
+                                                              'is_active')))
+        self.assertEqual(before, after)
+        for kind, text in files.items():
+            self.assertEqual({r.action for r in im.parse(kind, text).rows}, {'unchanged'}, kind)
+
+
+class CategorySubtitleImportTests(MenuFixture):
+    def test_subtitle_set_and_blank_keeps(self):
+        im.apply('categories', make_csv({'slug': 'burgers', 'subtitle': 'Includes your choice of side'}))
+        im.apply('categories', make_csv({'slug': 'burgers', 'subtitle': '', 'order': '3'}))
+        self.burgers.refresh_from_db()
+        self.assertEqual(self.burgers.subtitle, 'Includes your choice of side')
+
+    def test_old_file_without_subtitle_column_imports(self):
+        old_header = ['name', 'display_name', 'slug', 'category_type', 'description', 'order', 'is_active',
+                      'show_disclaimer']
+        rows = list(csv.DictReader(io.StringIO(im.export_csv('categories').lstrip('\ufeff'))))
+        out = io.StringIO()
+        writer = csv.DictWriter(out, fieldnames=old_header, extrasaction='ignore')
+        writer.writeheader()
+        writer.writerows(rows)
+        result = im.parse('categories', out.getvalue())
+        self.assertTrue(result.ok, [r.errors for r in result.rows])
+        self.assertEqual({r.action for r in result.rows}, {'unchanged'})

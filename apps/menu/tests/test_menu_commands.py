@@ -14,8 +14,10 @@ class CommandTests(MenuFixture):
     def test_export_then_dry_run_then_apply(self):
         with tempfile.TemporaryDirectory() as tmp:
             call_command('export_menu', tmp, stdout=io.StringIO())
-            files = sorted(p.name for p in Path(tmp).iterdir())
+            files = sorted((p.name for p in Path(tmp).iterdir()), key=lambda name: int(name.split('-')[0]))
             self.assertEqual(files, ['0-whole-menu.csv'] + [f'{n}-{k}.csv' for n, k in enumerate(im.KIND_ORDER, start=1)])
+            # Existing kinds keep their file numbers; option groups come after placements.
+            self.assertEqual(files[8], '8-placements.csv')
 
             path = Path(tmp) / 'edit.csv'
             path.write_text(make_csv({'slug': 'lager', 'price': '7'}), encoding='utf-8')
