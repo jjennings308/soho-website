@@ -59,6 +59,7 @@
     </details>
 
     {% if row.also_on %}<p class="ip-meta" style="margin-top:0.5rem;">Also on: {{ row.also_on|join:", " }}. Changing its items changes those menus too.</p>{% endif %}
+    <p class="ip-meta" style="margin-top:0.4rem;"><a href="{% url 'staff:category' row.category.pk %}?next={{ menu_url|urlencode }}" style="color:inherit;text-decoration:underline;">Category settings</a> — heading, subtitle, description, background, disclaimer.</p>
 
     {% if can_edit %}
     <form method="post" action="{% url 'staff:menu_categories' menu.pk %}" class="ip-pic-actions" style="margin:0.6rem 0 0.85rem;">

@@ -8,6 +8,7 @@ from apps.staff.permissions import MANAGER_GROUP
 
 # Pages a read-only (Tier 2) staff user may GET. Everything else is denied.
 TIER2_READABLE = {'dashboard', 'menu_mode', 'events', 'menu_item_list', 'menu_item', 'menus', 'menu_detail',
+                  'categories', 'category',
                   'colors', 'help'}
 SUPERUSER_ONLY = {'settings', 'color_scheme_add', 'color_scheme_edit', 'color_scheme_delete'}
 PUBLIC = {'login', 'logout'}

@@ -1,0 +1,39 @@
+{% extends "staff/base.html" %}
+{# staff/menu/category_list.html — every category, including switched-off ones and ones on no menu. #}
+{% block title %}Categories{% endblock %}
+{% block page_title %}Categories{% endblock %}
+
+{% block content %}
+<div class="sp-card" style="overflow-x:auto;">
+  <p style="font-size:0.8rem;color:var(--color-mid-gray);margin-bottom:0.75rem;">
+    Categories are the sections of a menu. One category can be on several menus; changing it changes all of them.
+    Add a category to a menu, or create one, from the menu's Categories tab.
+  </p>
+  {% if categories %}
+  <table class="sp-table">
+    <thead>
+      <tr><th>Category</th><th>Type</th><th>On menus</th><th style="text-align:center;">Items</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for category in categories %}
+      <tr>
+        <td><a href="{% url 'staff:category' category.pk %}" style="color:inherit;font-weight:500;">{{ category.name }}</a>
+          {% if category.display_name and category.display_name != category.name %}<div style="font-size:0.75rem;color:var(--color-mid-gray);">Heading: {{ category.display_name }}</div>{% endif %}
+          {% if not category.display_name %}<div style="font-size:0.75rem;color:var(--color-mid-gray);">No heading</div>{% endif %}
+        </td>
+        <td>{{ category.get_category_type_display }}</td>
+        <td>{% for assignment in category.menu_assignments.all %}{{ assignment.menu.title }}{% if not forloop.last %}, {% endif %}{% empty %}<span style="color:var(--color-mid-gray);">Not on any menu</span>{% endfor %}</td>
+        <td style="text-align:center;">{{ category.item_count }}</td>
+        <td>{% if category.is_active %}<span class="sp-pill sp-pill--green">Shown</span>{% else %}<span class="sp-pill sp-pill--gray">Off</span>{% endif %}</td>
+        <td style="text-align:right;">
+          <a href="{% url 'staff:category' category.pk %}" class="sp-btn sp-btn--outline sp-btn--sm">{% if staff_is_manager %}Edit{% else %}View{% endif %}</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="color:var(--color-mid-gray);padding:1rem 0;">No categories yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

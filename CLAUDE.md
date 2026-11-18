@@ -1974,7 +1974,7 @@ The staff portal dashboard is built and functional. Do not add features beyond w
 - Dashboard with stat cards (menu mode, subscribers, draft newsletters, unpublished photos, popup status, new inquiries)
 - Today's Events and Upcoming Events panels
 - Menu Status panel with weekly specials freshness indicator and promo menu status
-- Operations nav section: Menu Mode, Events, Menu Items
+- Operations nav section: Menu Mode, Events, Menus, Categories, Menu Items
 - Content nav section: Inquiries, Media Library, Newsletter, Popups, Reviews
 - Tools nav section: Analytics (external link), View Site (external link)
 - **Django admin link — visible to superusers only.** This link appears in the Tools section (or similar) and is conditionally rendered based on `request.user.is_superuser`. DO NOT REMOVE THIS LINK. It is intentional and required for superuser workflow. If you find this link in the template, leave it exactly as-is.
@@ -2353,6 +2353,8 @@ run the release checks and ask before each commit.
 | `/staff/menu/menus/add/` | `staff:menu_add` | Settings form; saving opens the menu page |
 | `/staff/menu/menus/<pk>/` | `staff:menu_detail` | Settings and Categories tabs (stacked on phones) |
 | `/staff/menu/menus/<pk>/categories/` | `staff:menu_categories` | Partial + actions, fetch pattern as Pictures |
+| `/staff/menu/categories/` | `staff:categories` | Every category (see *Category settings*); nav link **Categories** under Menus |
+| `/staff/menu/categories/<pk>/` | `staff:category` | A category's settings form |
 
 Access: list and page `STAFF` (read-only for Tier 2); every change and the add page `MANAGER`.
 
@@ -2422,10 +2424,29 @@ Access: list and page `STAFF` (read-only for Tier 2); every change and the add p
 - A category's rows and placements can only be acted on through a menu showing that category.
 - Browser-side code hasn't been run in a real browser here; `CategoryItemsTests` covers the views.
 
+### Category settings — Phase 5 of `docs/PLAN-menu-option-groups.md` (approved by James 2026-11-18)
+
+- **Pages:** `/staff/menu/categories/` (`staff:categories`) lists every category, inactive ones and ones on no
+  menu included: name, heading, type, shown, the menus it's on, item count. Sidebar link **Categories** in
+  Operations, under Menus (James chose the sidebar). `/staff/menu/categories/<pk>/` (`staff:category`) is the
+  settings form; each row in a menu's Categories tab links to it (**Category settings**, `?next=` back to the menu).
+- **Fields:** name (unique ignoring case, as in B2), heading customers see (`display_name`; blank hides the heading
+  and subtitle), type, subtitle, description, background image (a dropdown of staff images), default order, shown
+  (`is_active`), show disclaimer. Slug read-only.
+- **Warnings:** the page names every menu showing the category. Switching **shown** off hides it on all of them, so
+  it needs a confirm tick (`confirm_hide`), like the menu live-site guard.
+- **"+ New category" in B2 is unchanged** (short form); staff use Category settings for the rest (James).
+- **Access:** `STAFF` views (read-only for Tier 2); saving needs `MANAGER`. Help tips for both pages.
+- Phase 6 adds option groups to this page.
+- **Built as** (2026-11-18): `CategoryForm` (`apps/staff/forms.py`, groups in `CATEGORY_GROUPS`; `read_only=True`
+  disables every field for Tier 2; background images limited to staff images with a file), `CategoryListView` /
+  `CategoryDetailView`, templates `staff/menu/category_list.html`, `category_form.html`. The menu page's
+  Categories tab links each row to it (`menu_url` in `_menu_categories_context`). After a save it redirects to the
+  page, keeping `?next=` unless it's the plain list. Tests: `apps/staff/tests/test_category_settings.py`.
+
 ### Not in scope
 
-Deleting menus or categories (switch them off instead), copying a menu or category, editing a category's
-other settings (background image, disclaimer, description), arranging subcategories.
+Deleting menus or categories (switch them off instead), copying a menu or category, arranging subcategories.
 
 ### What Claude Code must not do here
 
@@ -2433,7 +2454,7 @@ other settings (background image, disclaimer, description), arranging subcategor
 - Delete an item, category or menu from these pages.
 - Give non-promo menus custom colors, or touch `available_game_day`.
 
-## Menu option groups — Phases 1–4 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
+## Menu option groups — Phases 1–5 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
 
 Category-level choice lists from the printed menu (Signature Sauces & Dry Rubs, Dressings, Add to Any Salad)
 and a category subtitle. Built one phase at a time; each phase updates this section.
@@ -2483,6 +2504,11 @@ and a category subtitle. Built one phase at a time; each phase updates this sect
 - Never deletes: rows missing from a file are kept; switch off with `is_active = no`. Not on the whole-menu sheet.
 - Portal import page and staff help list them automatically (`KIND_DESCRIPTIONS` / `KIND_EXAMPLES`); the help
   topic has a paragraph on the three files.
+
+### Category settings (Phase 5)
+
+Staff portal pages `staff:categories` / `staff:category` (subtitle and every other category field) — see
+*Category settings* in the menu builder section.
 
 ### Public menu (Phase 4)
 

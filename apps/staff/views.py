@@ -28,7 +28,7 @@ from apps.menu import whole_menu
 from apps.menu.models import Menu, MenuCategory, MenuCategoryAssignment, MenuItem, MenuItemCategoryAssignment
 
 from .forms import (
-    AddonFormSet, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuCategoryAddForm,
+    AddonFormSet, CategoryForm, ColorSchemeForm, EventForm, MediaItemEditForm, MediaItemUploadForm, MenuCategoryAddForm,
     MenuCategoryNewForm, MenuForm, MenuItemForm,
     NewsletterForm, PlacementAddForm, PlacementForm, PopupForm, SiteSettingsForm, VariationFormSet,
 )
@@ -1086,6 +1086,56 @@ class MenuDetailView(StaffRequiredMixin, View):
         return redirect('staff:menu_detail', pk=menu.pk)
 
 
+class CategoryListView(StaffRequiredMixin, View):
+    """Every category, including inactive ones and ones on no menu."""
+    staff_access = STAFF
+
+    def get(self, request):
+        categories = (
+            MenuCategory.objects
+            .annotate(item_count=Count('item_assignments', distinct=True))
+            .prefetch_related(Prefetch('menu_assignments',
+                                       queryset=MenuCategoryAssignment.objects.select_related('menu')
+                                       .order_by('menu__title')))
+            .order_by('category_type', 'order', 'name')
+        )
+        return render(request, 'staff/menu/category_list.html', {'categories': categories})
+
+
+class CategoryDetailView(StaffRequiredMixin, View):
+    """A category's settings. GET is open to every staff tier (read-only for Tier 2); POST needs a manager."""
+    staff_access = STAFF
+
+    def _render(self, request, category, form, back_url):
+        menus = Menu.objects.filter(menu_category_assignments__category=category).order_by('title')
+        return render(request, 'staff/menu/category_form.html', {
+            'category': category, 'form': form, 'menus': menus, 'back_url': back_url,
+            'can_edit': is_manager(request.user),
+            'item_count': category.item_assignments.count(),
+        })
+
+    def _back_url(self, request, data):
+        return _safe_next(request, data.get('next'), default=reverse('staff:categories'))
+
+    def get(self, request, pk):
+        category = get_object_or_404(MenuCategory, pk=pk)
+        form = CategoryForm(instance=category, read_only=not is_manager(request.user))
+        return self._render(request, category, form, self._back_url(request, request.GET))
+
+    def post(self, request, pk):
+        category = get_object_or_404(MenuCategory, pk=pk)
+        back_url = self._back_url(request, request.POST)
+        form = CategoryForm(request.POST, instance=category)
+        if not form.is_valid():
+            return self._render(request, MenuCategory.objects.get(pk=pk), form, back_url)
+        form.save()
+        messages.success(request, 'Saved.')
+        url = reverse('staff:category', args=[category.pk])
+        if back_url != reverse('staff:categories'):
+            url += '?' + urlencode({'next': back_url})
+        return redirect(url)
+
+
 def _menu_assignments(menu):
     return list(menu.menu_category_assignments.select_related('category').order_by('display_order', 'pk'))
 
@@ -1156,6 +1206,7 @@ def _menu_categories_context(menu, can_edit, add_form=None, new_form=None, notic
             prefix='newcat', initial={'category_type': 'drinks' if menu.menu_type == 'drinks' else 'food'})
     return {
         'menu': menu, 'can_edit': can_edit, 'category_rows': rows, 'add_form': add_form, 'new_form': new_form,
+        'menu_url': reverse('staff:menu_detail', args=[menu.pk]) + '#categories',
         'categories_notice': notice, 'new_form_open': new_form_open,
     }
 

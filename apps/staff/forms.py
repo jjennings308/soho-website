@@ -376,6 +376,84 @@ class MenuCategoryNewForm(forms.ModelForm):
         return self.cleaned_data['display_name'] or self.cleaned_data.get('name', '')
 
 
+# (heading, field names) of the category settings form.
+CATEGORY_GROUPS = [
+    ('Basics', ['name', 'display_name', 'category_type']),
+    ('On the menu page', ['subtitle', 'description', 'background_image', 'show_disclaimer']),
+    ('Visibility', ['is_active', 'order']),
+]
+
+
+class CategoryForm(forms.ModelForm):
+    """
+    All of a category's settings. Slug is left out (CSV ID). Switching Shown off
+    hides the category on every menu showing it, so it must be confirmed (confirm_hide).
+    """
+    confirm_hide = forms.BooleanField(required=False, label='Yes, hide it on those menus')
+
+    class Meta:
+        model = MenuCategory
+        fields = [name for _, names in CATEGORY_GROUPS for name in names]
+        labels = {
+            'display_name': 'Heading customers see', 'category_type': 'Type',
+            'subtitle': 'Subtitle', 'background_image': 'Background image',
+            'show_disclaimer': 'Show the menu disclaimer under this section',
+            'is_active': 'Shown', 'order': 'Default order',
+        }
+        help_texts = {
+            'name': 'For staff, and how spreadsheets find the category by name.',
+            'display_name': 'Blank hides the heading and the subtitle (the description still shows).',
+            'category_type': 'Food or drinks.',
+            'subtitle': "A short line in small capitals under the heading, e.g. 'Includes your choice of side'.",
+            'description': 'A sentence under the heading.',
+            'background_image': 'Optional photo behind the section, darkened so the text stays readable.',
+            'show_disclaimer': 'The consumer advisory (raw or undercooked food). Needed when a choice is marked *.',
+            'is_active': 'Off hides this category on every menu showing it.',
+            'order': "Used where categories aren't arranged by a menu. Each menu sets its own order on its "
+                     'Categories tab.',
+        }
+        widgets = {'description': forms.Textarea(attrs={'rows': 2})}
+
+    def __init__(self, *args, read_only=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.needs_confirm = False
+        images = self.fields['background_image']
+        images.queryset = (MediaItem.objects.filter(owner_type='staff', media_type='image')
+                           .exclude(file='').order_by('name'))
+        images.empty_label = 'No background image'
+        for field in self.fields.values():
+            widget = field.widget
+            if isinstance(widget, forms.CheckboxInput):
+                pass
+            elif isinstance(widget, forms.Select):
+                widget.attrs.setdefault('class', 'sp-select')
+            elif isinstance(widget, forms.Textarea):
+                widget.attrs.setdefault('class', 'sp-textarea')
+            else:
+                widget.attrs.setdefault('class', 'sp-input')
+            if read_only:
+                field.disabled = True
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if MenuCategory.objects.filter(name__iexact=name).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('Another category already has this name.')
+        return name
+
+    def clean(self):
+        cleaned = super().clean()
+        if self.instance.pk and self.instance.is_active and cleaned.get('is_active') is False:
+            menus = [m.title for m in Menu.objects.filter(menu_category_assignments__category=self.instance)
+                     .order_by('title')]
+            if menus and not cleaned.get('confirm_hide'):
+                self.needs_confirm = True
+                self.add_error(None, f'Switching Shown off hides this category on {", ".join(menus)}.')
+        return cleaned
+
+    def groups(self):
+        return [(title, [self[name] for name in names]) for title, names in CATEGORY_GROUPS]
+
+
 class NewsletterForm(forms.ModelForm):
     class Meta:
         model = Newsletter

@@ -1,0 +1,79 @@
+{% extends "staff/base.html" %}
+{# staff/menu/category_form.html — a category's settings (read-only unless can_edit). #}
+{% block title %}{{ category.name }}{% endblock %}
+{% block page_title %}{{ category.name }}{% endblock %}
+
+{% block extra_head %}
+{% include "staff/menu/_item_styles.html" %}
+<style>
+  .ip-confirm { border-left: 3px solid var(--color-gold-primary); padding: 0.6rem 0.75rem; margin-bottom: 1rem; }
+</style>
+{% endblock %}
+
+{% block topbar_actions %}
+  <a href="{{ back_url }}" class="sp-btn sp-btn--outline">&larr; Back</a>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:56rem;">
+  <p class="ip-meta" style="margin-bottom:0.5rem;">
+    Spreadsheet ID (slug): <code>{{ category.slug }}</code> — stays the same if you rename the category.
+    {% if not can_edit %}<br>You can view this category; a manager can change it.{% endif %}
+  </p>
+  <p class="ip-meta" style="margin-bottom:1rem;">
+    {{ item_count }} item{{ item_count|pluralize }}.
+    {% if menus %}On {% for menu in menus %}<a href="{% url 'staff:menu_detail' menu.pk %}#categories" style="color:inherit;text-decoration:underline;">{{ menu.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if menus|length > 1 %} — changes here show on all of them{% endif %}.
+    {% else %}Not on any menu, so customers don't see it. Add it from a menu's Categories tab.{% endif %}
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ back_url }}">
+    <div class="sp-card">
+      {% if form.needs_confirm %}
+      <div class="ip-confirm">
+        {% for err in form.non_field_errors %}<p style="font-size:0.875rem;margin-bottom:0.4rem;">{{ err }}</p>{% endfor %}
+        <label class="ip-check">{{ form.confirm_hide }} {{ form.confirm_hide.label }}</label>
+      </div>
+      {% else %}
+        {% for err in form.non_field_errors %}<div class="sp-field-error" style="margin-bottom:0.75rem;">{{ err }}</div>{% endfor %}
+      {% endif %}
+
+      {% for title, fields in form.groups %}
+      <div class="ip-group">
+        <h3>{{ title }}</h3>
+        <div class="ip-grid">
+          {% for field in fields %}
+            {% if field.widget_type == 'checkbox' %}
+              <div class="sp-field ip-wide">
+                <label class="ip-check">{{ field }} {{ field.label }}</label>
+                {% if field.help_text and can_edit %}<div class="ip-help">{{ field.help_text }}</div>{% endif %}
+                {% for err in field.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+              </div>
+            {% else %}
+              <div class="sp-field{% if field.widget_type == 'textarea' or field.name == 'subtitle' or field.name == 'background_image' %} ip-wide{% endif %}">
+                <label class="sp-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text and can_edit %}<div class="ip-help">{{ field.help_text }}</div>{% endif %}
+                {% for err in field.errors %}<div class="sp-field-error">{{ err }}</div>{% endfor %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+        {% if title == 'On the menu page' and category.background_image %}
+          <img src="{{ category.background_image.url }}" alt="" loading="lazy"
+               style="max-width:16rem;max-height:7rem;object-fit:cover;border-radius:4px;margin-top:0.25rem;">
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if can_edit %}
+    <div class="ip-actions ip-save">
+      <button type="submit" class="sp-btn sp-btn--primary">Save</button>
+      <a href="{{ back_url }}" class="sp-btn sp-btn--outline">Back</a>
+    </div>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}
