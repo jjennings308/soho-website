@@ -154,6 +154,14 @@ Before editing anything, review the code as built in Phases 1–6 and report bac
 
 Then **stop and wait** for James to pick what goes ahead.
 
+**7.0 done (2026-11-18). James's decisions:**
+1. **Layout as recommended:** a plain `<div>` entry (not a clickable card, no pop-up), same padding and title/price row as an item card: group name in the item title style, note on the right where the price goes, choices underneath in a new unclamped class that looks like `.menu-item__desc`. Full row (`md:col-span-3`). No photo, badges, "View details", hover shadow or pointer cursor.
+2. **Separators follow "Choices cost extra" (`is_add_on`):** on → " | ", off → ", ". Not decided per choice.
+3. **Build both 7.1 and 7.2.**
+4. **Leave the portal's choice summary as it is** (" · ").
+5. Start 7.1 only after James has deployed Phases 5–6 and says go.
+6. Content for James, found in the review: Starters and Soups and Salads have no heading on dev (blank "heading customers see"); Caesar Salad's own add-ons (Chicken +8, Steak +10, Salmon +12) conflict with Add to Any Salad; the Soups and Salads disclaimer is still off.
+
 ### 7.1 Group entries at the bottom of the section (public templates)
 
 - In `menu_category_section.html`, render active option groups as **entries in the section grid, each spanning a full row** (`md:col-span-3`), after the items and subcategory groups. They use item-like styling: bold name, the list underneath. No photo, no "View details", no modal.

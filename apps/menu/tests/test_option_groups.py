@@ -261,3 +261,57 @@ class PublicMenuOptionGroupTests(TestCase):
         html = self.client.get(reverse('menu:menu_detail', args=['salad-week'])).content.decode()
         self.assertIn('House Salad', html)
         self.assertNotIn('Add to Any Salad', html)
+
+
+class PrintedMenuLookTests(PublicMenuOptionGroupTests):
+    """Phase 7.1: groups are full-row entries at the bottom of the section grid, styled like items."""
+
+    def block(self, html, name):
+        """The markup of one group entry."""
+        start = html.rindex('<div class="menu-option-group', 0, html.index(f'card__title">{name}<'))
+        return html[start:html.index('</p>', start)]
+
+    def test_separators_follow_choices_cost_extra(self):
+        html = self.get()
+        adds = self.block(html, 'Add to Any Salad')
+        self.assertIn('</span> | <span', adds)
+        self.assertNotIn(', <span', adds)
+        dressings = self.block(html, 'Dressings')
+        self.assertIn('Ranch</span>, <span class="whitespace-nowrap">Caesar', dressings)
+        self.assertNotIn(' | ', dressings)
+
+    def test_note_sits_where_the_price_goes(self):
+        OptionGroup.objects.filter(pk=self.dressings.pk).update(note='Choose one')
+        self.assertIn('menu-item__price shrink-0">Choose one<', self.block(self.get(), 'Dressings'))
+
+    def test_full_row_in_the_grid_after_items_not_a_card(self):
+        MenuCategory.objects.filter(pk=self.salads.pk).update(show_disclaimer=True)
+        html = self.get()
+        entry = html.index('<div class="menu-option-group md:col-span-3">')
+        self.assertLess(html.index('House Salad'), entry)
+        self.assertLess(entry, html.index('menu-category-disclaimer'))
+        block = self.block(html, 'Dressings')
+        self.assertNotIn('open-menu-modal', block)
+        self.assertNotIn('View Details', block)
+        self.assertNotIn('t-description', block)            # never clamped to 3 lines
+
+    def test_long_list_is_not_cut(self):
+        for n in range(30):
+            OptionChoice.objects.create(group=self.dressings, name=f'Dressing {n:02d}', order=10 + n)
+        block = self.block(self.get(), 'Dressings')
+        self.assertIn('Dressing 00', block)
+        self.assertIn('Dressing 29', block)
+
+    def test_groups_only_category_has_the_entry_in_its_grid(self):
+        from apps.menu.models import MenuCategoryAssignment
+        sides = MenuCategory.objects.create(name='Sides', slug='sides')
+        MenuCategoryAssignment.objects.create(menu=self.food, category=sides, display_order=2)
+        group = OptionGroup.objects.create(name='Premium sides', note='8')
+        OptionChoice.objects.create(group=group, name='Gravy Fries', order=1)
+        OptionChoice.objects.create(group=group, name='Mashed Potatoes with Gravy', order=2)
+        CategoryOptionGroup.objects.create(category=sides, group=group)
+        html = self.get()
+        section = html[html.index('id="cat-sides"'):]
+        self.assertIn('card__title">Premium sides<', section)
+        self.assertIn('menu-item__price shrink-0">8<', section)
+        self.assertIn('Gravy Fries</span>, <span class="whitespace-nowrap">Mashed Potatoes with Gravy', section)

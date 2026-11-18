@@ -230,23 +230,13 @@
     @apply text-center text-sm tracking-wider mb-2;
   }
 
-  /* Option group (sauces, dressings, add-ons): a compact footnote, not a card */
-  .menu-option-group {
-    border-top: 1px dotted var(--color-dark-gray);
-    @apply max-w-3xl mx-auto mt-6 pt-3 text-center;
-  }
-  .menu-option-group__name {
-    font-family: var(--font-accent);
-    color: var(--color-text-accent);
-    @apply text-xs font-semibold uppercase tracking-widest;
-  }
-  .menu-option-group__note {
-    color: var(--color-text-secondary);
-    @apply text-xs italic mt-0.5;
-  }
+  /* Option group (sauces, dressings, add-ons): an entry like an item card — a full row at the
+     bottom of the section, not clickable. Its list looks like .menu-item__desc but is never
+     clamped (.t-description cuts at 3 lines). */
+  .menu-option-group { @apply rounded-lg; }
   .menu-option-group__choices {
     color: var(--color-text-secondary);
-    @apply text-sm leading-relaxed mt-1;
+    @apply text-sm italic leading-relaxed mt-1;
   }
   .menu-option-group__upcharge {
     color: var(--color-text-accent);

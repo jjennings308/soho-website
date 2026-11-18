@@ -1,18 +1,27 @@
 {# ============================================================ #}
 {# menu/partials/_option_group.html                             #}
 {#                                                              #}
-{# One option group (sauces, dressings, add-ons) at the end of  #}
-{# a category section. A compact footnote, not an item card.    #}
+{# One option group (sauces, dressings, add-ons) as an entry in #}
+{# the category grid, styled like an item card but not one: a   #}
+{# full row at the bottom, no photo, no pop-up. The note sits    #}
+{# where an item's price goes ("Sides | 7").                     #}
 {# Expects:                                                     #}
-{#   group — OptionGroup with `active_choices` prefetched       #}
-{#           (from get_category_option_groups)                  #}
+{#   group     — OptionGroup with `active_choices` prefetched   #}
+{#               (from get_category_option_groups)              #}
+{#   color_key — from menu_category_section.html                #}
+{# Separators follow "Choices cost extra" (is_add_on):           #}
+{#   on → " | " with upcharges; off → ", ".                     #}
 {# ============================================================ #}
-<div class="menu-option-group">
-  <p class="menu-option-group__name">{{ group.name }}</p>
-  {% if group.note %}<p class="menu-option-group__note">{{ group.note }}</p>{% endif %}
-  {% if group.active_choices %}
-  <p class="menu-option-group__choices">
-    {% for choice in group.active_choices %}<span class="whitespace-nowrap">{{ choice.name }}{% if choice.cooked_to_order %}*{% endif %}{% if group.is_add_on and choice.display_upcharge %} <span class="menu-option-group__upcharge">{{ choice.display_upcharge }}</span>{% endif %}</span>{% if not forloop.last %} · {% endif %}{% endfor %}
-  </p>
-  {% endif %}
+<div class="menu-option-group md:col-span-3">
+  <div class="p-4" style="color: var(--color-text-{{ color_key }});">
+    <div class="flex justify-between items-start gap-2 mb-1">
+      <h4 class="card__title">{{ group.name }}</h4>
+      {% if group.note %}<span class="menu-item__price shrink-0">{{ group.note }}</span>{% endif %}
+    </div>
+    {% if group.active_choices %}
+    <p class="menu-option-group__choices">
+      {% for choice in group.active_choices %}<span class="whitespace-nowrap">{{ choice.name }}{% if choice.cooked_to_order %}*{% endif %}{% if group.is_add_on and choice.display_upcharge %} <span class="menu-option-group__upcharge">{{ choice.display_upcharge }}</span>{% endif %}</span>{% if not forloop.last %}{% if group.is_add_on %} | {% else %}, {% endif %}{% endif %}{% endfor %}
+    </p>
+    {% endif %}
+  </div>
 </div>

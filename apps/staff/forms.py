@@ -484,10 +484,11 @@ class OptionGroupForm(forms.ModelForm):
     class Meta:
         model = OptionGroup
         fields = ['name', 'note', 'is_add_on', 'is_active']
-        labels = {'note': 'Note', 'is_add_on': 'Choices cost extra (show prices)', 'is_active': 'Shown'}
+        labels = {'note': 'Price or note', 'is_add_on': 'Choices cost extra (show prices)', 'is_active': 'Shown'}
         help_texts = {
             'name': 'The small heading customers see, e.g. Signature Sauces & Dry Rubs.',
-            'note': "Optional line under the name, e.g. 'Choose one' or 'Prices vary'.",
+            'note': "Shown on the right, where an item's price goes: a price such as 7, or a short note such as "
+                    "Prices vary.",
             'is_add_on': 'Shows each choice\'s upcharge, e.g. Steak +8. Leave off for free choices such as dressings.',
             'is_active': 'Off hides this group in every category it is in.',
         }

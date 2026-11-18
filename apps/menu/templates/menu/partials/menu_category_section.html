@@ -52,7 +52,7 @@
     </p>
   {% endif %}
 
-  {% if assignments %}
+  {# The section only renders with items or option groups (menu_sections.html). #}
   {% with plain=assignments|without_subcategory subcat_items=assignments|with_subcategory %}
   <div class="grid md:grid-cols-3 gap-2 p-1">
 
@@ -65,13 +65,13 @@
       {% include "menu/partials/menu_subcat_group.html" %}
     {% endfor %}
 
+    {# Option groups: full rows at the bottom, after items and subcategory groups #}
+    {% for group in option_groups %}
+      {% include "menu/partials/_option_group.html" %}
+    {% endfor %}
+
   </div>
   {% endwith %}
-  {% endif %}
-
-  {% for group in option_groups %}
-    {% include "menu/partials/_option_group.html" %}
-  {% endfor %}
 
   {% if category.show_disclaimer %}
     <div class="menu-category-disclaimer mt-4 text-center">

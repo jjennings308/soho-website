@@ -2456,7 +2456,7 @@ Deleting menus or categories (switch them off instead), copying a menu or catego
 - Delete an item, category or menu from these pages.
 - Give non-promo menus custom colors, or touch `available_game_day`.
 
-## Menu option groups — Phases 1–6 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
+## Menu option groups — Phases 1–6 and 7.1 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 6)
 
 Category-level choice lists from the printed menu (Signature Sauces & Dry Rubs, Dressings, Add to Any Salad)
 and a category subtitle. Built one phase at a time; each phase updates this section.
@@ -2539,8 +2539,15 @@ Staff portal pages `staff:categories` / `staff:category` (subtitle and every oth
 - `{% get_category_option_groups category as option_groups %}` (`menu_tags.py`) runs **once per category in
   `menu_sections.html`** and is passed into the section; active groups with active links, in link order, choices
   prefetched as `active_choices`. A category renders when it has items **or** groups (D15).
-- `menu/partials/_option_group.html`: name, note, choices joined by " · ", `*` for cooked-to-order, upcharge only
-  when `is_add_on`. Shown after the items, before the disclaimer.
+- `menu/partials/_option_group.html` (**Phase 7.1**): each group is an entry **inside the section grid, a full
+  row** (`md:col-span-3`) after the items and subcategory groups, styled like an item card but not one: a plain
+  `<div>`, no photo, badges, "View Details", pop-up, hover or pointer. Group name in `.card__title`; the **note
+  sits where an item's price goes** (`.menu-item__price`); choices underneath in `.menu-option-group__choices`,
+  which looks like `.menu-item__desc` but is **never clamped** (don't use `.t-description` here). `*` for
+  cooked-to-order. **Separators follow `is_add_on`** ("Choices cost extra"): on → " | " with upcharges, off → ", "
+  (James, 2026-11-18). The portal's own choice summary keeps " · " (James).
+- **The note is the price or a short note shown on the right** ("7", "Prices vary"), not a line under the name
+  (help texts on the model, portal form and staff help say so; migration `menu/0023` is help text only).
 - Subtitle renders under the heading (`.menu-category-subtitle`) and is hidden with it (D14).
 - Item cards show `MenuItem.addons_display` (`.menu-item__addons`). The modal's add-on `price` is now
   `display_upcharge` ("+2"), so the modal no longer adds its own "+".

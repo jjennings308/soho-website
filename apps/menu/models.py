@@ -551,7 +551,7 @@ class OptionGroup(TimeStampedModel):
     )
     note = models.CharField(
         max_length=200, blank=True,
-        help_text="Optional helper or price line shown under the group name.",
+        help_text="Price or short note shown on the right, where an item's price goes, e.g. 7 or Prices vary.",
     )
     is_add_on = models.BooleanField(
         default=False,
