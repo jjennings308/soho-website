@@ -82,7 +82,7 @@ def _assignment_to_json_data(assignment):
     addons = [
         {
             'name':       a.name,
-            'price':      _currency(a.price),
+            'price':      a.display_upcharge,     # "+2"; "" for none (shared formatter)
             'is_default': a.is_default,
         }
         for a in item.addons.all()
@@ -225,6 +225,34 @@ def get_category_assignments(category):
             ).order_by('order', 'price'),
         ),
     ).order_by('subcategory__order', 'order')
+
+
+@register.simple_tag
+def get_category_option_groups(category):
+    """
+    Active option groups shown at the end of a category section, in the
+    category's order, each with its active choices prefetched as
+    `active_choices`. A group shows only if both the group and its link to
+    this category are active. Two queries per category.
+
+    Usage (once per category, in menu_sections.html):
+        {% get_category_option_groups category as option_groups %}
+    """
+    from apps.menu.models import OptionChoice, OptionGroup
+
+    return list(
+        OptionGroup.objects.filter(
+            is_active=True,
+            category_links__category=category,
+            category_links__is_active=True,
+        ).order_by('category_links__order', 'name').prefetch_related(
+            Prefetch(
+                'choices',
+                queryset=OptionChoice.objects.filter(is_active=True).order_by('order', 'id'),
+                to_attr='active_choices',
+            ),
+        )
+    )
 
 
 @register.simple_tag

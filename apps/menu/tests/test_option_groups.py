@@ -166,3 +166,98 @@ class OptionGroupAdminTests(TestCase):
         resp = self.client.post(reverse('admin:menu_optiongroup_add'), data)
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(OptionGroup.objects.exists())
+
+
+class PublicMenuOptionGroupTests(TestCase):
+    """Phase 4: the main menu page (menu_sections → menu_category_section)."""
+
+    def setUp(self):
+        from apps.menu.models import Menu, MenuCategoryAssignment, MenuItemCategoryAssignment
+        self.food = Menu.objects.create(title='Food', slug='food', menu_type='food', role='default_food')
+        self.salads = MenuCategory.objects.create(
+            name='Soups and Salads', slug='soups-and-salads', display_name='Soups & Salads',
+            subtitle='Fresh every day', description='Fresh salads and homemade soups')
+        self.salad = MenuItem.objects.create(name='House Salad', slug='house-salad', price=Decimal('9'))
+        MenuItemCategoryAssignment.objects.create(menu_item=self.salad, category=self.salads)
+        MenuCategoryAssignment.objects.create(menu=self.food, category=self.salads, display_order=1)
+
+        self.adds = OptionGroup.objects.create(name='Add to Any Salad', is_add_on=True)
+        OptionChoice.objects.create(group=self.adds, name='Chicken', upcharge=Decimal('7'), order=1)
+        OptionChoice.objects.create(group=self.adds, name='Steak', upcharge=Decimal('8'), order=2,
+                                    cooked_to_order=True)
+        OptionChoice.objects.create(group=self.adds, name='Tofu', upcharge=Decimal('5'), order=3, is_active=False)
+        self.dressings = OptionGroup.objects.create(name='Dressings')
+        OptionChoice.objects.create(group=self.dressings, name='Ranch', upcharge=Decimal('1'), order=1)
+        OptionChoice.objects.create(group=self.dressings, name='Caesar', order=2)
+        CategoryOptionGroup.objects.create(category=self.salads, group=self.dressings, order=1)
+        CategoryOptionGroup.objects.create(category=self.salads, group=self.adds, order=2)
+
+    def get(self):
+        from django.urls import reverse
+        return self.client.get(reverse('menu:full')).content.decode()
+
+    def test_groups_render_in_order_with_choices(self):
+        html = self.get()
+        self.assertLess(html.index('Dressings'), html.index('Add to Any Salad'))
+        self.assertLess(html.index('House Salad'), html.index('Dressings'))   # at the end of the section
+        self.assertIn('Steak*', html)
+        self.assertIn('menu-option-group__upcharge">+8<', html)
+        self.assertNotIn('Tofu', html)                                       # inactive choice
+
+    def test_upcharge_only_shown_for_add_on_groups(self):
+        html = self.get()
+        self.assertIn('Ranch', html)
+        self.assertNotIn('menu-option-group__upcharge">+1<', html)
+
+    def test_inactive_group_or_link_hidden(self):
+        OptionGroup.objects.filter(pk=self.dressings.pk).update(is_active=False)
+        CategoryOptionGroup.objects.filter(group=self.adds).update(is_active=False)
+        html = self.get()
+        self.assertNotIn('Dressings', html)
+        self.assertNotIn('Add to Any Salad', html)
+
+    def test_subtitle_and_description(self):
+        html = self.get()
+        self.assertIn('menu-category-subtitle">Fresh every day<', html)
+        self.assertIn('Fresh salads and homemade soups', html)
+
+    def test_blank_heading_hides_subtitle_but_keeps_description(self):
+        MenuCategory.objects.filter(pk=self.salads.pk).update(display_name='')
+        html = self.get()
+        self.assertNotIn('Fresh every day', html)
+        self.assertIn('Fresh salads and homemade soups', html)
+
+    def test_category_with_only_groups_renders(self):
+        from apps.menu.models import MenuCategoryAssignment
+        sauces_cat = MenuCategory.objects.create(name='Sauces', slug='sauces', display_name='Sauces')
+        MenuCategoryAssignment.objects.create(menu=self.food, category=sauces_cat, display_order=2)
+        group = OptionGroup.objects.create(name='Signature Sauces')
+        OptionChoice.objects.create(group=group, name='Buffalo')
+        CategoryOptionGroup.objects.create(category=sauces_cat, group=group)
+        html = self.get()
+        self.assertIn('id="cat-sauces"', html)
+        self.assertIn('Signature Sauces', html)
+
+    def test_empty_category_still_hidden(self):
+        from apps.menu.models import MenuCategoryAssignment
+        empty = MenuCategory.objects.create(name='Empty', slug='empty', display_name='Empty Section')
+        MenuCategoryAssignment.objects.create(menu=self.food, category=empty, display_order=3)
+        self.assertNotIn('Empty Section', self.get())
+
+    def test_item_addons_line_and_modal_json(self):
+        MenuItemAddon.objects.create(menu_item=self.salad, name='Bacon', price=Decimal('2'), order=1)
+        MenuItemAddon.objects.create(menu_item=self.salad, name='Avocado', price=Decimal('3'), order=2,
+                                     is_available=False)
+        html = self.get()
+        self.assertIn('menu-item__addons mt-1">Bacon +2<', html)
+        self.assertNotIn('Avocado', html)
+        self.assertIn('&quot;price&quot;: &quot;+2&quot;', html.replace('"', '&quot;'))
+
+    def test_promo_page_does_not_show_groups(self):
+        from django.urls import reverse
+        from apps.menu.models import Menu, MenuCategoryAssignment
+        promo = Menu.objects.create(title='Salad Week', slug='salad-week', menu_type='promo')
+        MenuCategoryAssignment.objects.create(menu=promo, category=self.salads)
+        html = self.client.get(reverse('menu:menu_detail', args=['salad-week'])).content.decode()
+        self.assertIn('House Salad', html)
+        self.assertNotIn('Add to Any Salad', html)

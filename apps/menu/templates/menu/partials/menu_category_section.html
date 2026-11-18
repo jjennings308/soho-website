@@ -5,6 +5,7 @@
 {#   category        — MenuCategory instance                    #}
 {#   assignments     — QuerySet of MenuItemCategoryAssignment   #}
 {#   section_index   — integer from parent loop (for bg cycle)  #}
+{#   option_groups   — list from get_category_option_groups     #}
 {# ============================================================ #}
 
 {% load menu_tags menu_filters %}
@@ -40,13 +41,18 @@
   ">
   {% endif %}
 
-  {% if category.display_name %}<h2 class="text-center mb-1">{{ category.display_name }}</h2>{% endif %}
+  {% if category.display_name %}
+    <h2 class="text-center mb-1">{{ category.display_name }}</h2>
+    {# Subtitle belongs to the heading: hidden with it. Description still shows. #}
+    {% if category.subtitle %}<p class="menu-category-subtitle">{{ category.subtitle }}</p>{% endif %}
+  {% endif %}
   {% if category.description %}
     <p class="text-center t-description mb-6 max-w-2xl mx-auto">
       {{ category.description }}
     </p>
   {% endif %}
 
+  {% if assignments %}
   {% with plain=assignments|without_subcategory subcat_items=assignments|with_subcategory %}
   <div class="grid md:grid-cols-3 gap-2 p-1">
 
@@ -61,6 +67,11 @@
 
   </div>
   {% endwith %}
+  {% endif %}
+
+  {% for group in option_groups %}
+    {% include "menu/partials/_option_group.html" %}
+  {% endfor %}
 
   {% if category.show_disclaimer %}
     <div class="menu-category-disclaimer mt-4 text-center">

@@ -79,6 +79,10 @@
         </p>
       {% endif %}
 
+      {% with addons=assignment.menu_item.addons_display %}
+        {% if addons %}<p class="menu-item__addons mt-1">{{ addons }}</p>{% endif %}
+      {% endwith %}
+
       <span class="text-eyebrow mt-2 block">View Details →</span>
 
     </div>

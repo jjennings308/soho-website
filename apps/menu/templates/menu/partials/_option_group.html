@@ -1,0 +1,18 @@
+{# ============================================================ #}
+{# menu/partials/_option_group.html                             #}
+{#                                                              #}
+{# One option group (sauces, dressings, add-ons) at the end of  #}
+{# a category section. A compact footnote, not an item card.    #}
+{# Expects:                                                     #}
+{#   group — OptionGroup with `active_choices` prefetched       #}
+{#           (from get_category_option_groups)                  #}
+{# ============================================================ #}
+<div class="menu-option-group">
+  <p class="menu-option-group__name">{{ group.name }}</p>
+  {% if group.note %}<p class="menu-option-group__note">{{ group.note }}</p>{% endif %}
+  {% if group.active_choices %}
+  <p class="menu-option-group__choices">
+    {% for choice in group.active_choices %}<span class="whitespace-nowrap">{{ choice.name }}{% if choice.cooked_to_order %}*{% endif %}{% if group.is_add_on and choice.display_upcharge %} <span class="menu-option-group__upcharge">{{ choice.display_upcharge }}</span>{% endif %}</span>{% if not forloop.last %} · {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+</div>

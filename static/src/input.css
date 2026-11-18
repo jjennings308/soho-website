@@ -216,6 +216,43 @@
 
   .menu-item__prices { @apply flex flex-col items-end gap-0.5; }
 
+  /* Item add-ons line: "Bacon +2 · Guacamole +2" */
+  .menu-item__addons {
+    color: var(--color-text-secondary);
+    @apply text-xs leading-snug opacity-80;
+  }
+
+  /* Category tagline by the heading: "Includes your choice of side" */
+  .menu-category-subtitle {
+    font-family: var(--font-accent);
+    color: var(--color-text-accent);
+    font-variant: small-caps;
+    @apply text-center text-sm tracking-wider mb-2;
+  }
+
+  /* Option group (sauces, dressings, add-ons): a compact footnote, not a card */
+  .menu-option-group {
+    border-top: 1px dotted var(--color-dark-gray);
+    @apply max-w-3xl mx-auto mt-6 pt-3 text-center;
+  }
+  .menu-option-group__name {
+    font-family: var(--font-accent);
+    color: var(--color-text-accent);
+    @apply text-xs font-semibold uppercase tracking-widest;
+  }
+  .menu-option-group__note {
+    color: var(--color-text-secondary);
+    @apply text-xs italic mt-0.5;
+  }
+  .menu-option-group__choices {
+    color: var(--color-text-secondary);
+    @apply text-sm leading-relaxed mt-1;
+  }
+  .menu-option-group__upcharge {
+    color: var(--color-text-accent);
+    @apply font-semibold;
+  }
+
   .menu-item__price-label {
     color: var(--color-mid-gray);
     @apply text-xs uppercase tracking-wide mr-1;

@@ -14,8 +14,10 @@
 {% for cat_assignment in menu.menu_category_assignments.all %}
   {% with category=cat_assignment.category %}
     {% get_category_assignments category as assignments %}
-    {% if assignments %}
-      {% include "menu/partials/menu_category_section.html" with category=category assignments=assignments section_index=forloop.counter|add:section_offset %}
+    {% get_category_option_groups category as option_groups %}
+    {# A category with only option groups (no items) still renders. #}
+    {% if assignments or option_groups %}
+      {% include "menu/partials/menu_category_section.html" with category=category assignments=assignments option_groups=option_groups section_index=forloop.counter|add:section_offset %}
     {% endif %}
   {% endwith %}
 {% endfor %}

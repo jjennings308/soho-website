@@ -2433,7 +2433,7 @@ other settings (background image, disclaimer, description), arranging subcategor
 - Delete an item, category or menu from these pages.
 - Give non-promo menus custom colors, or touch `available_game_day`.
 
-## Menu option groups — Phases 1–3 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
+## Menu option groups — Phases 1–4 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 4)
 
 Category-level choice lists from the printed menu (Signature Sauces & Dry Rubs, Dressings, Add to Any Salad)
 and a category subtitle. Built one phase at a time; each phase updates this section.
@@ -2483,6 +2483,21 @@ and a category subtitle. Built one phase at a time; each phase updates this sect
 - Never deletes: rows missing from a file are kept; switch off with `is_active = no`. Not on the whole-menu sheet.
 - Portal import page and staff help list them automatically (`KIND_DESCRIPTIONS` / `KIND_EXAMPLES`); the help
   topic has a paragraph on the three files.
+
+### Public menu (Phase 4)
+
+- Main menu pages only (`menu_sections.html` → `menu_category_section.html`). Promo / single-menu pages
+  (`menu_detail.html`) are unchanged and show no option groups (default agreed in the plan; ask James to change).
+- `{% get_category_option_groups category as option_groups %}` (`menu_tags.py`) runs **once per category in
+  `menu_sections.html`** and is passed into the section; active groups with active links, in link order, choices
+  prefetched as `active_choices`. A category renders when it has items **or** groups (D15).
+- `menu/partials/_option_group.html`: name, note, choices joined by " · ", `*` for cooked-to-order, upcharge only
+  when `is_add_on`. Shown after the items, before the disclaimer.
+- Subtitle renders under the heading (`.menu-category-subtitle`) and is hidden with it (D14).
+- Item cards show `MenuItem.addons_display` (`.menu-item__addons`). The modal's add-on `price` is now
+  `display_upcharge` ("+2"), so the modal no longer adds its own "+".
+- CSS in `static/src/input.css` (`.menu-option-group*`, `.menu-category-subtitle`, `.menu-item__addons`), theme
+  variables only. Subcategory list rows (`menu_subcat_group.html`) don't show add-ons.
 
 ## Menu CSV import / export (`apps/menu/importers.py`) — M1–M3 BUILT
 
