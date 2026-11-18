@@ -176,6 +176,8 @@ Then **stop and wait** for James to pick what goes ahead.
 
 - Switch the D1 add-on formatter (`MenuItem.addons_display`) from " · " to " | ", and update its tests. The card and the modal still share the one formatter.
 
+**Status (2026-11-18):** 7.0 reported; 7.1 built (`5f75a9f`); 7.2 built. Remaining: the content follow-up below, and a look in a real browser (including phone widths).
+
 ### Not now: a three-way price display setting
 
 Replacing `is_add_on` with `none` / `upcharge` / `price` (so choices could show standalone prices such as "Onion rings $5") is **dropped for now**. Sides don't need it: two groups with the price in the note cover them. If it comes back, note that reading the old `is_add_on` / `upcharge` CSV columns would need **column aliases in the import engine** (`importers.py` treats unknown columns as errors and ties each column to one model field), which every kind would get.

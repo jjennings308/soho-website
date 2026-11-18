@@ -344,13 +344,13 @@ class MenuItem(TimeStampedModel, RecurrenceMixin):
 
     @property
     def addons_display(self):
-        """Available add-ons on one line: 'Bacon +2 · Guacamole +2'. '' when none.
+        """Available add-ons on one line, printed-menu style: 'Bacon +2 | Guacamole +2'. '' when none.
         Filters in Python so a prefetched addons queryset is reused."""
         parts = []
         for a in self.addons.all():
             if a.is_available:
                 parts.append(f'{a.name} {a.display_upcharge}'.strip())
-        return ' · '.join(parts)
+        return ' | '.join(parts)
 
     @property
     def current_price(self):

@@ -96,7 +96,7 @@ class AddonsDisplayTests(TestCase):
         MenuItemAddon.objects.create(menu_item=self.item, name='Grilled chicken', price=Decimal('5'), order=1)
         MenuItemAddon.objects.create(
             menu_item=self.item, name='Steak', price=Decimal('7'), order=3, is_available=False)
-        self.assertEqual(self.item.addons_display, 'Grilled chicken +5 · Pulled pork +6')
+        self.assertEqual(self.item.addons_display, 'Grilled chicken +5 | Pulled pork +6')
 
     def test_blank_when_none(self):
         self.assertEqual(self.item.addons_display, '')

@@ -2456,7 +2456,7 @@ Deleting menus or categories (switch them off instead), copying a menu or catego
 - Delete an item, category or menu from these pages.
 - Give non-promo menus custom colors, or touch `available_game_day`.
 
-## Menu option groups — Phases 1–6 and 7.1 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 6)
+## Menu option groups — Phases 1–7 BUILT (plan: `docs/PLAN-menu-option-groups.md`, rev 6)
 
 Category-level choice lists from the printed menu (Signature Sauces & Dry Rubs, Dressings, Add to Any Salad)
 and a category subtitle. Built one phase at a time; each phase updates this section.
@@ -2465,7 +2465,8 @@ and a category subtitle. Built one phase at a time; each phase updates this sect
 
 - **Option groups are not menu items.** They never appear in item grids, promo cards or homepage slots.
 - **Item add-ons are `MenuItemAddon`** (D1): no free-text add-ons field. One line per item comes from
-  `MenuItem.addons_display` ("Bacon +2 · Guacamole +2", available add-ons only, reuses a prefetched `addons`).
+  `MenuItem.addons_display` ("Bacon +2 | Guacamole +2" — " | " since Phase 7.2, matching the printed menu;
+  available add-ons only, reuses a prefetched `addons`).
   A cooked-to-order `*` on an item add-on goes in its name (D12).
 - **One price formatter** (D6): `menu_filters.currency`. `format_upcharge()` (`apps/menu/models.py`) gives
   "+7" / "+7.5" and `""` for None or 0, so a bare "+" never shows; used by `OptionChoice.display_upcharge` and
