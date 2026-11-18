@@ -52,4 +52,6 @@ class HeroSideBoxTests(TestCase):
         html = self.client.get(reverse('core:home')).content.decode()
         self.assertIn('Crisp and cold', html)
         self.assertNotIn('max-w-[180px]', html)
-        self.assertEqual(html.count('md:min-h-[400px] p-2 md:p-3'), 2)  # both side boxes
+        self.assertNotIn('min-h-[', html)
+        self.assertEqual(html.count('flex items-center justify-center p-2'), 2)  # both side boxes
+        self.assertIn('px-6 py-2 text-center', html)
