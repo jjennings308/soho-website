@@ -1,7 +1,7 @@
-# Plan: Menu Option Groups + Staff Category Editor (rev 4)
+# Plan: Menu Option Groups + Staff Category Editor (rev 6)
 
 **Project:** SoHo Pittsburgh website (`jjennings308/soho-website`)
-**Revision note:** Rev 4 folds in Claude Code's third review. D14 now hides only the subtitle; groups-only categories render; the option-group query uses a template tag; formatting goes through one currency function. If this plan and the code or CLAUDE.md disagree, stop and flag it.
+**Revision note:** Phases 1–6 are built. Rev 5 added **Phase 7**: option groups styled like printed-menu entries. Rev 6 folds in Claude Code's review of rev 5: two Sides groups get different names, group entries get their own unclamped text style and a full row at the bottom of the section, the three-way price setting is dropped for now, and the note is defined as the price shown on the right. Phase 7 **starts with a review and status report**; nothing changes until James approves. If this plan and the code or CLAUDE.md disagree, stop and flag it.
 
 ---
 
@@ -134,6 +134,49 @@ class CategoryOptionGroup(TimeStampedModel):
 - Warn when a group is shared: "Also used in: …". Don't require at least one choice (D11).
 - Access, help tips and styling as in Phase 5.
 - **Done when:** staff create Dressings in the portal, attach it to two categories, edit one choice and see the change in both, then detach and re-attach without an error.
+
+---
+
+## Phase 7: Printed-menu look
+
+**Goal:** option groups on the public menu read like the printed menu. "Signature Sauces & Dry Rubs", "Dressings" and "Add to Any Salad" appear as entries styled like items: bold name, the list where the description goes, no photo, no "View details". Each group takes **a full row at the bottom of the category section**, after the items and subcategory groups, like on the printed menu. Sides at two price levels can be shown cleanly (see *Content follow-up*).
+
+### 7.0 Review first: report, don't change
+
+Before editing anything, review the code as built in Phases 1–6 and report back to James:
+
+1. **Status of Phases 1–6:** anything incomplete, skipped, or different from the plan, and any tests failing.
+2. **How option groups render today:** template, position in the section, styling. Include a **description** of Starters and Soups and Salads on dev (Claude Code can't take screenshots here; the dev machine's headless browser lacks system libraries). James takes screenshots if needed.
+3. **How item cards render today:** photo, border, price position, "View details", and the description's 3-line clamp (`.t-description`). Propose how a text-only group entry matches: the same card frame without photo or button, or a plain text entry.
+4. **Item add-ons line:** what separator it uses, and whether it already matches the printed style ("Substitute steak* +4").
+5. **Data on dev:** which option groups exist, and what's in the Sides and Non-Alcoholic Beverages categories (item names and prices), so James can decide how to split them into groups.
+6. Anything else that blocks or affects 7.1–7.2.
+
+Then **stop and wait** for James to pick what goes ahead.
+
+### 7.1 Group entries at the bottom of the section (public templates)
+
+- In `menu_category_section.html`, render active option groups as **entries in the section grid, each spanning a full row** (`md:col-span-3`), after the items and subcategory groups. They use item-like styling: bold name, the list underneath. No photo, no "View details", no modal.
+- **Own unclamped text style:** the list must not use `.t-description` (it clamps to 3 lines and would cut long sauce or dressing lists). Add a group text class in `input.css` that matches the description's look without the clamp, using theme variables only.
+- Match the item card frame only as far as the 7.0 review recommends and James approves.
+- **Group note in the price position:** the note shows on the right, where an item's price goes ("Sides | 7"). The note is now defined as **the price or a short note shown on the right**, e.g. "7" or "Prices vary". Update the portal help text for `note` (Phase 6 says "e.g. 'Choose one' or 'Prices vary'"), the staff help topic and CLAUDE.md to match.
+- **Separators:** choices with upcharges are joined with " | " ("Steak* +8 | Six shrimp* +8"). Unpriced lists (sauces, dressings) are joined with ", ".
+- Promo pages stay unchanged (D7).
+- **Done when:** Starters and Soups and Salads on dev read like the printed menu; long lists aren't cut off; groups sit in full rows at the bottom; mobile still reads cleanly; promo pages are unchanged.
+
+### 7.2 Separator for item add-ons
+
+- Switch the D1 add-on formatter (`MenuItem.addons_display`) from " · " to " | ", and update its tests. The card and the modal still share the one formatter.
+
+### Not now: a three-way price display setting
+
+Replacing `is_add_on` with `none` / `upcharge` / `price` (so choices could show standalone prices such as "Onion rings $5") is **dropped for now**. Sides don't need it: two groups with the price in the note cover them. If it comes back, note that reading the old `is_add_on` / `upcharge` CSV columns would need **column aliases in the import engine** (`importers.py` treats unknown columns as errors and ties each column to one model field), which every kind would get.
+
+### Content follow-up (James, after Phase 7)
+
+- **Sides:** to match the printed menu, use one group per price level with the price in the note: **"Sides"** note "7" (French fries … Rice pilaf) and **"Premium sides"** note "8" (Mashed potatoes with gravy, Gravy fries). The names differ because group names must be unique (spreadsheets look groups up by name). Then switch off the old side items. That's reversible, since imports never delete.
+- **Soft drinks:** one group with the note "4", if they never have a drink special price.
+- Single-serve drinks, beer, wine, and anything with sizes or specials stay as items.
 
 ---
 
