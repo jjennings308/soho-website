@@ -705,6 +705,8 @@
   z-index: 30;
 }
 .sp-topbar h1 { font-size: 1.1rem; font-weight: 600; color: var(--color-text-primary); }
+.sp-topbar__title { display: flex; align-items: center; gap: 0.6rem; }
+.sp-topbar__actions { display: flex; gap: 0.75rem; align-items: center; }
 .sp-content { padding: 1.75rem; flex: 1; }
 
 /* ── Cards ── */
@@ -825,7 +827,12 @@
   .sp-sidebar.open { transform: translateX(0); }
   .sp-main { margin-left: 0; }
   .sp-mobile-topbar { display: flex; }
-  .sp-topbar { display: none; }
+  /* Phones: the page's header buttons (+ Upload, + Add Item, Back …) stay reachable in a slim bar under
+     the dark top bar, which already has the "?" tip. The title stays hidden; no buttons, no bar. */
+  .sp-topbar { position: static; padding: 0.6rem 1rem; justify-content: flex-start; }
+  .sp-topbar__title { display: none; }
+  .sp-topbar__actions { flex-wrap: wrap; gap: 0.5rem; }
+  .sp-topbar:not(:has(.sp-topbar__actions > *)) { display: none; }
   .sp-content { padding: 1rem; }
   .sp-grid-2, .sp-grid-3 { grid-template-columns: 1fr; }
 }
