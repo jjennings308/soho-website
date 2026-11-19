@@ -2354,6 +2354,7 @@ run the release checks and ask before each commit.
 | `/staff/menu/menus/<pk>/` | `staff:menu_detail` | Settings and Categories tabs (stacked on phones) |
 | `/staff/menu/menus/<pk>/categories/` | `staff:menu_categories` | Partial + actions, fetch pattern as Pictures |
 | `/staff/menu/categories/` | `staff:categories` | Every category (see *Category settings*); nav link **Categories** under Menus |
+| `/staff/menu/categories/add/` | `staff:category_add` | New category (managers): the settings form |
 | `/staff/menu/categories/<pk>/` | `staff:category` | A category's settings form and its option groups |
 | `/staff/menu/categories/<pk>/option-groups/` | `staff:category_option_groups` | Option groups section: partial + actions |
 | `/staff/menu/option-groups/<pk>/` | `staff:option_group` | An option group and its choices |
@@ -2438,6 +2439,11 @@ Access: list and page `STAFF` (read-only for Tier 2); every change and the add p
 - **Warnings:** the page names every menu showing the category. Switching **shown** off hides it on all of them, so
   it needs a confirm tick (`confirm_hide`), like the menu live-site guard.
 - **"+ New category" in B2 is unchanged** (short form); staff use Category settings for the rest (James).
+- **+ Add Category** (James, 2026-11-19) on the Categories page header, managers only: `/staff/menu/categories/add/`
+  (`staff:category_add`, `CategoryAddView`, `MANAGER`) reuses `CategoryForm` and `category_form.html` (no slug,
+  menus or option groups until saved). Slug from the name (`_unique_slug`); a blank heading defaults to the name,
+  as in B2. Saving opens the category's page; the new category is on no menu until added from a menu's
+  Categories tab.
 - **Access:** `STAFF` views (read-only for Tier 2); saving needs `MANAGER`. Help tips for both pages.
 - Phase 6 added an **Option groups** section to this page — see *Menu option groups*.
 - **Built as** (2026-11-18): `CategoryForm` (`apps/staff/forms.py`, groups in `CATEGORY_GROUPS`; `read_only=True`

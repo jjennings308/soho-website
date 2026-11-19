@@ -1106,6 +1106,32 @@ class CategoryListView(StaffRequiredMixin, View):
         return render(request, 'staff/menu/category_list.html', {'categories': categories})
 
 
+class CategoryAddView(StaffRequiredMixin, View):
+    """New category: the full settings form. Saving opens its page; it isn't on any menu yet."""
+    staff_access = MANAGER
+
+    def _render(self, request, form):
+        # Blank display name would hide the heading, so on create it defaults to the name (as B2's + New category).
+        form.fields['display_name'].help_text = 'Blank uses the name.'
+        return render(request, 'staff/menu/category_form.html', {
+            'category': None, 'form': form, 'can_edit': True, 'back_url': reverse('staff:categories'),
+        })
+
+    def get(self, request):
+        return self._render(request, CategoryForm())
+
+    def post(self, request):
+        form = CategoryForm(request.POST)
+        if not form.is_valid():
+            return self._render(request, form)
+        category = form.save(commit=False)
+        category.display_name = category.display_name or category.name
+        category.slug = _unique_slug(MenuCategory, category.name, 'category')
+        category.save()
+        messages.success(request, f'Added "{category.name}". Put it on a menu from the menu\'s Categories tab.')
+        return redirect('staff:category', pk=category.pk)
+
+
 class CategoryDetailView(StaffRequiredMixin, View):
     """A category's settings. GET is open to every staff tier (read-only for Tier 2); POST needs a manager."""
     staff_access = STAFF

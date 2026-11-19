@@ -146,3 +146,51 @@ class CategoryAccessTests(CategorySettingsTestCase):
         self.assertEqual(self.client.post(self.url, form_data(self.burgers, name='Hacked')).status_code, 403)
         self.burgers.refresh_from_db()
         self.assertEqual(self.burgers.name, 'Burgers')
+
+
+class CategoryAddTests(CategorySettingsTestCase):
+    def add_data(self, **changes):
+        data = {'name': 'Sides', 'display_name': '', 'category_type': 'food', 'subtitle': '', 'description': '',
+                'background_image': '', 'order': '0', 'is_active': 'on'}
+        data.update(changes)
+        return data
+
+    def test_button_on_list_for_managers_in_the_header(self):
+        html = self.client.get(reverse('staff:categories')).content.decode()
+        actions = html[html.index('sp-topbar__actions'):]
+        self.assertIn(reverse('staff:category_add'), actions[:500])
+
+    def test_add_creates_category_and_opens_it(self):
+        response = self.client.post(reverse('staff:category_add'), self.add_data(subtitle='Choose any two'))
+        category = MenuCategory.objects.get(name='Sides')
+        self.assertRedirects(response, reverse('staff:category', args=[category.pk]))
+        self.assertEqual(category.slug, 'sides')
+        self.assertEqual(category.display_name, 'Sides')        # blank heading defaults to the name
+        self.assertEqual(category.subtitle, 'Choose any two')
+        self.assertTrue(category.is_active)
+        self.assertFalse(category.menu_assignments.exists())   # on no menu yet
+
+    def test_given_heading_kept_and_slug_unique(self):
+        MenuCategory.objects.create(name='Old Sides', slug='sides')
+        self.client.post(reverse('staff:category_add'), self.add_data(display_name='Sides & Extras'))
+        category = MenuCategory.objects.get(name='Sides')
+        self.assertEqual(category.display_name, 'Sides & Extras')
+        self.assertEqual(category.slug, 'sides-2')
+
+    def test_duplicate_name_refused(self):
+        response = self.client.post(reverse('staff:category_add'), self.add_data(name='burgers'))
+        self.assertContains(response, 'Another category already has this name.')
+        self.assertEqual(MenuCategory.objects.filter(name__iexact='burgers').count(), 1)
+
+    def test_add_page_has_no_option_groups_or_slug(self):
+        html = self.client.get(reverse('staff:category_add')).content.decode()
+        self.assertIn('Add Category', html)
+        self.assertNotIn('id="option-groups"', html)
+        self.assertNotIn('Spreadsheet ID', html)
+
+    def test_read_only_staff_see_no_button_and_cannot_add(self):
+        self.client.force_login(User.objects.create_user('viewer', password='x', is_staff=True))
+        self.assertNotContains(self.client.get(reverse('staff:categories')), reverse('staff:category_add'))
+        self.assertEqual(self.client.get(reverse('staff:category_add')).status_code, 403)
+        self.assertEqual(self.client.post(reverse('staff:category_add'), self.add_data()).status_code, 403)
+        self.assertFalse(MenuCategory.objects.filter(name='Sides').exists())

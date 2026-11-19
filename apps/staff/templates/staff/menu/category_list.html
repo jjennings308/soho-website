@@ -2,12 +2,17 @@
 {# staff/menu/category_list.html — every category, including switched-off ones and ones on no menu. #}
 {% block title %}Categories{% endblock %}
 {% block page_title %}Categories{% endblock %}
+{% block topbar_actions %}
+  {% if staff_is_manager %}
+  <a href="{% url 'staff:category_add' %}" class="sp-btn sp-btn--primary">+ Add Category</a>
+  {% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="sp-card" style="overflow-x:auto;">
   <p style="font-size:0.8rem;color:var(--color-mid-gray);margin-bottom:0.75rem;">
     Categories are the sections of a menu. One category can be on several menus; changing it changes all of them.
-    Add a category to a menu, or create one, from the menu's Categories tab.
+    Put a category on a menu from the menu's Categories tab.
   </p>
   {% if categories %}
   <table class="sp-table">

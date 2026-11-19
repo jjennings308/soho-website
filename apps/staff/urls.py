@@ -62,6 +62,7 @@ urlpatterns = [
     path('menu/menus/<int:pk>/categories/', views.MenuCategoriesView.as_view(), name='menu_categories'),
     path('menu/menus/<int:pk>/categories/items/', views.MenuCategoryItemPickerView.as_view(), name='menu_category_items'),
     path('menu/categories/', views.CategoryListView.as_view(), name='categories'),
+    path('menu/categories/add/', views.CategoryAddView.as_view(), name='category_add'),
     path('menu/categories/<int:pk>/', views.CategoryDetailView.as_view(), name='category'),
     path('menu/categories/<int:pk>/option-groups/', views.CategoryOptionGroupsView.as_view(),
          name='category_option_groups'),

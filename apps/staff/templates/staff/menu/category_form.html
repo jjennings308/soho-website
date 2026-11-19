@@ -1,7 +1,7 @@
 {% extends "staff/base.html" %}
 {# staff/menu/category_form.html — a category's settings (read-only unless can_edit). #}
-{% block title %}{{ category.name }}{% endblock %}
-{% block page_title %}{{ category.name }}{% endblock %}
+{% block title %}{% if category %}{{ category.name }}{% else %}Add Category{% endif %}{% endblock %}
+{% block page_title %}{% if category %}{{ category.name }}{% else %}Add Category{% endif %}{% endblock %}
 
 {% block extra_head %}
 {% include "staff/menu/_item_styles.html" %}
@@ -18,6 +18,7 @@
 
 {% block content %}
 <div style="max-width:56rem;" x-data="categoryPage()">
+  {% if category %}
   <p class="ip-meta" style="margin-bottom:0.5rem;">
     Spreadsheet ID (slug): <code>{{ category.slug }}</code> — stays the same if you rename the category.
     {% if not can_edit %}<br>You can view this category; a manager can change it.{% endif %}
@@ -27,6 +28,12 @@
     {% if menus %}On {% for menu in menus %}<a href="{% url 'staff:menu_detail' menu.pk %}#categories" style="color:inherit;text-decoration:underline;">{{ menu.title }}</a>{% if not forloop.last %}, {% endif %}{% endfor %}{% if menus|length > 1 %} — changes here show on all of them{% endif %}.
     {% else %}Not on any menu, so customers don't see it. Add it from a menu's Categories tab.{% endif %}
   </p>
+  {% else %}
+  <p class="ip-meta" style="margin-bottom:1rem;">
+    A new category isn't on any menu yet. After saving, add it to a menu from the menu's Categories tab, and add
+    items and option groups.
+  </p>
+  {% endif %}
 
   <form method="post">
     {% csrf_token %}
@@ -72,12 +79,13 @@
 
     {% if can_edit %}
     <div class="ip-actions ip-save">
-      <button type="submit" class="sp-btn sp-btn--primary">Save</button>
+      <button type="submit" class="sp-btn sp-btn--primary">{% if category %}Save{% else %}Save category{% endif %}</button>
       <a href="{{ back_url }}" class="sp-btn sp-btn--outline">Back</a>
     </div>
     {% endif %}
   </form>
 
+  {% if category %}
   {# ── Option groups ─ outside the form above: each change here saves on its own. #}
   <section id="option-groups" style="margin-top:2rem;scroll-margin-top:1rem;">
     <h2 style="font-size:1rem;font-weight:600;margin-bottom:0.75rem;">Option groups</h2>
@@ -85,6 +93,7 @@
       {% include "staff/menu/_category_option_groups.html" %}
     </div>
   </section>
+  {% endif %}
 </div>
 {% endblock %}
 

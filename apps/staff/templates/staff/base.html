@@ -67,7 +67,7 @@
             <a href="{% url 'staff:menus' %}" class="{% if request.resolver_match.url_name == 'menus' or request.resolver_match.url_name == 'menu_add' or request.resolver_match.url_name == 'menu_detail' %}active{% endif %}">
               &#9670; Menus
             </a>
-            <a href="{% url 'staff:categories' %}" class="{% if request.resolver_match.url_name == 'categories' or request.resolver_match.url_name == 'category' %}active{% endif %}">
+            <a href="{% url 'staff:categories' %}" class="{% if request.resolver_match.url_name == 'categories' or request.resolver_match.url_name == 'category' or request.resolver_match.url_name == 'category_add' %}active{% endif %}">
               &#9670; Categories
             </a>
             <a href="{% url 'staff:menu_item_list' %}" class="{% if 'menu_item' in request.resolver_match.url_name %}active{% endif %}">
