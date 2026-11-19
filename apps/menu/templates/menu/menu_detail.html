@@ -43,7 +43,7 @@
             {% include "menu/partials/promo_item_card.html" %}
           {% endfor %}
 
-          {% regroup subcat_items by subcategory.name as subcategory %}
+          {% regroup subcat_items by subcategory.name as subcategories %}
           {% for subcat in subcategories %}
             {% include "menu/partials/promo_subcat_card.html" %}
           {% endfor %}
